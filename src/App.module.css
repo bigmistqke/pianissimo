@@ -1,0 +1,23 @@
+.topHud {
+  display: grid;
+  position: fixed;
+  right: 0px;
+
+  margin: 10px;
+  border: 1px solid var(--color-stroke);
+  border-radius: 3px;
+
+  background: white;
+  color: var(--color-text);
+  text-align: center;
+
+  & .button {
+    padding-right: 7px;
+    padding-left: 7px;
+
+    &.active {
+      background: var(--color-text);
+      color: white;
+    }
+  }
+}

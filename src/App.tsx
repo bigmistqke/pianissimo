@@ -1,7 +1,10 @@
+import clsx from 'clsx'
+import MidiWriter from 'midi-writer-js'
 import { createEffect, createSignal, For, Index, on, onCleanup, onMount, Show } from 'solid-js'
 import { createStore, produce, SetStoreFunction, unwrap } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import './App.css'
+import styles from './App.module.css'
 import { pointerHelper } from './pointer-helper'
 
 type Vector = { x: number; y: number }
@@ -24,6 +27,34 @@ const KEY_COLORS = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1].reverse()
 const HEIGHT = 20
 const WIDTH = 60
 const MARGIN = 2
+
+function createMidiDataUri(notes: Array<NoteData>) {
+  const track = new MidiWriter.Track()
+  const division = 8
+
+  notes.forEach(note => {
+    track.addEvent(
+      new MidiWriter.NoteEvent({
+        pitch: [MidiWriter.Utils.getPitch(note.pitch)],
+        duration: Array.from({ length: note.duration }).fill(division),
+        startTick: note.time * (512 / division),
+        velocity: 100
+      })
+    )
+  })
+
+  const write = new MidiWriter.Writer(track)
+  return write.dataUri()
+}
+
+function downloadDataUri(dataUri: string, filename: string) {
+  const link = document.createElement('a')
+  link.href = dataUri
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 
 function Note(props: {
   note: NoteData
@@ -119,7 +150,7 @@ function Piano(props: { dimensions: DOMRect; origin: Vector }) {
                   mod(index + Math.floor(-props.origin.y / HEIGHT), KEY_COLORS.length)
                 ]
                   ? 'white'
-                  : 'var(--color-keys)'
+                  : 'var(--color-piano)'
               }}
             />
             <line
@@ -154,7 +185,7 @@ function Ruler(props: {
         y={0}
         width={props.dimensions.width}
         height={HEIGHT}
-        fill="var(--color-keys)"
+        fill="var(--color-piano)"
         onPointerDown={event => {
           event.stopPropagation()
 
@@ -338,7 +369,8 @@ function Grid(props: { origin: Vector; dimensions: DOMRect }) {
 }
 
 function App() {
-  let instrument = 24
+  const [instrument, setInstrument] = createSignal(24)
+  const [mode, setMode] = createSignal<'pan' | 'note' | 'select' | 'shift'>('note')
   const [notes, setNotes] = createStore<
     Array<{
       pitch: number
@@ -348,7 +380,7 @@ function App() {
   >([])
 
   const [dimensions, setDimensions] = createSignal<DOMRect>()
-  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 0 })
+  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 8 * HEIGHT * 12 })
   const [loop, setLoop] = createStore<Loop>({
     time: 0,
     duration: 4
@@ -394,8 +426,8 @@ function App() {
           if (note.time === now && !playedNotes.has(note)) {
             playedNotes.add(note)
             player.play(
-              instrument, // instrument: 24 is "Acoustic Guitar (nylon)"
-              72 + note.pitch, // note: midi number or frequency in Hz (if > 127)
+              instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
+              note.pitch, // note: midi number or frequency in Hz (if > 127)
               1, // velocity: 0..1
               0, // delay in seconds
               note.duration / velocity, // duration in seconds
@@ -412,13 +444,17 @@ function App() {
     })
   )
 
+  function play() {
+    if (!audioContext) {
+      audioContext = new AudioContext()
+      player = new Instruments()
+    } else offset = audioContext.currentTime * velocity - now()
+    setPlaying(true)
+  }
+
   function togglePlaying() {
     if (!playing()) {
-      if (!audioContext) {
-        audioContext = new AudioContext()
-        player = new Instruments()
-      } else offset = audioContext.currentTime * velocity - now()
-      setPlaying(true)
+      play()
     } else {
       setPlaying(false)
     }
@@ -435,42 +471,135 @@ function App() {
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
       <div
+        class={styles.topHud}
+        style={{
+          top: `${HEIGHT}px`,
+          'grid-template-rows': `${HEIGHT * 2 - 2}px 1px ${HEIGHT * 2 - 2}px 1px ${
+            HEIGHT * 2 - 2
+          }px 1px ${HEIGHT * 2 - 2}px`
+        }}
+      >
+        <button
+          class={clsx(styles.button, mode() === 'note' && styles.active)}
+          onClick={() => setMode('note')}
+        >
+          <IconGrommetIconsMusic />
+        </button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button
+          class={clsx(styles.button, mode() === 'pan' && styles.active)}
+          onClick={() => setMode('pan')}
+        >
+          <IconGrommetIconsPan />
+        </button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button
+          class={clsx(styles.button, mode() === 'select' && styles.active)}
+          onClick={() => setMode('select')}
+        >
+          <IconGrommetIconsSelect />
+        </button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button
+          class={clsx(styles.button, mode() === 'shift' && styles.active)}
+          onClick={() => setMode('shift')}
+        >
+          <IconGrommetIconsShift />
+        </button>
+      </div>
+      <div
         style={{
           position: 'fixed',
           right: '0px',
           bottom: '0px',
-          margin: `${HEIGHT}px`,
-          display: 'flex',
-          'flex-direction': 'column',
-          gap: '5px'
+          margin: `10px`,
+          display: 'grid',
+          'grid-template-columns': `${(WIDTH * 3) / 2}px repeat(5, 1px ${WIDTH}px)`,
+          background: 'white',
+          'border-radius': '3px',
+          color: 'var(--color-text)',
+          border: '1px solid var(--color-stroke)',
+          'text-align': 'center'
         }}
       >
-        <button onClick={() => setNotes([])}>clear</button>
-        <div style={{ display: 'flex', gap: '5px' }}>
+        <div
+          style={{
+            display: 'flex',
+            'justify-content': 'space-evenly',
+            'padding-top': '5px',
+            'padding-bottom': '5px'
+          }}
+        >
           <button
             onClick={() => {
-              if (instrument > 0) {
-                instrument--
+              if (instrument() > 0) {
+                setInstrument(instrument => instrument - 1)
               } else {
-                instrument = 174
+                setInstrument(174)
               }
             }}
           >
-            {'<'}
+            <IconGrommetIconsFormPreviousLink />
           </button>
+          {instrument()}
           <button
             onClick={() => {
-              if (instrument >= 174) {
-                instrument = 0
+              if (instrument() >= 174) {
+                setInstrument(0)
               } else {
-                instrument++
+                setInstrument(instrument => instrument + 1)
               }
             }}
           >
-            {'>'}
+            <IconGrommetIconsFormNextLink />
           </button>
         </div>
-        <button onClick={togglePlaying}>{!playing() ? 'play' : 'pause'}</button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => setNotes([])}
+        >
+          <IconGrommetIconsTrash />
+        </button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}
+        >
+          <IconGrommetIconsShare />
+        </button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => {
+            const selection = notes.filter(
+              note => note.time >= loop.time && note.time < loop.time + loop.duration
+            )
+            setNotes(
+              produce(notes => {
+                notes.push(...selection.map(note => ({ ...note, time: note.time + loop.duration })))
+              })
+            )
+            setLoop('duration', duration => duration * 2)
+          }}
+        >
+          <IconGrommetIconsCopy />
+        </button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => {
+            setNow(loop.time)
+            setPlaying(false)
+            playedNotes.clear()
+          }}
+        >
+          <IconGrommetIconsStop />
+        </button>
+        <div style={{ background: 'var(--color-stroke)' }} />
+        <button style={{ 'padding-top': '5px', 'padding-bottom': '5px' }} onClick={togglePlaying}>
+          {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
+        </button>
       </div>
       <svg
         style={{ width: '100%', height: '100%', overflow: 'hidden' }}
@@ -531,7 +660,6 @@ function App() {
         <Show when={dimensions()}>
           {dimensions => (
             <>
-              <Grid dimensions={dimensions()} origin={origin()} />
               {/* Piano underlay */}
               <g style={{ transform: `translateY(${-mod(-origin().y, HEIGHT)}px)` }}>
                 <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
@@ -542,17 +670,17 @@ function App() {
                       height={HEIGHT}
                       style={{
                         'pointer-events': 'none',
-                        opacity: 0.1,
                         fill: KEY_COLORS[
                           mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)
                         ]
                           ? 'transparent'
-                          : 'var(--color-keys)'
+                          : 'var(--color-piano-underlay)'
                       }}
                     />
                   )}
                 </Index>
               </g>
+              <Grid dimensions={dimensions()} origin={origin()} />
               {/* Notes */}
               <Show when={notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
@@ -591,6 +719,7 @@ function App() {
           )}
         </Show>
       </svg>
+      <div></div>
     </div>
   )
 }
