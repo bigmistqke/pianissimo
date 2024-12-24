@@ -1,7 +1,28 @@
-# Tauri + Solid + Typescript
+# 🎹 Pianissimo
 
-This template should help get you started developing with Tauri, Solid and Typescript in Vite.
+A pianoroll web app build with `solid-js`.
 
-## Recommended IDE Setup
+# 📝 TODO
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [x] selection
+  - [x] select-mode
+  - [x] select notes with selectionbox
+  - [x] drag
+  - [ ] select-pane (only appears once there are selected notes)
+    - [ ] duplicate
+    - [ ] delete
+    - [ ] make loop from selection
+- [ ] collaborative feature: add automerge/chee's lib
+- [ ] history: ctrl+z/ctrl+y
+- [ ] change tempo/bpm
+- [ ] velocity mode
+- [ ] different grids
+- [ ] theming: dark mode, mb different color schemes
+- [ ] save/load locally (localStorage and tauri/fs)
+
+# 💡 Feature Ideas
+
+- [ ] layers: stack music instruments
+- [ ] loop multiple different sections at the same time
+- [ ] load from midi
+- [ ] `WebMidi`
