@@ -226,14 +226,14 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         stroke="var(--color-stroke)"
       />
 
-      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 4)}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 4) + 2)}>
+      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 8)}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 8) + 2)}>
           {(_, index) => (
             <line
               y1={0}
               y2={HEIGHT}
-              x1={index * WIDTH * 4}
-              x2={index * WIDTH * 4}
+              x1={index * WIDTH * 8}
+              x2={index * WIDTH * 8}
               stroke="var(--color-stroke)"
               stroke-width="2px"
             />
@@ -275,14 +275,14 @@ function Grid() {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 4)}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 4) + 2)}>
+      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 8)}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 8) + 2)}>
           {(_, index) => (
             <line
               y1={0}
               y2={context.dimensions.height}
-              x1={index * WIDTH * 4}
-              x2={index * WIDTH * 4}
+              x1={index * WIDTH * 8}
+              x2={index * WIDTH * 8}
               stroke="var(--color-stroke)"
               stroke-width="2px"
             />
@@ -488,6 +488,16 @@ function App() {
     }))
   }
 
+  async function handlePan(event: PointerEvent) {
+    const initialOrigin = { ...origin() }
+    await pointerHelper(event, ({ delta }) => {
+      setOrigin({
+        x: initialOrigin.x + delta.x,
+        y: initialOrigin.y + delta.y
+      })
+    })
+  }
+
   function sortNotes() {
     setNotes(produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1))))
   }
@@ -600,52 +610,39 @@ function App() {
           gap: '5px'
         }}
       >
-        <div
-          style={{
-            display: 'grid',
-            'grid-template-rows': `${HEIGHT * 2 - 2}px repeat(3, ${HEIGHT * 2 - 2}px)`
-          }}
-        >
+        <div>
           <button
-            class={clsx(styles.button, mode() === 'note' && styles.active)}
+            class={mode() === 'note' ? styles.active : undefined}
             onClick={() => setMode('note')}
           >
             <IconGrommetIconsMusic />
           </button>
           <button
-            class={clsx(styles.button, mode() === 'pan' && styles.active)}
+            class={mode() === 'pan' ? styles.active : undefined}
             onClick={() => setMode('pan')}
           >
             <IconGrommetIconsPan />
           </button>
           <button
-            class={clsx(styles.button, mode() === 'select' && styles.active)}
+            class={mode() === 'select' ? styles.active : undefined}
             onClick={() => setMode('select')}
           >
             <IconGrommetIconsSelect />
           </button>
           <button
-            class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+            class={mode() === 'stretch' ? styles.active : undefined}
             onClick={() => setMode('stretch')}
           >
             <IconGrommetIconsShift />
           </button>
         </div>
         <Show when={selectedNotes().length > 0}>
-          <div
-            style={{
-              display: 'grid',
-              'grid-auto-rows': `${HEIGHT * 2 - 2}px`
-            }}
-          >
-            <button
-              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
-              onClick={copyNotes}
-            >
+          <div>
+            <button class={mode() === 'stretch' ? styles.active : undefined} onClick={copyNotes}>
               <IconGrommetIconsClipboard />
             </button>
             <button
-              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              class={mode() === 'stretch' ? styles.active : undefined}
               onClick={() => {
                 let inactiveSelectedNotes = 0
                 selectedNotes().forEach(note => {
@@ -664,13 +661,38 @@ function App() {
               <IconGrommetIconsDisabledOutline />
             </button>
             <button
-              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              class={mode() === 'stretch' ? styles.active : undefined}
               onClick={() => {
                 setNotes(notes.filter(note => !isNoteSelected(note)))
                 setSelectedNotes([])
               }}
             >
               <IconGrommetIconsErase />
+            </button>
+          </div>
+        </Show>
+        <Show when={mode() === 'note'}>
+          <div>
+            <button
+              onClick={() => {
+                const selection = notes.filter(
+                  note => note.time >= loop.time && note.time < loop.time + loop.duration
+                )
+                setNotes(
+                  produce(notes => {
+                    notes.push(
+                      ...selection.map(note => ({
+                        ...note,
+                        id: zeptoid(),
+                        time: note.time + loop.duration
+                      }))
+                    )
+                  })
+                )
+                setLoop('duration', duration => duration * 2)
+              }}
+            >
+              <IconGrommetIconsDuplicate />
             </button>
           </div>
         </Show>
@@ -682,7 +704,7 @@ function App() {
             }}
           >
             <button
-              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              class={mode() === 'stretch' ? styles.active : undefined}
               onClick={() => {
                 const loop = {
                   start: Infinity,
@@ -713,103 +735,89 @@ function App() {
               'grid-template-rows': `${HEIGHT * 2 - 2}px`
             }}
           >
-            <button
-              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
-              onClick={pasteNotes}
-            >
+            <button class={mode() === 'stretch' ? styles.active : undefined} onClick={pasteNotes}>
               <IconGrommetIconsCopy />
             </button>
           </div>
         </Show>
       </div>
-      <div
-        class={styles.bottomHud}
-        style={{
-          'grid-template-columns': `${(WIDTH * 3) / 2}px repeat(5, ${WIDTH}px)`
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            'justify-content': 'space-evenly',
-            'padding-top': '5px',
-            'padding-bottom': '5px'
-          }}
-        >
-          <button
-            onClick={() => {
-              if (instrument() > 0) {
-                setInstrument(instrument => instrument - 1)
-              } else {
-                setInstrument(174)
-              }
+      <div class={styles.bottomHud}>
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              width: '90px',
+              'justify-content': 'space-evenly',
+              'padding-top': '5px',
+              'padding-bottom': '5px'
             }}
           >
-            <IconGrommetIconsFormPreviousLink />
+            <button
+              onClick={() => {
+                if (instrument() > 0) {
+                  setInstrument(instrument => instrument - 1)
+                } else {
+                  setInstrument(174)
+                }
+              }}
+            >
+              <IconGrommetIconsFormPreviousLink />
+            </button>
+            {instrument()}
+            <button
+              onClick={() => {
+                if (instrument() >= 174) {
+                  setInstrument(0)
+                } else {
+                  setInstrument(instrument => instrument + 1)
+                }
+              }}
+            >
+              <IconGrommetIconsFormNextLink />
+            </button>
+          </div>
+        </div>
+        <div>
+          <button
+            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+            onClick={() => {
+              setNotes([])
+              setNow(0)
+            }}
+          >
+            <IconGrommetIconsSave />
           </button>
-          {instrument()}
           <button
+            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
             onClick={() => {
-              if (instrument() >= 174) {
-                setInstrument(0)
-              } else {
-                setInstrument(instrument => instrument + 1)
-              }
+              setNotes([])
+              setNow(0)
             }}
           >
-            <IconGrommetIconsFormNextLink />
+            <IconGrommetIconsDocument />
+          </button>
+          <button
+            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+            onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}
+          >
+            <IconGrommetIconsShare />
           </button>
         </div>
-        <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-          onClick={() => {
-            setNotes([])
-            setNow(0)
-          }}
-        >
-          <IconGrommetIconsTrash />
-        </button>
-        <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-          onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}
-        >
-          <IconGrommetIconsShare />
-        </button>
-        <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-          onClick={() => {
-            const selection = notes.filter(
-              note => note.time >= loop.time && note.time < loop.time + loop.duration
-            )
-            setNotes(
-              produce(notes => {
-                notes.push(
-                  ...selection.map(note => ({
-                    ...note,
-                    id: zeptoid(),
-                    time: note.time + loop.duration
-                  }))
-                )
-              })
-            )
-            setLoop('duration', duration => duration * 2)
-          }}
-        >
-          <IconGrommetIconsCopy />
-        </button>
-        <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-          onClick={() => {
-            setNow(loop.time)
-            setPlaying(false)
-            playedNotes.clear()
-          }}
-        >
-          <IconGrommetIconsStop />
-        </button>
-        <button style={{ 'padding-top': '5px', 'padding-bottom': '5px' }} onClick={togglePlaying}>
-          {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
-        </button>
+        <div>
+          <button
+            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+            onClick={() => {
+              setNow(loop.time)
+              setPlaying(false)
+              playedNotes.clear()
+            }}
+          >
+            <IconGrommetIconsStop />
+          </button>
+          <button style={{ 'padding-top': '5px', 'padding-bottom': '5px' }} onClick={togglePlaying}>
+            {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
+          </button>
+        </div>
       </div>
       <svg
         style={{ width: '100%', height: '100%', overflow: 'hidden' }}
@@ -829,10 +837,15 @@ function App() {
           }))
         }
         onPointerDown={async event => {
-          if (mode() === 'note') {
-            handleNote(event)
-          } else if (mode() === 'select') {
-            handleSelectionBox(event)
+          switch (mode()) {
+            case 'note':
+              handleNote(event)
+              break
+            case 'select':
+              handleSelectionBox(event)
+              break
+            case 'pan':
+              handlePan(event)
           }
         }}
       >
@@ -889,7 +902,6 @@ function App() {
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
                   <For each={notes}>
                     {(note, index) => {
-                      const selected = () => isNoteSelected(note)
                       const setNote: ReturnType<typeof createStore<typeof note>>[1] = (
                         ...args: any[]
                       ) =>
@@ -900,7 +912,7 @@ function App() {
                         )
                       return (
                         <rect
-                          class={clsx(styles.note, selected() && styles.selected)}
+                          class={clsx(styles.note, isNoteSelected(note) && styles.selected)}
                           x={note.time * WIDTH + MARGIN}
                           y={-note.pitch * HEIGHT + MARGIN}
                           width={note.duration * WIDTH - MARGIN * 2}
@@ -912,14 +924,12 @@ function App() {
                             }
                           }}
                           onPointerDown={async e => {
-                            e.stopPropagation()
-                            e.preventDefault()
-
-                            const { width, left } = e.target.getBoundingClientRect()
-
+                            const { left } = e.target.getBoundingClientRect()
                             switch (mode()) {
                               case 'select': {
                                 if (isNoteSelected(note)) {
+                                  e.stopPropagation()
+                                  e.preventDefault()
                                   if (selectedNotes().length > 0) {
                                     const initialNotes = Object.fromEntries(
                                       selectedNotes().map(note => [
@@ -947,22 +957,18 @@ function App() {
                                       sortNotes()
                                     }
                                   }
-                                } else {
-                                  setSelectedNotes([note])
                                 }
-
                                 return
                               }
-                              case 'note': {
+                              case 'stretch': {
+                                e.stopPropagation()
+                                e.preventDefault()
                                 const originalTime = note.time
                                 const originalDuration = note.duration
-                                const originalPitch = note.pitch
 
-                                let previous = originalTime
-
-                                if (e.clientX < left + WIDTH / 3) {
+                                // NOTE: it irks me that the 2 implementations aren't symmetrical
+                                if (e.clientX < left + (WIDTH * note.duration) / 2) {
                                   const offset = e.layerX - originalTime * WIDTH - origin().x
-
                                   const { delta } = await pointerHelper(e, ({ delta }) => {
                                     const deltaX = Math.floor((delta.x + offset) / WIDTH)
                                     if (deltaX >= originalDuration) {
@@ -976,7 +982,7 @@ function App() {
                                   if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
                                     sortNotes()
                                   }
-                                } else if (e.layerX > left + width - WIDTH / 3) {
+                                } else {
                                   pointerHelper(e, ({ delta }) => {
                                     const duration =
                                       Math.floor((e.layerX - origin().x + delta.x) / WIDTH) -
@@ -996,21 +1002,28 @@ function App() {
                                       })
                                     }
                                   })
-                                } else {
-                                  pointerHelper(e, ({ delta }) => {
-                                    const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                                    const time = originalTime + deltaX
-                                    setNote({
-                                      time,
-                                      pitch:
-                                        originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-                                    })
-                                    if (previous !== time) {
-                                      sortNotes()
-                                      previous = time
-                                    }
-                                  })
                                 }
+                                return
+                              }
+                              case 'note': {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                const originalTime = note.time
+                                const originalPitch = note.pitch
+                                let previous = originalTime
+                                pointerHelper(e, ({ delta }) => {
+                                  const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                                  const time = originalTime + deltaX
+                                  setNote({
+                                    time,
+                                    pitch:
+                                      originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                  })
+                                  if (previous !== time) {
+                                    sortNotes()
+                                    previous = time
+                                  }
+                                })
                               }
                             }
                           }}

@@ -8,9 +8,9 @@ A pianoroll web app build with `solid-js`.
   - [x] select-mode
   - [x] select notes with selectionbox
   - [x] drag
-  - [ ] select-pane (only appears once there are selected notes)
-    - [ ] duplicate
-    - [ ] delete
+  - [x] select-pane (only appears once there are selected notes)
+    - [x] duplicate
+    - [x] delete
     - [ ] make loop from selection
 - [ ] collaborative feature: add automerge/chee's lib
 - [ ] history: ctrl+z/ctrl+y

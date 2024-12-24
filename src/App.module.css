@@ -5,16 +5,19 @@
 
   margin: 10px;
 
-  & div {
+  & > div {
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--color-stroke);
     border-radius: 3px;
     background: white;
     color: var(--color-text);
     text-align: center;
 
-    & .button {
+    & > button {
       padding-right: 7px;
       padding-left: 7px;
+      height: calc(var(--height) * 2);
 
       &:not(:last-child) {
         border-bottom: 1px solid var(--color-stroke);
@@ -29,19 +32,28 @@
 }
 
 .bottomHud {
-  display: grid;
+  display: flex;
   position: fixed;
   right: 0px;
   bottom: 0px;
+  gap: 5px;
   margin: 10px;
-  border: 1px solid var(--color-stroke);
-  border-radius: 3px;
-  background: white;
-  color: var(--color-text);
-  text-align: center;
 
-  & > *:not(:last-child) {
-    border-right: 1px solid var(--color-stroke);
+  & > div {
+    display: flex;
+    border: 1px solid var(--color-stroke);
+    border-radius: 3px;
+    background: white;
+    color: var(--color-text);
+    text-align: center;
+
+    & > *:not(:last-child) {
+      border-right: 1px solid var(--color-stroke);
+    }
+
+    & > button {
+      width: 60px;
+    }
   }
 }
 
