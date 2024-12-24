@@ -32,11 +32,11 @@ interface SelectionBoxData {
   start: Vector
   end: Vector
 }
-
 interface Loop {
   time: number
   duration: number
 }
+type Mode = 'note' | 'select' | 'pan' | 'stretch'
 
 function mod(n: number, m: number): number {
   return ((n % m) + m) % m
@@ -73,84 +73,6 @@ function downloadDataUri(dataUri: string, filename: string) {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-}
-
-function Note(props: {
-  selected: boolean
-  note: NoteData
-  sortNotes: () => void
-  deleteNote: () => void
-}) {
-  const context = usePiano()
-  const [note, setNote] = createStore(props.note)
-  return (
-    <rect
-      class={clsx(styles.note, props.selected && styles.selected)}
-      x={note.time * WIDTH + MARGIN}
-      y={-note.pitch * HEIGHT + MARGIN}
-      width={note.duration * WIDTH - MARGIN * 2}
-      height={HEIGHT - MARGIN * 2}
-      onDblClick={props.deleteNote}
-      onPointerDown={e => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        const { width, left } = e.target.getBoundingClientRect()
-
-        const originalTime = note.time
-        const originalDuration = note.duration
-        const originalPitch = note.pitch
-
-        let previous = originalTime
-
-        if (e.clientX < left + WIDTH / 3) {
-          const offset = e.layerX - originalTime * WIDTH - context.origin.x
-
-          let previous = originalTime
-          pointerHelper(e, ({ delta }) => {
-            const deltaX = Math.floor((delta.x + offset) / WIDTH)
-            if (deltaX >= originalDuration) {
-              setNote('duration', deltaX - originalDuration + 2)
-            } else {
-              const time = originalTime + deltaX
-              setNote('time', time)
-              setNote('duration', originalDuration - deltaX)
-              if (previous !== time) {
-                props.sortNotes()
-                previous = time
-              }
-            }
-          })
-        } else if (e.layerX > left + width - WIDTH / 3) {
-          pointerHelper(e, ({ delta }) => {
-            const duration =
-              Math.floor((e.layerX - context.origin.x + delta.x) / WIDTH) - originalTime
-
-            if (duration > 0) {
-              setNote('duration', 1 + duration)
-            } else if (duration < 0) {
-              setNote('duration', 1 - duration)
-              setNote('time', originalTime + duration)
-            } else {
-              setNote('time', originalTime)
-              setNote('duration', 1)
-            }
-          })
-        } else {
-          pointerHelper(e, ({ delta }) => {
-            const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-            const time = originalTime + deltaX
-            setNote('time', time)
-            setNote('pitch', originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT))
-            if (previous !== time) {
-              props.sortNotes()
-              previous = time
-            }
-          })
-        }
-      }}
-    />
-  )
 }
 
 function Piano() {
@@ -413,6 +335,7 @@ function SelectionBox(props: {
 const pianoContext = createContext<{
   dimensions: DOMRect
   origin: Vector
+  mode: Mode
 }>()
 function usePiano() {
   const context = useContext(pianoContext)
@@ -429,11 +352,11 @@ function App() {
     time: 0,
     duration: 4
   })
-  const [mode, setMode] = createSignal<'pan' | 'note' | 'select' | 'shift'>('note')
+  const [mode, setMode] = createSignal<Mode>('note')
   const [now, setNow] = createSignal(0)
   const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 8 * HEIGHT * 12 })
   const [playing, setPlaying] = createSignal(false)
-  const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>()
+  const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
   const [selectionBox, setSelectionBox] = createSignal<SelectionBoxData | undefined>(undefined)
 
   const [notes, setNotes] = createStore<
@@ -460,11 +383,15 @@ function App() {
   function selectNotesFromSelectionBox(box: SelectionBoxData) {
     const start = normalize(box.start)
     const end = normalize(box.end)
+
     setSelectedNotes(
-      notes.filter(
-        note =>
-          note.time > start.x && note.time < end.x && -note.pitch > start.y && -note.pitch < end.y
-      )
+      notes.filter(note => {
+        const noteStartTime = note.time
+        const noteEndTime = note.time + note.duration
+        const isWithinXBounds = noteStartTime < end.x && noteEndTime > start.x
+        const isWithinYBounds = -note.pitch > start.y && -note.pitch < end.y
+        return isWithinXBounds && isWithinYBounds
+      })
     )
   }
 
@@ -489,7 +416,7 @@ function App() {
     }
   }
 
-  function createNote(event: PointerEvent) {
+  function handleNote(event: PointerEvent) {
     const absolutePosition = {
       x: event.layerX - origin().x,
       y: event.layerY - origin().y
@@ -526,6 +453,32 @@ function App() {
         setNotes(index, 'duration', 1)
       }
     })
+  }
+
+  async function handleSelectionBox(event: PointerEvent) {
+    const position = {
+      x: event.clientX - origin().x,
+      y: event.clientY - origin().y
+    }
+    await pointerHelper(event, ({ delta }) => {
+      const box = {
+        start: {
+          x: delta.x < 0 ? position.x + delta.x : position.x,
+          y: delta.y < 0 ? position.y + delta.y : position.y
+        },
+        end: {
+          x: delta.x > 0 ? position.x + delta.x : position.x,
+          y: delta.y > 0 ? position.y + delta.y : position.y
+        }
+      }
+      setSelectionBox(box)
+      selectNotesFromSelectionBox(box)
+    })
+    setSelectionBox()
+  }
+
+  function sortNotes() {
+    setNotes(produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1))))
   }
 
   // Audio Loop
@@ -585,6 +538,12 @@ function App() {
     })
   })
 
+  createEffect(() => {
+    if (mode() !== 'select') {
+      setSelectedNotes([])
+    }
+  })
+
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
       <div
@@ -618,8 +577,8 @@ function App() {
         </button>
         <div style={{ background: 'var(--color-stroke)' }} />
         <button
-          class={clsx(styles.button, mode() === 'shift' && styles.active)}
-          onClick={() => setMode('shift')}
+          class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+          onClick={() => setMode('stretch')}
         >
           <IconGrommetIconsShift />
         </button>
@@ -740,34 +699,9 @@ function App() {
         }
         onPointerDown={async event => {
           if (mode() === 'note') {
-            createNote(event)
+            handleNote(event)
           } else if (mode() === 'select') {
-            const position = {
-              x: event.clientX - origin().x,
-              y: event.clientY - origin().y
-            }
-
-            await pointerHelper(event, ({ delta }) => {
-              const box =
-                delta.y < 0
-                  ? {
-                      start: {
-                        x: position.x + delta.x,
-                        y: position.y + delta.y
-                      },
-                      end: position
-                    }
-                  : {
-                      start: position,
-                      end: {
-                        x: position.x + delta.x,
-                        y: position.y + delta.y
-                      }
-                    }
-              setSelectionBox(box)
-              selectNotesFromSelectionBox(box)
-            })
-            setSelectionBox()
+            handleSelectionBox(event)
           }
         }}
       >
@@ -780,6 +714,9 @@ function App() {
                 },
                 get origin() {
                   return origin()
+                },
+                get mode() {
+                  return mode()
                 }
               }}
             >
@@ -804,7 +741,7 @@ function App() {
                 </Index>
               </g>
               <Grid />
-              {/* Selection Box */}
+              {/* Selection Box Underlay */}
               <SelectionBox
                 selectionBox={selectionBox()}
                 fill="var(--color-selected)"
@@ -814,25 +751,117 @@ function App() {
               <Show when={notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
                   <For each={notes}>
-                    {(note, index) => (
-                      <Note
-                        selected={isNoteSelected(note)}
-                        note={note}
-                        sortNotes={() => {
-                          setNotes(
-                            produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1)))
-                          )
-                        }}
-                        deleteNote={() => {
-                          setNotes(produce(notes => notes.splice(index(), 1)))
-                        }}
-                      />
-                    )}
+                    {(note, index) => {
+                      const selected = () => isNoteSelected(note)
+                      const setNote = createStore(note)[1]
+                      return (
+                        <rect
+                          class={clsx(styles.note, selected() && styles.selected)}
+                          x={note.time * WIDTH + MARGIN}
+                          y={-note.pitch * HEIGHT + MARGIN}
+                          width={note.duration * WIDTH - MARGIN * 2}
+                          height={HEIGHT - MARGIN * 2}
+                          onDblClick={() => setNotes(produce(notes => notes.splice(index(), 1)))}
+                          onPointerDown={async e => {
+                            e.stopPropagation()
+                            e.preventDefault()
+
+                            const { width, left } = e.target.getBoundingClientRect()
+
+                            switch (mode()) {
+                              case 'select': {
+                                const notes = selectedNotes().map(note => ({
+                                  ...note,
+                                  setNote: createStore(note)[1]
+                                }))
+                                if (notes.length > 0) {
+                                  const { delta } = await pointerHelper(e, ({ delta }) => {
+                                    notes?.forEach(note => {
+                                      note.setNote(
+                                        'time',
+                                        note.time + Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                                      )
+
+                                      note.setNote(
+                                        'pitch',
+                                        note.pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                      )
+                                    })
+                                  })
+                                  if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+                                    sortNotes()
+                                  }
+                                } else {
+                                  setSelectedNotes([note])
+                                }
+                                return
+                              }
+                              case 'note': {
+                                const originalTime = note.time
+                                const originalDuration = note.duration
+                                const originalPitch = note.pitch
+
+                                let previous = originalTime
+
+                                if (e.clientX < left + WIDTH / 3) {
+                                  const offset = e.layerX - originalTime * WIDTH - origin().x
+
+                                  const { delta } = await pointerHelper(e, ({ delta }) => {
+                                    const deltaX = Math.floor((delta.x + offset) / WIDTH)
+                                    if (deltaX >= originalDuration) {
+                                      setNote('duration', deltaX - originalDuration + 2)
+                                    } else {
+                                      const time = originalTime + deltaX
+                                      setNote('time', time)
+                                      setNote('duration', originalDuration - deltaX)
+                                    }
+                                  })
+
+                                  if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+                                    sortNotes()
+                                  }
+                                } else if (e.layerX > left + width - WIDTH / 3) {
+                                  pointerHelper(e, ({ delta }) => {
+                                    const duration =
+                                      Math.floor((e.layerX - origin().x + delta.x) / WIDTH) -
+                                      originalTime
+
+                                    if (duration > 0) {
+                                      setNote('duration', 1 + duration)
+                                    } else if (duration < 0) {
+                                      setNote('duration', 1 - duration)
+                                      setNote('time', originalTime + duration)
+                                    } else {
+                                      setNote('time', originalTime)
+                                      setNote('duration', 1)
+                                    }
+                                  })
+                                } else {
+                                  pointerHelper(e, ({ delta }) => {
+                                    const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                                    const time = originalTime + deltaX
+                                    setNote('time', time)
+                                    setNote(
+                                      'pitch',
+                                      originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                    )
+                                    if (previous !== time) {
+                                      sortNotes()
+                                      previous = time
+                                    }
+                                  })
+                                }
+                              }
+                            }
+                          }}
+                        />
+                      )
+                    }}
                   </For>
                 </g>
               </Show>
               <Ruler loop={loop} setLoop={setLoop} />
-              {/* Now */}
+              {/* Now Indicator */}
               <rect
                 width={WIDTH}
                 height={dimensions().height}
@@ -844,7 +873,7 @@ function App() {
                 }}
               />
               <Piano />
-              {/* Selection Box */}
+              {/* Selection Box Overlay */}
               <SelectionBox selectionBox={selectionBox()} stroke="var(--color-selected)" />
             </pianoContext.Provider>
           )}
