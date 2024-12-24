@@ -21,3 +21,10 @@
     }
   }
 }
+
+.note {
+  fill: var(--color-note);
+  &.selected {
+    fill: var(--color-selected);
+  }
+}

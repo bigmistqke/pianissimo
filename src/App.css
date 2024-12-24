@@ -2,6 +2,7 @@ body {
   --color-stroke: #005bea;
   --color-loop: #04f9f2;
   --color-note: #0000ff;
+  --color-selected: #dd04f9;
   --color-piano: #0091e7;
   --color-piano-underlay: #e9f3fc;
   --color-text: #043e99;

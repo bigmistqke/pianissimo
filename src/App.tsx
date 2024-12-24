@@ -3,6 +3,7 @@ import MidiWriter from 'midi-writer-js'
 import {
   createContext,
   createEffect,
+  createSelector,
   createSignal,
   For,
   Index,
@@ -18,11 +19,18 @@ import './App.css'
 import styles from './App.module.css'
 import { pointerHelper } from './pointer-helper'
 
-type Vector = { x: number; y: number }
+interface Vector {
+  x: number
+  y: number
+}
 interface NoteData {
   pitch: number
   time: number
   duration: number
+}
+interface SelectionBoxData {
+  start: Vector
+  end: Vector
 }
 
 interface Loop {
@@ -67,16 +75,21 @@ function downloadDataUri(dataUri: string, filename: string) {
   document.body.removeChild(link)
 }
 
-function Note(props: { note: NoteData; sortNotes: () => void; deleteNote: () => void }) {
+function Note(props: {
+  selected: boolean
+  note: NoteData
+  sortNotes: () => void
+  deleteNote: () => void
+}) {
   const context = usePiano()
   const [note, setNote] = createStore(props.note)
   return (
     <rect
+      class={clsx(styles.note, props.selected && styles.selected)}
       x={note.time * WIDTH + MARGIN}
       y={-note.pitch * HEIGHT + MARGIN}
       width={note.duration * WIDTH - MARGIN * 2}
       height={HEIGHT - MARGIN * 2}
-      fill="var(--color-note)"
       onDblClick={props.deleteNote}
       onPointerDown={e => {
         e.stopPropagation()
@@ -373,6 +386,30 @@ function Grid() {
   )
 }
 
+function SelectionBox(props: {
+  selectionBox?: SelectionBoxData
+  stroke?: string
+  fill?: string
+  opacity?: number
+}) {
+  const context = usePiano()
+  return (
+    <Show when={props.selectionBox}>
+      {box => (
+        <rect
+          x={box().start.x + context.origin.x}
+          y={box().start.y + context.origin.y}
+          width={Math.abs(box().end.x - box().start.x)}
+          height={Math.abs(box().end.y - box().start.y)}
+          stroke={props.stroke ?? 'none'}
+          fill={props.fill ?? 'none'}
+          opacity={props.opacity}
+        />
+      )}
+    </Show>
+  )
+}
+
 const pianoContext = createContext<{
   dimensions: DOMRect
   origin: Vector
@@ -386,8 +423,19 @@ function usePiano() {
 }
 
 function App() {
+  const [dimensions, setDimensions] = createSignal<DOMRect>()
   const [instrument, setInstrument] = createSignal(24)
+  const [loop, setLoop] = createStore<Loop>({
+    time: 0,
+    duration: 4
+  })
   const [mode, setMode] = createSignal<'pan' | 'note' | 'select' | 'shift'>('note')
+  const [now, setNow] = createSignal(0)
+  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 8 * HEIGHT * 12 })
+  const [playing, setPlaying] = createSignal(false)
+  const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>()
+  const [selectionBox, setSelectionBox] = createSignal<SelectionBoxData | undefined>(undefined)
+
   const [notes, setNotes] = createStore<
     Array<{
       pitch: number
@@ -396,23 +444,91 @@ function App() {
     }>
   >([])
 
-  const [dimensions, setDimensions] = createSignal<DOMRect>()
-  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 8 * HEIGHT * 12 })
-  const [loop, setLoop] = createStore<Loop>({
-    time: 0,
-    duration: 4
-  })
-
-  const [now, setNow] = createSignal(0)
-  const [playing, setPlaying] = createSignal(false)
+  const velocity = 4
   let audioContext: AudioContext | undefined
   let player: Instruments
-
-  const velocity = 4
   let offset = 0
-
   let playedNotes = new Set<NoteData>()
 
+  function normalize(value: Vector) {
+    return {
+      x: Math.floor(value.x / WIDTH),
+      y: Math.floor(value.y / HEIGHT)
+    }
+  }
+
+  function selectNotesFromSelectionBox(box: SelectionBoxData) {
+    const start = normalize(box.start)
+    const end = normalize(box.end)
+    setSelectedNotes(
+      notes.filter(
+        note =>
+          note.time > start.x && note.time < end.x && -note.pitch > start.y && -note.pitch < end.y
+      )
+    )
+  }
+
+  const isNoteSelected = createSelector(
+    selectedNotes,
+    (note: NoteData, notes) => !!notes?.includes(note)
+  )
+
+  function play() {
+    if (!audioContext) {
+      audioContext = new AudioContext()
+      player = new Instruments()
+    } else offset = audioContext.currentTime * velocity - now()
+    setPlaying(true)
+  }
+
+  function togglePlaying() {
+    if (!playing()) {
+      play()
+    } else {
+      setPlaying(false)
+    }
+  }
+
+  function createNote(event: PointerEvent) {
+    const absolutePosition = {
+      x: event.layerX - origin().x,
+      y: event.layerY - origin().y
+    }
+
+    const note = {
+      time: Math.floor(absolutePosition.x / WIDTH),
+      pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
+      duration: 1
+    }
+
+    setNotes(
+      produce(notes => {
+        notes.push(note)
+        notes.sort((a, b) => (a.time < b.time ? -1 : 1))
+      })
+    )
+
+    const index = unwrap(notes).findIndex(_note => note === _note)
+
+    const originalTime = note.time
+    const originalDuration = note.duration
+    const offset = absolutePosition.x - originalTime * WIDTH
+
+    pointerHelper(event, ({ delta }) => {
+      const deltaX = Math.floor((offset + delta.x) / WIDTH)
+      if (deltaX < 0) {
+        setNotes(index, 'time', originalTime + deltaX)
+        setNotes(index, 'duration', 1 - deltaX)
+      } else if (deltaX > 0) {
+        setNotes(index, 'duration', originalDuration + deltaX)
+      } else {
+        setNotes(index, 'time', originalTime)
+        setNotes(index, 'duration', 1)
+      }
+    })
+  }
+
+  // Audio Loop
   createEffect(
     on(playing, playing => {
       if (!playing || !audioContext) return
@@ -460,22 +576,6 @@ function App() {
       onCleanup(() => (shouldPlay = false))
     })
   )
-
-  function play() {
-    if (!audioContext) {
-      audioContext = new AudioContext()
-      player = new Instruments()
-    } else offset = audioContext.currentTime * velocity - now()
-    setPlaying(true)
-  }
-
-  function togglePlaying() {
-    if (!playing()) {
-      play()
-    } else {
-      setPlaying(false)
-    }
-  }
 
   onMount(() => {
     window.addEventListener('keydown', e => {
@@ -638,43 +738,37 @@ function App() {
             y: origin.y - (event.deltaY * 2) / 3
           }))
         }
-        onPointerDown={event => {
-          const absolutePosition = {
-            x: event.layerX - origin().x,
-            y: event.layerY - origin().y
-          }
-
-          const note = {
-            time: Math.floor(absolutePosition.x / WIDTH),
-            pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
-            duration: 1
-          }
-
-          setNotes(
-            produce(notes => {
-              notes.push(note)
-              notes.sort((a, b) => (a.time < b.time ? -1 : 1))
-            })
-          )
-
-          const index = unwrap(notes).findIndex(_note => note === _note)
-
-          const originalTime = note.time
-          const originalDuration = note.duration
-          const offset = absolutePosition.x - originalTime * WIDTH
-
-          pointerHelper(event, ({ delta }) => {
-            const deltaX = Math.floor((offset + delta.x) / WIDTH)
-            if (deltaX < 0) {
-              setNotes(index, 'time', originalTime + deltaX)
-              setNotes(index, 'duration', 1 - deltaX)
-            } else if (deltaX > 0) {
-              setNotes(index, 'duration', originalDuration + deltaX)
-            } else {
-              setNotes(index, 'time', originalTime)
-              setNotes(index, 'duration', 1)
+        onPointerDown={async event => {
+          if (mode() === 'note') {
+            createNote(event)
+          } else if (mode() === 'select') {
+            const position = {
+              x: event.clientX - origin().x,
+              y: event.clientY - origin().y
             }
-          })
+
+            await pointerHelper(event, ({ delta }) => {
+              const box =
+                delta.y < 0
+                  ? {
+                      start: {
+                        x: position.x + delta.x,
+                        y: position.y + delta.y
+                      },
+                      end: position
+                    }
+                  : {
+                      start: position,
+                      end: {
+                        x: position.x + delta.x,
+                        y: position.y + delta.y
+                      }
+                    }
+              setSelectionBox(box)
+              selectNotesFromSelectionBox(box)
+            })
+            setSelectionBox()
+          }
         }}
       >
         <Show when={dimensions()}>
@@ -702,7 +796,7 @@ function App() {
                         fill: KEY_COLORS[
                           mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)
                         ]
-                          ? 'transparent'
+                          ? 'none'
                           : 'var(--color-piano-underlay)'
                       }}
                     />
@@ -710,12 +804,19 @@ function App() {
                 </Index>
               </g>
               <Grid />
+              {/* Selection Box */}
+              <SelectionBox
+                selectionBox={selectionBox()}
+                fill="var(--color-selected)"
+                opacity={0.05}
+              />
               {/* Notes */}
               <Show when={notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
                   <For each={notes}>
                     {(note, index) => (
                       <Note
+                        selected={isNoteSelected(note)}
                         note={note}
                         sortNotes={() => {
                           setNotes(
@@ -743,6 +844,8 @@ function App() {
                 }}
               />
               <Piano />
+              {/* Selection Box */}
+              <SelectionBox selectionBox={selectionBox()} stroke="var(--color-selected)" />
             </pianoContext.Provider>
           )}
         </Show>
