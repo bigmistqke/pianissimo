@@ -1,6 +1,17 @@
 import clsx from 'clsx'
 import MidiWriter from 'midi-writer-js'
-import { createEffect, createSignal, For, Index, on, onCleanup, onMount, Show } from 'solid-js'
+import {
+  createContext,
+  createEffect,
+  createSignal,
+  For,
+  Index,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+  useContext
+} from 'solid-js'
 import { createStore, produce, SetStoreFunction, unwrap } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import './App.css'
@@ -56,12 +67,8 @@ function downloadDataUri(dataUri: string, filename: string) {
   document.body.removeChild(link)
 }
 
-function Note(props: {
-  note: NoteData
-  sortNotes: () => void
-  deleteNote: () => void
-  origin: Vector
-}) {
+function Note(props: { note: NoteData; sortNotes: () => void; deleteNote: () => void }) {
+  const context = usePiano()
   const [note, setNote] = createStore(props.note)
   return (
     <rect
@@ -84,7 +91,7 @@ function Note(props: {
         let previous = originalTime
 
         if (e.clientX < left + WIDTH / 3) {
-          const offset = e.layerX - originalTime * WIDTH - props.origin.x
+          const offset = e.layerX - originalTime * WIDTH - context.origin.x
 
           let previous = originalTime
           pointerHelper(e, ({ delta }) => {
@@ -104,7 +111,7 @@ function Note(props: {
         } else if (e.layerX > left + width - WIDTH / 3) {
           pointerHelper(e, ({ delta }) => {
             const duration =
-              Math.floor((e.layerX - props.origin.x + delta.x) / WIDTH) - originalTime
+              Math.floor((e.layerX - context.origin.x + delta.x) / WIDTH) - originalTime
 
             if (duration > 0) {
               setNote('duration', 1 + duration)
@@ -133,10 +140,11 @@ function Note(props: {
   )
 }
 
-function Piano(props: { dimensions: DOMRect; origin: Vector }) {
+function Piano() {
+  const context = usePiano()
   return (
-    <g style={{ transform: `translateY(${mod(-props.origin.y, HEIGHT) * -1}px)` }}>
-      <Index each={new Array(Math.floor(props.dimensions.height / HEIGHT) + 2)}>
+    <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
+      <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 2)}>
         {(_, index) => (
           <>
             <rect
@@ -147,7 +155,7 @@ function Piano(props: { dimensions: DOMRect; origin: Vector }) {
               style={{
                 stroke: 'var(--color-stroke)',
                 fill: KEY_COLORS[
-                  mod(index + Math.floor(-props.origin.y / HEIGHT), KEY_COLORS.length)
+                  mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length)
                 ]
                   ? 'white'
                   : 'var(--color-piano)'
@@ -160,7 +168,7 @@ function Piano(props: { dimensions: DOMRect; origin: Vector }) {
               x2={WIDTH}
               stroke="var(--color-stroke)"
               stroke-width={
-                mod(index + Math.floor(-props.origin.y / HEIGHT), KEY_COLORS.length) === 0
+                mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length) === 0
                   ? '2px'
                   : '1px'
               }
@@ -172,26 +180,22 @@ function Piano(props: { dimensions: DOMRect; origin: Vector }) {
   )
 }
 
-function Ruler(props: {
-  dimensions: DOMRect
-  origin: Vector
-  setLoop: SetStoreFunction<Loop>
-  loop: Loop
-}) {
+function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
+  const context = usePiano()
   return (
     <>
       <rect
         x={0}
         y={0}
-        width={props.dimensions.width}
+        width={context.dimensions.width}
         height={HEIGHT}
         fill="var(--color-piano)"
         onPointerDown={event => {
           event.stopPropagation()
 
           const absolutePosition = {
-            x: event.layerX - props.origin.x,
-            y: event.layerY - props.origin.y
+            x: event.layerX - context.origin.x,
+            y: event.layerY - context.origin.y
           }
 
           const loop = {
@@ -227,7 +231,7 @@ function Ruler(props: {
             width={loop().duration * WIDTH}
             height={HEIGHT}
             fill="var(--color-loop)"
-            style={{ transform: `translateX(${props.origin.x}px)` }}
+            style={{ transform: `translateX(${context.origin.x}px)` }}
             onPointerDown={e => {
               e.stopPropagation()
               e.preventDefault()
@@ -238,7 +242,7 @@ function Ruler(props: {
               const originalDuration = loop().duration
 
               if (e.clientX < left + WIDTH / 3) {
-                const offset = e.layerX - originalTime * WIDTH - props.origin.x
+                const offset = e.layerX - originalTime * WIDTH - context.origin.x
 
                 pointerHelper(e, ({ delta }) => {
                   const deltaX = Math.floor((delta.x + offset) / WIDTH)
@@ -253,7 +257,7 @@ function Ruler(props: {
               } else if (e.layerX > left + width - WIDTH / 3) {
                 pointerHelper(e, ({ delta }) => {
                   const duration =
-                    Math.floor((e.layerX - props.origin.x + delta.x) / WIDTH) - originalTime
+                    Math.floor((e.layerX - context.origin.x + delta.x) / WIDTH) - originalTime
 
                   if (duration > 0) {
                     props.setLoop('duration', 1 + duration)
@@ -278,14 +282,14 @@ function Ruler(props: {
       </Show>
       <line
         x1={0}
-        x2={props.dimensions.width}
+        x2={context.dimensions.width}
         y1={HEIGHT}
         y2={HEIGHT}
         stroke="var(--color-stroke)"
       />
 
-      <g style={{ transform: `translateX(${props.origin.x % (WIDTH * 4)}px)` }}>
-        <Index each={new Array(Math.floor(props.dimensions.width / WIDTH / 4) + 2)}>
+      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 4)}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 4) + 2)}>
           {(_, index) => (
             <line
               y1={0}
@@ -298,8 +302,8 @@ function Ruler(props: {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${props.origin.x % WIDTH}px)` }}>
-        <Index each={new Array(Math.floor(props.dimensions.width / WIDTH) + 2)}>
+      <g style={{ transform: `translateX(${context.origin.x % WIDTH}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH) + 2)}>
           {(_, index) => (
             <line
               y1={0}
@@ -316,15 +320,16 @@ function Ruler(props: {
   )
 }
 
-function Grid(props: { origin: Vector; dimensions: DOMRect }) {
+function Grid() {
+  const context = usePiano()
   return (
     <>
-      <g style={{ transform: `translateX(${props.origin.x % WIDTH}px)` }}>
-        <Index each={new Array(Math.floor(props.dimensions.width / WIDTH) + 2)}>
+      <g style={{ transform: `translateX(${context.origin.x % WIDTH}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH) + 2)}>
           {(_, index) => (
             <line
               y1={0}
-              y2={props.dimensions.height}
+              y2={context.dimensions.height}
               x1={index * WIDTH}
               x2={index * WIDTH}
               stroke="var(--color-stroke)"
@@ -332,12 +337,12 @@ function Grid(props: { origin: Vector; dimensions: DOMRect }) {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${props.origin.x % (WIDTH * 4)}px)` }}>
-        <Index each={new Array(Math.floor(props.dimensions.width / WIDTH / 4) + 2)}>
+      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 4)}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 4) + 2)}>
           {(_, index) => (
             <line
               y1={0}
-              y2={props.dimensions.height}
+              y2={context.dimensions.height}
               x1={index * WIDTH * 4}
               x2={index * WIDTH * 4}
               stroke="var(--color-stroke)"
@@ -346,17 +351,17 @@ function Grid(props: { origin: Vector; dimensions: DOMRect }) {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateY(${mod(-props.origin.y, HEIGHT) * -1}px)` }}>
-        <Index each={new Array(Math.floor(props.dimensions.height / HEIGHT) + 1)}>
+      <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 1)}>
           {(_, index) => (
             <line
               y1={index * HEIGHT}
               y2={index * HEIGHT}
               x1={0}
-              x2={props.dimensions.width}
+              x2={context.dimensions.width}
               stroke="var(--color-stroke)"
               stroke-width={
-                mod(index + Math.floor(-props.origin.y / HEIGHT), KEY_COLORS.length) === 0
+                mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length) === 0
                   ? '2px'
                   : '1px'
               }
@@ -366,6 +371,18 @@ function Grid(props: { origin: Vector; dimensions: DOMRect }) {
       </g>
     </>
   )
+}
+
+const pianoContext = createContext<{
+  dimensions: DOMRect
+  origin: Vector
+}>()
+function usePiano() {
+  const context = useContext(pianoContext)
+  if (!context) {
+    throw `PianoContext is undefined.`
+  }
+  return context
 }
 
 function App() {
@@ -557,7 +574,10 @@ function App() {
         <div style={{ background: 'var(--color-stroke)' }} />
         <button
           style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-          onClick={() => setNotes([])}
+          onClick={() => {
+            setNotes([])
+            setNow(0)
+          }}
         >
           <IconGrommetIconsTrash />
         </button>
@@ -659,7 +679,16 @@ function App() {
       >
         <Show when={dimensions()}>
           {dimensions => (
-            <>
+            <pianoContext.Provider
+              value={{
+                get dimensions() {
+                  return dimensions()
+                },
+                get origin() {
+                  return origin()
+                }
+              }}
+            >
               {/* Piano underlay */}
               <g style={{ transform: `translateY(${-mod(-origin().y, HEIGHT)}px)` }}>
                 <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
@@ -680,14 +709,13 @@ function App() {
                   )}
                 </Index>
               </g>
-              <Grid dimensions={dimensions()} origin={origin()} />
+              <Grid />
               {/* Notes */}
               <Show when={notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
                   <For each={notes}>
                     {(note, index) => (
                       <Note
-                        origin={origin()}
                         note={note}
                         sortNotes={() => {
                           setNotes(
@@ -702,7 +730,7 @@ function App() {
                   </For>
                 </g>
               </Show>
-              <Ruler dimensions={dimensions()} origin={origin()} loop={loop} setLoop={setLoop} />
+              <Ruler loop={loop} setLoop={setLoop} />
               {/* Now */}
               <rect
                 width={WIDTH}
@@ -714,8 +742,8 @@ function App() {
                   'pointer-events': 'none'
                 }}
               />
-              <Piano dimensions={dimensions()} origin={origin()} />
-            </>
+              <Piano />
+            </pianoContext.Provider>
           )}
         </Show>
       </svg>
