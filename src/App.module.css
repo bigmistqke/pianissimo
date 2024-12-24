@@ -4,21 +4,44 @@
   right: 0px;
 
   margin: 10px;
+
+  & div {
+    border: 1px solid var(--color-stroke);
+    border-radius: 3px;
+    background: white;
+    color: var(--color-text);
+    text-align: center;
+
+    & .button {
+      padding-right: 7px;
+      padding-left: 7px;
+
+      &:not(:last-child) {
+        border-bottom: 1px solid var(--color-stroke);
+      }
+
+      &.active {
+        background: var(--color-text);
+        color: white;
+      }
+    }
+  }
+}
+
+.bottomHud {
+  display: grid;
+  position: fixed;
+  right: 0px;
+  bottom: 0px;
+  margin: 10px;
   border: 1px solid var(--color-stroke);
   border-radius: 3px;
-
   background: white;
   color: var(--color-text);
   text-align: center;
 
-  & .button {
-    padding-right: 7px;
-    padding-left: 7px;
-
-    &.active {
-      background: var(--color-text);
-      color: white;
-    }
+  & > *:not(:last-child) {
+    border-right: 1px solid var(--color-stroke);
   }
 }
 

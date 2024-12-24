@@ -15,6 +15,7 @@ import {
 } from 'solid-js'
 import { createStore, produce, SetStoreFunction, unwrap } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
+import zeptoid from 'zeptoid'
 import './App.css'
 import styles from './App.module.css'
 import { pointerHelper } from './pointer-helper'
@@ -27,6 +28,8 @@ interface NoteData {
   pitch: number
   time: number
   duration: number
+  active: boolean
+  id: string
 }
 interface SelectionBoxData {
   start: Vector
@@ -346,26 +349,22 @@ function usePiano() {
 }
 
 function App() {
+  const [mode, setMode] = createSignal<Mode>('note')
   const [dimensions, setDimensions] = createSignal<DOMRect>()
+  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 8 * HEIGHT * 12 })
+  // Select-related state
+  const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
+  const [selectionArea, setSelectionArea] = createSignal<SelectionBoxData>()
+  const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
+  // Playing related state
   const [instrument, setInstrument] = createSignal(24)
   const [loop, setLoop] = createStore<Loop>({
     time: 0,
     duration: 4
   })
-  const [mode, setMode] = createSignal<Mode>('note')
   const [now, setNow] = createSignal(0)
-  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 8 * HEIGHT * 12 })
   const [playing, setPlaying] = createSignal(false)
-  const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
-  const [selectionBox, setSelectionBox] = createSignal<SelectionBoxData | undefined>(undefined)
-
-  const [notes, setNotes] = createStore<
-    Array<{
-      pitch: number
-      time: number
-      duration: number
-    }>
-  >([])
+  const [notes, setNotes] = createStore<Array<NoteData>>([])
 
   const velocity = 4
   let audioContext: AudioContext | undefined
@@ -388,8 +387,8 @@ function App() {
       notes.filter(note => {
         const noteStartTime = note.time
         const noteEndTime = note.time + note.duration
-        const isWithinXBounds = noteStartTime < end.x && noteEndTime > start.x
-        const isWithinYBounds = -note.pitch > start.y && -note.pitch < end.y
+        const isWithinXBounds = noteStartTime <= end.x && noteEndTime > start.x
+        const isWithinYBounds = -note.pitch >= start.y && -note.pitch <= end.y
         return isWithinXBounds && isWithinYBounds
       })
     )
@@ -397,7 +396,7 @@ function App() {
 
   const isNoteSelected = createSelector(
     selectedNotes,
-    (note: NoteData, notes) => !!notes?.includes(note)
+    (note: NoteData, notes) => !!notes.find(_note => _note.id === note.id)
   )
 
   function play() {
@@ -423,9 +422,11 @@ function App() {
     }
 
     const note = {
-      time: Math.floor(absolutePosition.x / WIDTH),
+      id: zeptoid(),
+      active: true,
+      duration: 1,
       pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
-      duration: 1
+      time: Math.floor(absolutePosition.x / WIDTH)
     }
 
     setNotes(
@@ -460,6 +461,10 @@ function App() {
       x: event.clientX - origin().x,
       y: event.clientY - origin().y
     }
+    setSelectionArea({
+      start: normalize(position),
+      end: normalize(position)
+    })
     await pointerHelper(event, ({ delta }) => {
       const box = {
         start: {
@@ -471,14 +476,50 @@ function App() {
           y: delta.y > 0 ? position.y + delta.y : position.y
         }
       }
-      setSelectionBox(box)
       selectNotesFromSelectionBox(box)
+      setSelectionArea({
+        start: normalize(box.start),
+        end: normalize(box.end)
+      })
     })
-    setSelectionBox()
+    setSelectionArea(area => ({
+      start: area!.end,
+      end: area!.end
+    }))
   }
 
   function sortNotes() {
     setNotes(produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1))))
+  }
+
+  function copyNotes() {
+    let offset = Infinity
+    selectedNotes().forEach(note => {
+      if (note.time < offset) {
+        offset = note.time
+      }
+    })
+    setClipboard(
+      selectedNotes().map(note => ({
+        ...note,
+        id: zeptoid(),
+        time: note.time - offset
+      }))
+    )
+  }
+
+  function pasteNotes() {
+    setNotes(
+      produce(notes => {
+        notes.push(
+          ...clipboard()!.map(note => ({
+            ...note,
+            time: note.time + selectionArea()!.end.x,
+            id: zeptoid()
+          }))
+        )
+      })
+    )
   }
 
   // Audio Loop
@@ -509,7 +550,7 @@ function App() {
         setNow(now)
 
         notes.forEach(note => {
-          if (note.time === now && !playedNotes.has(note)) {
+          if (note.active && note.time === now && !playedNotes.has(note)) {
             playedNotes.add(note)
             player.play(
               instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
@@ -534,6 +575,12 @@ function App() {
     window.addEventListener('keydown', e => {
       if (e.code === 'Space') {
         togglePlaying()
+      } else if (mode() === 'select') {
+        if (e.code === 'KeyC' && (e.ctrlKey || e.metaKey)) {
+          copyNotes()
+        } else if (e.code === 'KeyV' && (e.ctrlKey || e.metaKey)) {
+          pasteNotes()
+        }
       }
     })
   })
@@ -550,52 +597,135 @@ function App() {
         class={styles.topHud}
         style={{
           top: `${HEIGHT}px`,
-          'grid-template-rows': `${HEIGHT * 2 - 2}px 1px ${HEIGHT * 2 - 2}px 1px ${
-            HEIGHT * 2 - 2
-          }px 1px ${HEIGHT * 2 - 2}px`
+          gap: '5px'
         }}
       >
-        <button
-          class={clsx(styles.button, mode() === 'note' && styles.active)}
-          onClick={() => setMode('note')}
+        <div
+          style={{
+            display: 'grid',
+            'grid-template-rows': `${HEIGHT * 2 - 2}px repeat(3, ${HEIGHT * 2 - 2}px)`
+          }}
         >
-          <IconGrommetIconsMusic />
-        </button>
-        <div style={{ background: 'var(--color-stroke)' }} />
-        <button
-          class={clsx(styles.button, mode() === 'pan' && styles.active)}
-          onClick={() => setMode('pan')}
-        >
-          <IconGrommetIconsPan />
-        </button>
-        <div style={{ background: 'var(--color-stroke)' }} />
-        <button
-          class={clsx(styles.button, mode() === 'select' && styles.active)}
-          onClick={() => setMode('select')}
-        >
-          <IconGrommetIconsSelect />
-        </button>
-        <div style={{ background: 'var(--color-stroke)' }} />
-        <button
-          class={clsx(styles.button, mode() === 'stretch' && styles.active)}
-          onClick={() => setMode('stretch')}
-        >
-          <IconGrommetIconsShift />
-        </button>
+          <button
+            class={clsx(styles.button, mode() === 'note' && styles.active)}
+            onClick={() => setMode('note')}
+          >
+            <IconGrommetIconsMusic />
+          </button>
+          <button
+            class={clsx(styles.button, mode() === 'pan' && styles.active)}
+            onClick={() => setMode('pan')}
+          >
+            <IconGrommetIconsPan />
+          </button>
+          <button
+            class={clsx(styles.button, mode() === 'select' && styles.active)}
+            onClick={() => setMode('select')}
+          >
+            <IconGrommetIconsSelect />
+          </button>
+          <button
+            class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+            onClick={() => setMode('stretch')}
+          >
+            <IconGrommetIconsShift />
+          </button>
+        </div>
+        <Show when={selectedNotes().length > 0}>
+          <div
+            style={{
+              display: 'grid',
+              'grid-auto-rows': `${HEIGHT * 2 - 2}px`
+            }}
+          >
+            <button
+              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              onClick={copyNotes}
+            >
+              <IconGrommetIconsClipboard />
+            </button>
+            <button
+              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              onClick={() => {
+                let inactiveSelectedNotes = 0
+                selectedNotes().forEach(note => {
+                  if (!note.active) {
+                    inactiveSelectedNotes++
+                  }
+                })
+
+                const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
+
+                selectedNotes().forEach(selectedNote => {
+                  setNotes(note => note.id === selectedNote.id, 'active', shouldActivate)
+                })
+              }}
+            >
+              <IconGrommetIconsDisabledOutline />
+            </button>
+            <button
+              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              onClick={() => {
+                setNotes(notes.filter(note => !isNoteSelected(note)))
+                setSelectedNotes([])
+              }}
+            >
+              <IconGrommetIconsErase />
+            </button>
+          </div>
+        </Show>
+        {/*  <Show when={selectedNotes().length > 0}>
+          <div
+            style={{
+              display: 'grid',
+              'grid-template-rows': `${HEIGHT * 2 - 2}px`
+            }}
+          >
+            <button
+              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              onClick={() => {
+                const loop = {
+                  start: Infinity,
+                  end: -Infinity
+                }
+                selectedNotes().forEach(note => {
+                  if (note.time < loop.start) {
+                    loop.start = note.time
+                  }
+                  if (note.time + note.duration > loop.end) {
+                    loop.end = note.time + note.duration
+                  }
+                })
+                setLoop({
+                  time: loop.start,
+                  duration: loop.end - loop.start
+                })
+              }}
+            >
+              <IconGrommetIconsCycle />
+            </button>
+          </div>
+        </Show> */}
+        <Show when={mode() === 'select' && clipboard() && selectionArea()}>
+          <div
+            style={{
+              display: 'grid',
+              'grid-template-rows': `${HEIGHT * 2 - 2}px`
+            }}
+          >
+            <button
+              class={clsx(styles.button, mode() === 'stretch' && styles.active)}
+              onClick={pasteNotes}
+            >
+              <IconGrommetIconsCopy />
+            </button>
+          </div>
+        </Show>
       </div>
       <div
+        class={styles.bottomHud}
         style={{
-          position: 'fixed',
-          right: '0px',
-          bottom: '0px',
-          margin: `10px`,
-          display: 'grid',
-          'grid-template-columns': `${(WIDTH * 3) / 2}px repeat(5, 1px ${WIDTH}px)`,
-          background: 'white',
-          'border-radius': '3px',
-          color: 'var(--color-text)',
-          border: '1px solid var(--color-stroke)',
-          'text-align': 'center'
+          'grid-template-columns': `${(WIDTH * 3) / 2}px repeat(5, ${WIDTH}px)`
         }}
       >
         <div
@@ -630,7 +760,6 @@ function App() {
             <IconGrommetIconsFormNextLink />
           </button>
         </div>
-        <div style={{ background: 'var(--color-stroke)' }} />
         <button
           style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
           onClick={() => {
@@ -640,14 +769,12 @@ function App() {
         >
           <IconGrommetIconsTrash />
         </button>
-        <div style={{ background: 'var(--color-stroke)' }} />
         <button
           style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
           onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}
         >
           <IconGrommetIconsShare />
         </button>
-        <div style={{ background: 'var(--color-stroke)' }} />
         <button
           style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
           onClick={() => {
@@ -656,7 +783,13 @@ function App() {
             )
             setNotes(
               produce(notes => {
-                notes.push(...selection.map(note => ({ ...note, time: note.time + loop.duration })))
+                notes.push(
+                  ...selection.map(note => ({
+                    ...note,
+                    id: zeptoid(),
+                    time: note.time + loop.duration
+                  }))
+                )
               })
             )
             setLoop('duration', duration => duration * 2)
@@ -664,7 +797,6 @@ function App() {
         >
           <IconGrommetIconsCopy />
         </button>
-        <div style={{ background: 'var(--color-stroke)' }} />
         <button
           style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
           onClick={() => {
@@ -675,7 +807,6 @@ function App() {
         >
           <IconGrommetIconsStop />
         </button>
-        <div style={{ background: 'var(--color-stroke)' }} />
         <button style={{ 'padding-top': '5px', 'padding-bottom': '5px' }} onClick={togglePlaying}>
           {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
         </button>
@@ -741,19 +872,32 @@ function App() {
                 </Index>
               </g>
               <Grid />
-              {/* Selection Box Underlay */}
-              <SelectionBox
-                selectionBox={selectionBox()}
-                fill="var(--color-selected)"
-                opacity={0.05}
-              />
+              <Show when={mode() === 'select' && selectionArea()}>
+                {area => (
+                  <rect
+                    x={area().start.x * WIDTH + origin().x}
+                    y={area().start.y * HEIGHT + origin().y}
+                    width={(area().end.x - area().start.x + 1) * WIDTH}
+                    height={(area().end.y - area().start.y + 1) * HEIGHT}
+                    opacity={0.3}
+                    fill="var(--color-loop)"
+                  />
+                )}
+              </Show>
               {/* Notes */}
               <Show when={notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
                   <For each={notes}>
                     {(note, index) => {
                       const selected = () => isNoteSelected(note)
-                      const setNote = createStore(note)[1]
+                      const setNote: ReturnType<typeof createStore<typeof note>>[1] = (
+                        ...args: any[]
+                      ) =>
+                        setNotes(
+                          _note => _note.id === note.id,
+                          // @ts-ignore
+                          ...args
+                        )
                       return (
                         <rect
                           class={clsx(styles.note, selected() && styles.selected)}
@@ -761,7 +905,12 @@ function App() {
                           y={-note.pitch * HEIGHT + MARGIN}
                           width={note.duration * WIDTH - MARGIN * 2}
                           height={HEIGHT - MARGIN * 2}
-                          onDblClick={() => setNotes(produce(notes => notes.splice(index(), 1)))}
+                          opacity={note.active ? 1 : 0.25}
+                          onDblClick={() => {
+                            if (mode() === 'note') {
+                              setNotes(produce(notes => notes.splice(index(), 1)))
+                            }
+                          }}
                           onPointerDown={async e => {
                             e.stopPropagation()
                             e.preventDefault()
@@ -770,30 +919,38 @@ function App() {
 
                             switch (mode()) {
                               case 'select': {
-                                const notes = selectedNotes().map(note => ({
-                                  ...note,
-                                  setNote: createStore(note)[1]
-                                }))
-                                if (notes.length > 0) {
-                                  const { delta } = await pointerHelper(e, ({ delta }) => {
-                                    notes?.forEach(note => {
-                                      note.setNote(
-                                        'time',
-                                        note.time + Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                                      )
-
-                                      note.setNote(
-                                        'pitch',
-                                        note.pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                if (isNoteSelected(note)) {
+                                  if (selectedNotes().length > 0) {
+                                    const initialNotes = Object.fromEntries(
+                                      selectedNotes().map(note => [
+                                        note.id,
+                                        {
+                                          time: note.time,
+                                          pitch: note.pitch
+                                        }
+                                      ])
+                                    )
+                                    const { delta } = await pointerHelper(e, ({ delta }) => {
+                                      setNotes(
+                                        isNoteSelected,
+                                        produce(note => {
+                                          note.time =
+                                            initialNotes[note.id].time +
+                                            Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                                          note.pitch =
+                                            initialNotes[note.id].pitch -
+                                            Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                        })
                                       )
                                     })
-                                  })
-                                  if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-                                    sortNotes()
+                                    if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+                                      sortNotes()
+                                    }
                                   }
                                 } else {
                                   setSelectedNotes([note])
                                 }
+
                                 return
                               }
                               case 'note': {
@@ -812,8 +969,7 @@ function App() {
                                       setNote('duration', deltaX - originalDuration + 2)
                                     } else {
                                       const time = originalTime + deltaX
-                                      setNote('time', time)
-                                      setNote('duration', originalDuration - deltaX)
+                                      setNote({ time, duration: originalDuration - deltaX })
                                     }
                                   })
 
@@ -829,22 +985,26 @@ function App() {
                                     if (duration > 0) {
                                       setNote('duration', 1 + duration)
                                     } else if (duration < 0) {
-                                      setNote('duration', 1 - duration)
-                                      setNote('time', originalTime + duration)
+                                      setNote({
+                                        duration: 1 - duration,
+                                        time: originalTime + duration
+                                      })
                                     } else {
-                                      setNote('time', originalTime)
-                                      setNote('duration', 1)
+                                      setNote({
+                                        time: originalTime,
+                                        duration: 1
+                                      })
                                     }
                                   })
                                 } else {
                                   pointerHelper(e, ({ delta }) => {
                                     const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
                                     const time = originalTime + deltaX
-                                    setNote('time', time)
-                                    setNote(
-                                      'pitch',
-                                      originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-                                    )
+                                    setNote({
+                                      time,
+                                      pitch:
+                                        originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                    })
                                     if (previous !== time) {
                                       sortNotes()
                                       previous = time
@@ -873,13 +1033,10 @@ function App() {
                 }}
               />
               <Piano />
-              {/* Selection Box Overlay */}
-              <SelectionBox selectionBox={selectionBox()} stroke="var(--color-selected)" />
             </pianoContext.Provider>
           )}
         </Show>
       </svg>
-      <div></div>
     </div>
   )
 }

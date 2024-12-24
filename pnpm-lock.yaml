@@ -29,6 +29,9 @@ importers:
       webaudio-instruments:
         specifier: ^0.4.1
         version: 0.4.1
+      zeptoid:
+        specifier: ^1.0.1
+        version: 1.0.1
     devDependencies:
       '@iconify-json/carbon':
         specifier: ^1.2.5
@@ -787,6 +790,9 @@ packages:
   strip-literal@2.1.1:
     resolution: {integrity: sha512-631UJ6O00eNGfMiWG78ck80dfBab8X6IVFB51jZK5Icd7XAs60Z5y7QdSd/wGIklnWvRbUNloVzhOKKmutxQ6Q==}
 
+  tiny-webcrypto@1.0.1:
+    resolution: {integrity: sha512-xmRCZrKqgLNfDVjj12Da9l7a/gKyqwIQ0gTIQ2p+/tbosZxFGW41QQ5C6Pwz9tiVO0OTUDh8IcBqncVHbq1RqQ==}
+
   tinyexec@0.3.1:
     resolution: {integrity: sha512-WiCJLEECkO18gwqIp6+hJg0//p23HXp4S+gGtAKu3mI2F2/sXC4FvHvXvB0zJVVaTPhx1/tOwdbRsa1sOBIKqQ==}
 
@@ -801,6 +807,9 @@ packages:
 
   ufo@1.5.4:
     resolution: {integrity: sha512-UsUk3byDzKd04EyoZ7U4DOlxQaD14JUKQl6/P7wiX4FNvUfm3XL246n9W5AmqwW5RSFJ27NAuM0iLscAOYUiGQ==}
+
+  uint-rng@1.2.0:
+    resolution: {integrity: sha512-ZQ+FZ7y4o0abzRjqHgSPXnC+sfpthLJI3B5zeazPh28f8l1WKTXxZfYvZrcS9RjrHDT6vFwc/KVi/1UyJC4s5A==}
 
   unimport@3.14.5:
     resolution: {integrity: sha512-tn890SwFFZxqaJSKQPPd+yygfKSATbM8BZWW1aCR2TJBTs1SDrmLamBueaFtYsGjHtQaRgqEbQflOjN2iW12gA==}
@@ -923,6 +932,9 @@ packages:
 
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
+
+  zeptoid@1.0.1:
+    resolution: {integrity: sha512-LJrctN9zR01YuLUl2M8yhc7Z5HzlwgUADFnmM8VSPWO5IX+glR5kfX9rJ+Kwvs51ruh8lyijDZwW1mCu0PDBig==}
 
 snapshots:
 
@@ -1588,6 +1600,8 @@ snapshots:
     dependencies:
       js-tokens: 9.0.1
 
+  tiny-webcrypto@1.0.1: {}
+
   tinyexec@0.3.1: {}
 
   to-regex-range@5.0.1:
@@ -1597,6 +1611,10 @@ snapshots:
   typescript@5.6.3: {}
 
   ufo@1.5.4: {}
+
+  uint-rng@1.2.0:
+    dependencies:
+      tiny-webcrypto: 1.0.1
 
   unimport@3.14.5(rollup@4.29.1):
     dependencies:
@@ -1689,3 +1707,7 @@ snapshots:
   webpack-virtual-modules@0.6.2: {}
 
   yallist@3.1.1: {}
+
+  zeptoid@1.0.1:
+    dependencies:
+      uint-rng: 1.2.0
