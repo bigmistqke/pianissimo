@@ -32,8 +32,8 @@ interface NoteData {
   duration: number
   active: boolean
   id: string
-  _remove?: boolean
-  _duration?: number
+  _remove?: boolean // Temporary data: do not serialise
+  _duration?: number // Temporary data: do not serialise
 }
 interface SelectionArea {
   start: Vector
@@ -45,14 +45,14 @@ interface Loop {
 }
 type Mode = 'note' | 'select' | 'pan' | 'stretch'
 
-function mod(n: number, m: number): number {
-  return ((n % m) + m) % m
-}
-
 const KEY_COLORS = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1].reverse()
 const HEIGHT = 20
 const WIDTH = 60
 const MARGIN = 2
+
+function mod(n: number, m: number): number {
+  return ((n % m) + m) % m
+}
 
 function createMidiDataUri(notes: Array<NoteData>) {
   const track = new MidiWriter.Track()
@@ -90,22 +90,48 @@ function Piano() {
       <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
         <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 2)}>
           {(_, index) => (
-            <>
+            <rect
+              y={index * HEIGHT}
+              x={0}
+              width={WIDTH}
+              height={HEIGHT}
+              style={{
+                fill: KEY_COLORS[
+                  mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length)
+                ]
+                  ? 'none'
+                  : 'var(--color-piano-black)'
+              }}
+            />
+          )}
+        </Index>
+      </g>
+    </>
+  )
+}
+
+function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
+  const context = usePiano()
+  return (
+    <>
+      <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 2)}>
+          {(_, index) => {
+            return (
               <rect
                 y={index * HEIGHT}
                 x={0}
                 width={WIDTH}
                 height={HEIGHT}
+                opacity={0.8}
                 style={{
-                  fill: KEY_COLORS[
-                    mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length)
-                  ]
-                    ? 'none'
-                    : 'var(--color-piano-black)'
+                  fill: props.isPitchPlaying(-(index + Math.floor(-context.origin.y / HEIGHT)))
+                    ? 'var(--color-note-selected)'
+                    : 'none'
                 }}
               />
-            </>
-          )}
+            )
+          }}
         </Index>
       </g>
     </>
@@ -336,6 +362,7 @@ function App() {
   const [now, setNow] = createSignal(0)
   const [playing, setPlaying] = createSignal(false)
   const [notes, setNotes] = createStore<Array<NoteData>>([])
+  const [playingNotes, setPlayingNotes] = createSignal<Array<NoteData>>([])
 
   const velocity = 4
   let audioContext: AudioContext | undefined
@@ -364,7 +391,12 @@ function App() {
 
   const isNoteSelected = createSelector(
     selectedNotes,
-    (note: NoteData, notes) => !!notes.find(_note => _note.id === note.id)
+    (note: NoteData, selectedNotes) => !!selectedNotes.find(_note => _note.id === note.id)
+  )
+
+  const isPitchPlaying = createSelector(
+    playingNotes,
+    (pitch: number, playingNotes) => !!playingNotes.find(_note => _note.pitch === pitch)
   )
 
   function play() {
@@ -395,8 +427,6 @@ function App() {
       pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
       time: Math.floor(absolutePosition.x / WIDTH)
     }
-
-    playNote(note.pitch, note.duration)
 
     setNotes(
       produce(notes => {
@@ -513,27 +543,21 @@ function App() {
 
   function clipOverlappingNotes(...sources: Array<NoteData>) {
     batch(() => {
-      setNotes(
-        produce(notes => {
-          notes.forEach(note => {
-            // Remove temporary values
-            delete note._duration
-            delete note._remove
-          })
-        })
-      )
-
       // Remove all notes that are
       // - intersecting with source and
       // - come after source
-      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) =>
-        sources.find(
+      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) => {
+        if (sources.find(source => source.id === id)) {
+          return
+        }
+        return sources.find(
           source =>
             source.pitch === pitch &&
             id !== source.id &&
             source.time < time &&
             source.time + source.duration > time
         )
+      }
       setNotes(notes =>
         notes.filter(note => {
           if (isIntersectingAndAfterSource(note)) {
@@ -545,14 +569,18 @@ function App() {
       // Clip all notes that are
       // - intersecting with source and
       // - come before source
-      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) =>
-        sources.find(
+      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) => {
+        if (sources.find(source => source.id === id)) {
+          return
+        }
+        return sources.find(
           source =>
             source.pitch === pitch &&
             id !== source.id &&
             source.time >= time &&
             source.time <= time + duration
         )
+      }
       setNotes(
         produce(notes =>
           notes.forEach((note, index) => {
@@ -563,6 +591,38 @@ function App() {
           })
         )
       )
+
+      // Self intersecting sources
+      sources
+        .sort((a, b) => (a.time < b.time ? -1 : 1))
+        .forEach((source, index) => {
+          const end = source.time + source.duration
+          while (index + 1 < sources.length) {
+            if (sources[index + 1].pitch !== source.pitch) {
+              index++
+              continue
+            }
+            if (sources[index + 1].time <= end) {
+              setNotes(
+                ({ id }) => id === source.id,
+                'duration',
+                sources[index + 1].time - source.time
+              )
+              break
+            }
+            break
+          }
+        })
+
+      setNotes(
+        produce(notes => {
+          notes.forEach(note => {
+            // Remove temporary values
+            delete note._duration
+            delete note._remove
+          })
+        })
+      )
     })
   }
 
@@ -571,14 +631,18 @@ function App() {
       // Remove all notes that are
       // - intersecting with source and
       // - come after source
-      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) =>
-        sources.find(
+      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) => {
+        if (sources.find(source => source.id === id)) {
+          return
+        }
+        return sources.find(
           source =>
             source.pitch === pitch &&
             id !== source.id &&
             source.time < time &&
             source.time + source.duration > time
         )
+      }
       setNotes(
         produce(notes =>
           notes.forEach(note => {
@@ -593,14 +657,18 @@ function App() {
       // Clip all notes that are
       // - intersecting with source and
       // - come before source
-      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) =>
-        sources.find(
+      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) => {
+        if (sources.find(source => source.id === id)) {
+          return
+        }
+        return sources.find(
           source =>
             source.pitch === pitch &&
             id !== source.id &&
             source.time >= time &&
             source.time <= time + duration
         )
+      }
       setNotes(
         produce(notes =>
           notes.forEach((note, index) => {
@@ -613,22 +681,48 @@ function App() {
           })
         )
       )
+
+      sources
+        .sort((a, b) => (a.time < b.time ? -1 : 1))
+        .forEach((source, index) => {
+          const end = source.time + source.duration
+          while (index + 1 < sources.length) {
+            if (sources[index + 1].pitch !== source.pitch) {
+              index++
+              continue
+            }
+            if (sources[index + 1].time <= end) {
+              setNotes(
+                ({ id }) => id === source.id,
+                '_duration',
+                sources[index + 1].time - source.time
+              )
+              break
+            }
+            setNotes(({ id }) => id === source.id, '_duration', undefined)
+            break
+          }
+        })
     })
   }
 
-  function playNote(pitch: number, duration: number) {
+  function playNote(note: NoteData) {
     if (!player) {
       player = new Instruments()
     }
     player.play(
       instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
-      pitch, // note: midi number or frequency in Hz (if > 127)
+      note.pitch, // note: midi number or frequency in Hz (if > 127)
       1, // velocity: 0..1
       0, // delay in seconds
-      duration / velocity, // duration in seconds
+      note.duration / velocity, // duration in seconds
       0, // (optional - specify channel for tinysynth to use)
       0.05 // (optional - override envelope "attack" parameter)
     )
+    setPlayingNotes(pitches => [...pitches, note])
+    setTimeout(() => {
+      setPlayingNotes(pitches => pitches.filter(({ id }) => id !== note.id))
+    }, (note.duration / velocity) * 1000)
   }
 
   // Audio Loop
@@ -661,7 +755,7 @@ function App() {
         notes.forEach(note => {
           if (note.active && note.time === now && !playedNotes.has(note)) {
             playedNotes.add(note)
-            playNote(note.pitch, note.duration)
+            playNote(note)
           }
         })
 
@@ -670,6 +764,32 @@ function App() {
       clock()
       onCleanup(() => (shouldPlay = false))
     })
+  )
+
+  createEffect(() => {
+    if (mode() !== 'select') {
+      setSelectionPresence()
+    }
+  })
+
+  createEffect(
+    mapArray(
+      () => notes,
+      note => {
+        createEffect(
+          on(
+            () => isNoteSelected(note),
+            selected => selected && playNote(note)
+          )
+        )
+        createEffect(
+          on(
+            () => note.pitch,
+            () => playNote(note)
+          )
+        )
+      }
+    )
   )
 
   onMount(() => {
@@ -688,39 +808,6 @@ function App() {
       }
     })
   })
-
-  createEffect(() => {
-    if (mode() !== 'select') {
-      setSelectedNotes([])
-      setSelectionPresence()
-    }
-  })
-
-  createEffect(
-    mapArray(
-      () => notes,
-      note => {
-        createEffect(
-          on(
-            () => isNoteSelected(note),
-            selected => {
-              if (selected) {
-                playNote(note.pitch, note.duration)
-              }
-            }
-          )
-        )
-        createEffect(
-          on(
-            () => note.pitch,
-            pitch => {
-              playNote(pitch, note.duration)
-            }
-          )
-        )
-      }
-    )
-  )
 
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
@@ -757,7 +844,7 @@ function App() {
             <IconGrommetIconsShift />
           </button>
         </div>
-        <Show when={selectedNotes().length > 0}>
+        <Show when={selectedNotes().length > 0 && mode() === 'select'}>
           <div>
             <button class={mode() === 'stretch' ? styles.active : undefined} onClick={copyNotes}>
               <IconGrommetIconsClipboard />
@@ -799,18 +886,18 @@ function App() {
                 const selection = notes.filter(
                   note => note.time >= loop.time && note.time < loop.time + loop.duration
                 )
+                const newNotes = selection.map(note => ({
+                  ...note,
+                  id: zeptoid(),
+                  time: note.time + loop.duration
+                }))
                 setNotes(
                   produce(notes => {
-                    notes.push(
-                      ...selection.map(note => ({
-                        ...note,
-                        id: zeptoid(),
-                        time: note.time + loop.duration
-                      }))
-                    )
+                    notes.push(...newNotes)
                   })
                 )
                 setLoop('duration', duration => duration * 2)
+                clipOverlappingNotes(...newNotes)
               }}
             >
               <IconGrommetIconsDuplicate />
@@ -1106,48 +1193,63 @@ function App() {
                                 e.stopPropagation()
                                 e.preventDefault()
                                 const initialTime = note.time
-                                const initialDuration = note.duration
+                                if (!isNoteSelected(note)) {
+                                  setSelectedNotes([note])
+                                }
+
+                                const initialSelectedNotes = selectedNotes().map(note => ({
+                                  ...note
+                                }))
 
                                 // NOTE: it irks me that the 2 implementations aren't symmetrical
                                 if (e.clientX < left + (WIDTH * note.duration) / 2) {
                                   const offset = e.layerX - initialTime * WIDTH - origin().x
                                   const { delta } = await pointerHelper(e, ({ delta }) => {
                                     const deltaX = Math.floor((delta.x + offset) / WIDTH)
-                                    if (deltaX >= initialDuration) {
-                                      setNote('duration', deltaX - initialDuration + 2)
-                                    } else {
-                                      const time = initialTime + deltaX
-                                      setNote({ time, duration: initialDuration - deltaX })
-                                    }
-                                    markOverlappingNotes(note)
+                                    initialSelectedNotes.forEach(note => {
+                                      if (deltaX < note.duration) {
+                                        setNotes(({ id }) => note.id === id, {
+                                          time: note.time + deltaX,
+                                          duration: note.duration - deltaX
+                                        })
+                                      }
+                                    })
+                                    markOverlappingNotes(...selectedNotes())
                                   })
                                   if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-                                    clipOverlappingNotes(note)
+                                    clipOverlappingNotes(...selectedNotes())
                                     sortNotes()
                                   }
                                 } else {
                                   await pointerHelper(e, ({ delta }) => {
-                                    const duration =
-                                      Math.floor((e.layerX - origin().x + delta.x) / WIDTH) -
-                                      initialTime
+                                    batch(() => {
+                                      const scaledDelta = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                                      // ...
+                                      // ... -2 -1 0 1 2 ...
+                                      const normalizedDelta =
+                                        scaledDelta > 0
+                                          ? scaledDelta
+                                          : scaledDelta < -1
+                                          ? scaledDelta + 1
+                                          : 0
 
-                                    if (duration > 0) {
-                                      setNote('duration', 1 + duration)
-                                    } else if (duration < 0) {
-                                      setNote({
-                                        duration: 1 - duration,
-                                        time: initialTime + duration
+                                      initialSelectedNotes.forEach(note => {
+                                        const duration = note.duration + Math.floor(normalizedDelta)
+
+                                        if (duration > 1) {
+                                          setNotes(({ id }) => id === note.id, 'duration', duration)
+                                        } else {
+                                          setNotes(({ id }) => id === note.id, {
+                                            time: note.time,
+                                            duration: 1
+                                          })
+                                        }
                                       })
-                                    } else {
-                                      setNote({
-                                        time: initialTime,
-                                        duration: 1
-                                      })
-                                    }
-                                    markOverlappingNotes(note)
+                                      markOverlappingNotes(...selectedNotes())
+                                    })
                                   })
                                 }
-                                clipOverlappingNotes(note)
+                                clipOverlappingNotes(...selectedNotes())
                                 return
                               }
                               case 'note': {
@@ -1194,6 +1296,7 @@ function App() {
                 }}
               />
               <Piano />
+              <PlayingNotes isPitchPlaying={isPitchPlaying} />
             </pianoContext.Provider>
           )}
         </Show>
