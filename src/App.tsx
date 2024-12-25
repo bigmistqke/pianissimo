@@ -814,6 +814,7 @@ function App() {
             onCleanup(() => observer.disconnect())
           })
         }}
+        onDblClick={() => setSelectedNotes([])}
         onWheel={event =>
           setOrigin(origin => ({
             x: origin.x - event.deltaX,

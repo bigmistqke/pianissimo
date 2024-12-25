@@ -210,10 +210,11 @@ export function pasteNotes(clipboard: Array<NoteData>, position: Vector) {
   clipOverlappingNotes(...newNotes)
 }
 
-const findSourceIntersectingAndBeforeNote = (
+// Utility for clipOverlappingNotes and markOverlappingNotes
+function findSourceIntersectingAndBeforeNote(
   sources: Array<NoteData>,
   { id, time, pitch }: NoteData
-) => {
+) {
   if (sources.find(source => source.id === id)) {
     return
   }
@@ -226,10 +227,11 @@ const findSourceIntersectingAndBeforeNote = (
   )
 }
 
-const findSourceIntersectingAndAfterNote = (
+// Utility for clipOverlappingNotes and markOverlappingNotes
+function findSourceIntersectingAndAfterNote(
   sources: Array<NoteData>,
   { id, time, duration, pitch }: NoteData
-) => {
+) {
   if (sources.find(source => source.id === id)) {
     return
   }
