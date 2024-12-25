@@ -382,7 +382,7 @@ function App() {
     }
   }
 
-  function handleNote(event: PointerEvent) {
+  async function handleNote(event: PointerEvent) {
     const absolutePosition = {
       x: event.layerX - origin().x,
       y: event.layerY - origin().y
@@ -411,7 +411,7 @@ function App() {
     const originalDuration = note.duration
     const offset = absolutePosition.x - originalTime * WIDTH
 
-    pointerHelper(event, ({ delta }) => {
+    await pointerHelper(event, ({ delta }) => {
       const deltaX = Math.floor((offset + delta.x) / WIDTH)
       if (deltaX < 0) {
         setNotes(index, 'time', originalTime + deltaX)
@@ -423,6 +423,8 @@ function App() {
         setNotes(index, 'duration', 1)
       }
     })
+
+    clipOverlappingNotes(note)
   }
 
   async function handleSelectionBox(event: PointerEvent) {
@@ -491,17 +493,60 @@ function App() {
     )
   }
 
-  function pasteNotes() {
+  function pasteNotes(position: Vector) {
+    const newNotes = clipboard()!.map(note => ({
+      ...note,
+      time: note.time + position.x,
+      id: zeptoid()
+    }))
     setNotes(
       produce(notes => {
-        notes.push(
-          ...clipboard()!.map(note => ({
-            ...note,
-            time: note.time + selectionArea()!.end.x,
-            id: zeptoid()
-          }))
-        )
+        notes.push(...newNotes)
       })
+    )
+    clipOverlappingNotes(...newNotes)
+  }
+
+  function clipOverlappingNotes(...sources: Array<NoteData>) {
+    // Remove all notes that are
+    // - intersecting with source and
+    // - come after source
+    const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) =>
+      sources.find(
+        source =>
+          source.pitch === pitch &&
+          id !== source.id &&
+          source.time < time &&
+          source.time + source.duration > time
+      )
+    setNotes(notes =>
+      notes.filter(note => {
+        if (isIntersectingAndAfterSource(note)) {
+          return false
+        }
+        return true
+      })
+    )
+    // Clip all notes that are
+    // - intersecting with source and
+    // - come before source
+    const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) =>
+      sources.find(
+        source =>
+          source.pitch === pitch &&
+          id !== source.id &&
+          source.time >= time &&
+          source.time <= time + duration
+      )
+    setNotes(
+      produce(notes =>
+        notes.forEach((note, index) => {
+          const source = isIntersectingAndBeforeSource(note)
+          if (source) {
+            notes[index].duration = source.time - note.time
+          }
+        })
+      )
     )
   }
 
@@ -569,7 +614,10 @@ function App() {
         if (e.code === 'KeyC' && (e.ctrlKey || e.metaKey)) {
           copyNotes()
         } else if (e.code === 'KeyV' && (e.ctrlKey || e.metaKey)) {
-          pasteNotes()
+          const presence = selectionPresence()
+          if (presence) {
+            pasteNotes(presence)
+          }
         }
       }
     })
@@ -730,17 +778,22 @@ function App() {
             </button>
           </div>
         </Show> */}
-        <Show when={mode() === 'select' && clipboard() && selectionArea()}>
-          <div
-            style={{
-              display: 'grid',
-              'grid-template-rows': `${HEIGHT * 2 - 2}px`
-            }}
-          >
-            <button class={mode() === 'stretch' ? styles.active : undefined} onClick={pasteNotes}>
-              <IconGrommetIconsCopy />
-            </button>
-          </div>
+        <Show when={mode() === 'select' && clipboard() && selectionPresence()}>
+          {presence => (
+            <div
+              style={{
+                display: 'grid',
+                'grid-template-rows': `${HEIGHT * 2 - 2}px`
+              }}
+            >
+              <button
+                class={mode() === 'stretch' ? styles.active : undefined}
+                onClick={() => pasteNotes(presence())}
+              >
+                <IconGrommetIconsCopy />
+              </button>
+            </div>
+          )}
         </Show>
       </div>
       <div class={styles.bottomHud}>
@@ -972,6 +1025,7 @@ function App() {
                                     if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
                                       sortNotes()
                                     }
+                                    clipOverlappingNotes(...selectedNotes())
                                   }
                                 }
                                 return
@@ -994,12 +1048,12 @@ function App() {
                                       setNote({ time, duration: originalDuration - deltaX })
                                     }
                                   })
-
                                   if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+                                    clipOverlappingNotes(note)
                                     sortNotes()
                                   }
                                 } else {
-                                  pointerHelper(e, ({ delta }) => {
+                                  await pointerHelper(e, ({ delta }) => {
                                     const duration =
                                       Math.floor((e.layerX - origin().x + delta.x) / WIDTH) -
                                       originalTime
@@ -1019,6 +1073,7 @@ function App() {
                                     }
                                   })
                                 }
+                                clipOverlappingNotes(note)
                                 return
                               }
                               case 'note': {
@@ -1027,17 +1082,20 @@ function App() {
                                 const originalTime = note.time
                                 const originalPitch = note.pitch
                                 let previousTime = originalTime
-                                pointerHelper(e, ({ delta }) => {
+                                await pointerHelper(e, ({ delta }) => {
                                   const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
                                   const time = originalTime + deltaX
                                   const pitch =
                                     originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
                                   setNote({ time, pitch })
+
                                   if (previousTime !== time) {
                                     sortNotes()
                                     previousTime = time
                                   }
                                 })
+
+                                clipOverlappingNotes(note)
                               }
                             }
                           }}
