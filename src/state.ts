@@ -143,6 +143,7 @@ export async function handleCreateNote(event: PointerEvent) {
         duration: timeScale()
       })
     }
+    markOverlappingNotes(note)
   })
 
   setSelectedNotes([])

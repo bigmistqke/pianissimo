@@ -976,7 +976,6 @@ function App() {
                 }}
               />
               <Ruler loop={loop} setLoop={setLoop} />
-
               <Piano />
               <PlayingNotes isPitchPlaying={isPitchPlaying} />
             </dimensionsContext.Provider>
