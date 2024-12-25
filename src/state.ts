@@ -288,7 +288,10 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
       )
     )
 
-    // Self intersecting sources
+    // Remove all notes that have 0 duration (after being clipped)
+    setNotes(notes => notes.filter(note => note.duration !== 0))
+
+    // Handle sources intersecting with other sources
     sources.forEach((note, index) => {
       // Loop starting from note after this note
       while (index + 1 < sources.length) {
@@ -305,10 +308,10 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
       }
     })
 
+    // Remove temporary values
     setNotes(
       produce(notes => {
         notes.forEach(note => {
-          // Remove temporary values
           delete note._duration
           delete note._remove
         })
@@ -317,6 +320,11 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
   })
 }
 
+/**
+ * Mark overlapping notes temporarily for display purposes
+ * - remove notes with note._remove
+ * - clip notes with note._duration
+ */
 export function markOverlappingNotes(...sources: Array<NoteData>) {
   // Sort sources
   sources.sort((a, b) => (a.time < b.time ? -1 : 1))
@@ -352,6 +360,7 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
       )
     )
 
+    // Handle sources intersecting with other sources
     sources.forEach((source, index) => {
       const end = source.time + source.duration
       while (index + 1 < sources.length) {
