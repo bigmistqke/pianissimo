@@ -90,173 +90,170 @@ function createMidiDataUri(notes: Array<NoteData>) {
 }
 
 function Note(props: { note: NoteData }) {
-  {
-    const setNote: ReturnType<typeof createStore<NoteData>>[1] = (...args: any[]) =>
-      setNotes(
-        _note => _note.id === props.note.id,
-        // @ts-ignore
-        ...args
-      )
+  const setNote: ReturnType<typeof createStore<NoteData>>[1] = (...args: any[]) =>
+    setNotes(
+      _note => _note.id === props.note.id,
+      // @ts-ignore
+      ...args
+    )
 
-    async function handleSelection(event: PointerEvent) {
-      if (isNoteSelected(props.note)) {
-        event.stopPropagation()
-        event.preventDefault()
-
-        selectedNotes().sort((a, b) => (a.time < b.time ? -1 : 1))
-
-        if (selectedNotes().length > 0) {
-          const offset = selectedNotes()[0].time % timeScale()
-          const initialNotes = Object.fromEntries(
-            selectedNotes().map(note => [
-              note.id,
-              {
-                time: note.time,
-                pitch: note.pitch
-              }
-            ])
-          )
-          const { delta } = await pointerHelper(event, ({ delta }) => {
-            let time = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
-
-            if (time === timeScale() * -1) {
-              time = 0
-            } else if (time < timeScale() * -1) {
-              time = time + timeScale()
-            }
-
-            setNotes(
-              isNoteSelected,
-              produce(note => {
-                note.time = initialNotes[note.id].time + time - offset
-                note.pitch =
-                  initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-              })
-            )
-            markOverlappingNotes(...selectedNotes())
-          })
-          if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-            sortNotes()
-          }
-          clipOverlappingNotes(...selectedNotes())
-        }
-      }
-    }
-
-    async function handleStretch(
-      event: PointerEvent & {
-        currentTarget: SVGRectElement
-        target: DOMElement
-      }
-    ) {
-      const { left } = event.target.getBoundingClientRect()
-
+  async function handleSelection(event: PointerEvent) {
+    if (isNoteSelected(props.note)) {
       event.stopPropagation()
       event.preventDefault()
-      const initialTime = props.note.time
-      if (!isNoteSelected(props.note)) {
-        setSelectedNotes([props.note])
-      }
 
-      const initialSelectedNotes = selectedNotes().map(note => ({
-        ...note
-      }))
+      selectedNotes().sort((a, b) => (a.time < b.time ? -1 : 1))
 
-      // NOTE: it irks me that the 2 implementations aren't symmetrical
-      if (event.clientX < left + (WIDTH * props.note.duration) / 2) {
-        const offset = event.layerX - initialTime * WIDTH - origin().x
+      if (selectedNotes().length > 0) {
+        const offset = selectedNotes()[0].time % timeScale()
+        const initialNotes = Object.fromEntries(
+          selectedNotes().map(note => [
+            note.id,
+            {
+              time: note.time,
+              pitch: note.pitch
+            }
+          ])
+        )
         const { delta } = await pointerHelper(event, ({ delta }) => {
-          const deltaX = Math.floor((delta.x + offset) / WIDTH / timeScale()) * timeScale()
+          let time = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
 
+          if (time === timeScale() * -1) {
+            time = 0
+          } else if (time < timeScale() * -1) {
+            time = time + timeScale()
+          }
+
+          setNotes(
+            isNoteSelected,
+            produce(note => {
+              note.time = initialNotes[note.id].time + time - offset
+              note.pitch = initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+            })
+          )
+          markOverlappingNotes(...selectedNotes())
+        })
+        if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+          sortNotes()
+        }
+        clipOverlappingNotes(...selectedNotes())
+      }
+    }
+  }
+
+  async function handleStretch(
+    event: PointerEvent & {
+      currentTarget: SVGRectElement
+      target: DOMElement
+    }
+  ) {
+    const { left } = event.target.getBoundingClientRect()
+
+    event.stopPropagation()
+    event.preventDefault()
+    const initialTime = props.note.time
+    if (!isNoteSelected(props.note)) {
+      setSelectedNotes([props.note])
+    }
+
+    const initialSelectedNotes = selectedNotes().map(note => ({
+      ...note
+    }))
+
+    // NOTE: it irks me that the 2 implementations aren't symmetrical
+    if (event.clientX < left + (WIDTH * props.note.duration) / 2) {
+      const offset = event.layerX - initialTime * WIDTH - origin().x
+      const { delta } = await pointerHelper(event, ({ delta }) => {
+        const deltaX = Math.floor((delta.x + offset) / WIDTH / timeScale()) * timeScale()
+
+        initialSelectedNotes.forEach(note => {
+          if (deltaX < note.duration) {
+            setNotes(({ id }) => note.id === id, {
+              time: note.time + deltaX,
+              duration: note.duration - deltaX
+            })
+          }
+        })
+        markOverlappingNotes(...selectedNotes())
+      })
+      if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+        clipOverlappingNotes(...selectedNotes())
+        sortNotes()
+      }
+    } else {
+      await pointerHelper(event, ({ delta }) => {
+        batch(() => {
+          const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
           initialSelectedNotes.forEach(note => {
-            if (deltaX < note.duration) {
-              setNotes(({ id }) => note.id === id, {
-                time: note.time + deltaX,
-                duration: note.duration - deltaX
+            const duration = note.duration + deltaX
+            if (duration > timeScale()) {
+              setNotes(({ id }) => id === note.id, 'duration', duration)
+            } else {
+              setNotes(({ id }) => id === note.id, {
+                time: note.time,
+                duration: timeScale()
               })
             }
           })
           markOverlappingNotes(...selectedNotes())
         })
-        if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-          clipOverlappingNotes(...selectedNotes())
-          sortNotes()
-        }
-      } else {
-        await pointerHelper(event, ({ delta }) => {
-          batch(() => {
-            const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
-            initialSelectedNotes.forEach(note => {
-              const duration = note.duration + deltaX
-              if (duration > timeScale()) {
-                setNotes(({ id }) => id === note.id, 'duration', duration)
-              } else {
-                setNotes(({ id }) => id === note.id, {
-                  time: note.time,
-                  duration: timeScale()
-                })
-              }
-            })
-            markOverlappingNotes(...selectedNotes())
-          })
-        })
-      }
-      clipOverlappingNotes(...selectedNotes())
-      if (selectedNotes().length === 1) {
-        setSelectedNotes([])
-      }
-    }
-
-    async function handleNote(event: PointerEvent) {
-      event.stopPropagation()
-      event.preventDefault()
-      const initialTime = props.note.time
-      const initialPitch = props.note.pitch
-      let previousTime = initialTime
-      setSelectedNotes([props.note])
-      await pointerHelper(event, ({ delta }) => {
-        const time = Math.floor((initialTime + delta.x / WIDTH) / timeScale()) * timeScale()
-        const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-
-        setNote({ time, pitch })
-
-        if (previousTime !== time) {
-          sortNotes()
-          previousTime = time
-        }
-
-        markOverlappingNotes(props.note)
       })
-      setSelectedNotes([])
-      clipOverlappingNotes(props.note)
     }
-
-    return (
-      <rect
-        class={clsx(styles.note, isNoteSelected(props.note) && styles.selected)}
-        x={props.note.time * WIDTH + MARGIN}
-        y={-props.note.pitch * HEIGHT + MARGIN}
-        width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
-        height={HEIGHT - MARGIN * 2}
-        opacity={!props.note._remove && props.note.active ? 1 : 0.25}
-        onDblClick={() => {
-          if (mode() === 'note') {
-            setNotes(notes => notes.filter(note => note.id !== props.note.id))
-          }
-        }}
-        onPointerDown={async event => {
-          switch (mode()) {
-            case 'select':
-              return await handleSelection(event)
-            case 'stretch':
-              return handleStretch(event)
-            case 'note':
-              return handleNote(event)
-          }
-        }}
-      />
-    )
+    clipOverlappingNotes(...selectedNotes())
+    if (selectedNotes().length === 1) {
+      setSelectedNotes([])
+    }
   }
+
+  async function handleNote(event: PointerEvent) {
+    event.stopPropagation()
+    event.preventDefault()
+    const initialTime = props.note.time
+    const initialPitch = props.note.pitch
+    let previousTime = initialTime
+    setSelectedNotes([props.note])
+    await pointerHelper(event, ({ delta }) => {
+      const time = Math.floor((initialTime + delta.x / WIDTH) / timeScale()) * timeScale()
+      const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+
+      setNote({ time, pitch })
+
+      if (previousTime !== time) {
+        sortNotes()
+        previousTime = time
+      }
+
+      markOverlappingNotes(props.note)
+    })
+    setSelectedNotes([])
+    clipOverlappingNotes(props.note)
+  }
+
+  return (
+    <rect
+      class={clsx(styles.note, isNoteSelected(props.note) && styles.selected)}
+      x={props.note.time * WIDTH + MARGIN}
+      y={-props.note.pitch * HEIGHT + MARGIN}
+      width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
+      height={HEIGHT - MARGIN * 2}
+      opacity={!props.note._remove && props.note.active ? 1 : 0.25}
+      onDblClick={() => {
+        if (mode() === 'note') {
+          setNotes(notes => notes.filter(note => note.id !== props.note.id))
+        }
+      }}
+      onPointerDown={async event => {
+        switch (mode()) {
+          case 'select':
+            return await handleSelection(event)
+          case 'stretch':
+            return handleStretch(event)
+          case 'note':
+            return handleNote(event)
+        }
+      }}
+    />
+  )
 }
 
 function Piano() {
@@ -313,6 +310,91 @@ function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
 
 function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
   const dimensions = useDimensions()
+
+  function handleCreateLoop(event: PointerEvent) {
+    event.stopPropagation()
+
+    const absolutePosition = {
+      x: event.layerX - origin().x,
+      y: event.layerY - origin().y
+    }
+
+    const loop = {
+      time: Math.floor(absolutePosition.x / WIDTH),
+      duration: 1
+    }
+
+    props.setLoop(loop)
+
+    const initialTime = loop.time
+    const initialDuration = loop.duration
+    const offset = absolutePosition.x - initialTime * WIDTH
+
+    pointerHelper(event, ({ delta }) => {
+      const deltaX = Math.floor((offset + delta.x) / WIDTH)
+      if (deltaX < 0) {
+        props.setLoop('time', initialTime + deltaX)
+        props.setLoop('duration', 1 - deltaX)
+      } else if (deltaX > 0) {
+        props.setLoop('duration', initialDuration + deltaX)
+      } else {
+        props.setLoop('time', initialTime)
+        props.setLoop('duration', 1)
+      }
+    })
+  }
+
+  function handleAdjustLoop(
+    event: PointerEvent & {
+      currentTarget: SVGRectElement
+      target: DOMElement
+    },
+    loop: Loop
+  ) {
+    event.stopPropagation()
+    event.preventDefault()
+
+    const { width, left } = event.target.getBoundingClientRect()
+
+    const initialTime = loop.time
+    const initialDuration = loop.duration
+
+    if (event.clientX < left + WIDTH / 3) {
+      const offset = event.layerX - initialTime * WIDTH - origin().x
+
+      pointerHelper(event, ({ delta }) => {
+        const deltaX = Math.floor((delta.x + offset) / WIDTH)
+        if (deltaX >= initialDuration) {
+          props.setLoop('duration', deltaX - initialDuration + 2)
+        } else {
+          const time = initialTime + deltaX
+          props.setLoop('time', time)
+          props.setLoop('duration', initialDuration - deltaX)
+        }
+      })
+    } else if (event.layerX > left + width - WIDTH / 3) {
+      pointerHelper(event, ({ delta }) => {
+        const duration = Math.floor((event.layerX - origin().x + delta.x) / WIDTH) - initialTime
+
+        if (duration > 0) {
+          props.setLoop('duration', 1 + duration)
+        } else if (duration < 0) {
+          props.setLoop('duration', 1 - duration)
+          props.setLoop('time', initialTime + duration)
+        } else {
+          props.setLoop('time', initialTime)
+          props.setLoop('duration', 1)
+        }
+      })
+    } else {
+      pointerHelper(event, ({ delta }) => {
+        const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+        const time = initialTime + deltaX
+        props.setLoop('time', time)
+      })
+    }
+  }
+
   return (
     <>
       <rect
@@ -321,40 +403,8 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         width={dimensions().width}
         height={HEIGHT}
         fill="var(--color-piano-black)"
-        onPointerDown={event => {
-          event.stopPropagation()
-
-          const absolutePosition = {
-            x: event.layerX - origin().x,
-            y: event.layerY - origin().y
-          }
-
-          const loop = {
-            time: Math.floor(absolutePosition.x / WIDTH),
-            duration: 1
-          }
-
-          props.setLoop(loop)
-
-          const initialTime = loop.time
-          const initialDuration = loop.duration
-          const offset = absolutePosition.x - initialTime * WIDTH
-
-          pointerHelper(event, ({ delta }) => {
-            const deltaX = Math.floor((offset + delta.x) / WIDTH)
-            if (deltaX < 0) {
-              props.setLoop('time', initialTime + deltaX)
-              props.setLoop('duration', 1 - deltaX)
-            } else if (deltaX > 0) {
-              props.setLoop('duration', initialDuration + deltaX)
-            } else {
-              props.setLoop('time', initialTime)
-              props.setLoop('duration', 1)
-            }
-          })
-        }}
+        onPointerDown={handleCreateLoop}
       />
-
       <Show when={props.loop}>
         {loop => (
           <rect
@@ -364,51 +414,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
             height={HEIGHT}
             fill="var(--color-loop)"
             style={{ transform: `translateX(${origin().x}px)` }}
-            onPointerDown={e => {
-              e.stopPropagation()
-              e.preventDefault()
-
-              const { width, left } = e.target.getBoundingClientRect()
-
-              const initialTime = loop().time
-              const initialDuration = loop().duration
-
-              if (e.clientX < left + WIDTH / 3) {
-                const offset = e.layerX - initialTime * WIDTH - origin().x
-
-                pointerHelper(e, ({ delta }) => {
-                  const deltaX = Math.floor((delta.x + offset) / WIDTH)
-                  if (deltaX >= initialDuration) {
-                    props.setLoop('duration', deltaX - initialDuration + 2)
-                  } else {
-                    const time = initialTime + deltaX
-                    props.setLoop('time', time)
-                    props.setLoop('duration', initialDuration - deltaX)
-                  }
-                })
-              } else if (e.layerX > left + width - WIDTH / 3) {
-                pointerHelper(e, ({ delta }) => {
-                  const duration =
-                    Math.floor((e.layerX - origin().x + delta.x) / WIDTH) - initialTime
-
-                  if (duration > 0) {
-                    props.setLoop('duration', 1 + duration)
-                  } else if (duration < 0) {
-                    props.setLoop('duration', 1 - duration)
-                    props.setLoop('time', initialTime + duration)
-                  } else {
-                    props.setLoop('time', initialTime)
-                    props.setLoop('duration', 1)
-                  }
-                })
-              } else {
-                pointerHelper(e, ({ delta }) => {
-                  const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                  const time = initialTime + deltaX
-                  props.setLoop('time', time)
-                })
-              }
-            }}
+            onPointerDown={event => handleAdjustLoop(event, loop())}
           />
         )}
       </Show>
@@ -698,19 +704,11 @@ function BottomHud() {
             'padding-bottom': '5px'
           }}
         >
-          <button
-            onClick={() => {
-              setTimeScale(duration => duration / 2)
-            }}
-          >
+          <button onClick={() => setTimeScale(duration => duration / 2)}>
             <IconGrommetIconsFormPreviousLink />
           </button>
           {timeScale() < 1 ? `1 / ${1 / timeScale()}` : timeScale()}
-          <button
-            onClick={() => {
-              setTimeScale(duration => duration * 2)
-            }}
-          >
+          <button onClick={() => setTimeScale(duration => duration * 2)}>
             <IconGrommetIconsFormNextLink />
           </button>
         </div>
