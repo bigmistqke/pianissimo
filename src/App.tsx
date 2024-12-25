@@ -1148,6 +1148,7 @@ function App() {
                                 const initialTime = note.time
                                 const initialPitch = note.pitch
                                 let previousTime = initialTime
+                                setSelectedNotes([note])
                                 await pointerHelper(e, ({ delta }) => {
                                   const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
                                   const time = initialTime + deltaX
@@ -1162,7 +1163,7 @@ function App() {
 
                                   markOverlappingNotes(note)
                                 })
-
+                                setSelectedNotes([])
                                 clipOverlappingNotes(note)
                               }
                             }
