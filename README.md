@@ -13,15 +13,16 @@ A pianoroll web app build with `solid-js`.
     - [x] delete
     - [x] enable/disable notes
     - [ ] make loop from selection
+- [x] change scale of time-grid
+- [ ] change measure
+- [ ] change tempo/bpm
+- [ ] velocity mode
+- [ ] change volume
 - [ ] history: ctrl+z/ctrl+y
 - [ ] collaborative feature: add automerge/chee's lib
   - [ ] how to implement undo/redo w automerge?
-- [ ] change tempo/bpm
-- [ ] velocity mode
-- [ ] different grids
-- [ ] dark mode/light mode
+- [ ] theming: dark mode/light mode
 - [ ] save/load locally (localStorage and tauri/fs)
-- [ ] volume
 - [ ] desktop mode/mobile mode
   - we develop mobile-first since it's trickier to pull of right
 

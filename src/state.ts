@@ -20,6 +20,7 @@ export const [mode, setMode] = createSignal<Mode>('note')
 export const [timeOffset, setTimeOffset] = createSignal(0)
 export const [dimensions, setDimensions] = createSignal<DOMRect>()
 export const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 6 * HEIGHT * 12 })
+export const [timeScale, setTimeScale] = createSignal(1)
 // Select-related state
 export const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
 export const [selectionArea, setSelectionArea] = createSignal<SelectionArea>()
@@ -80,7 +81,7 @@ export function togglePlaying() {
   }
 }
 
-export async function handleNote(event: PointerEvent) {
+export async function handleCreateNote(event: PointerEvent) {
   const absolutePosition = {
     x: event.layerX - origin().x,
     y: event.layerY - origin().y
@@ -89,9 +90,9 @@ export async function handleNote(event: PointerEvent) {
   const note = {
     id: zeptoid(),
     active: true,
-    duration: 1,
+    duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
-    time: Math.floor(absolutePosition.x / WIDTH)
+    time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale()
   }
 
   setNotes(
@@ -110,7 +111,7 @@ export async function handleNote(event: PointerEvent) {
   setSelectedNotes([note])
 
   await pointerHelper(event, ({ delta }) => {
-    const deltaX = Math.floor((offset + delta.x) / WIDTH)
+    const deltaX = Math.floor((offset + delta.x) / WIDTH / timeScale()) * timeScale()
     if (deltaX < 0) {
       setNotes(index, {
         time: initialTime + deltaX,
@@ -121,7 +122,7 @@ export async function handleNote(event: PointerEvent) {
     } else {
       setNotes(index, {
         time: initialTime,
-        duration: 1
+        duration: timeScale()
       })
     }
   })
@@ -350,16 +351,16 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
   })
 }
 
-export function playNote(note: NoteData) {
+export function playNote(note: NoteData, delay = 0) {
   if (!player) {
     player = new Instruments()
   }
   player.play(
     instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch, // note: midi number or frequency in Hz (if > 127)
-    1, // velocity: 0..1
-    0, // delay in seconds
-    note.duration / VELOCITY, // duration in seconds
+    1, // velocity
+    delay, // delay
+    note.duration / VELOCITY, // duration
     0, // (optional - specify channel for tinysynth to use)
     0.05 // (optional - override envelope "attack" parameter)
   )

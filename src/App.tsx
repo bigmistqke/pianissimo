@@ -25,7 +25,7 @@ import {
   clipOverlappingNotes,
   copyNotes,
   dimensions,
-  handleNote,
+  handleCreateNote,
   handlePan,
   handleSelectionBox,
   HEIGHT,
@@ -58,8 +58,10 @@ import {
   setSelectedNotes,
   setSelectionPresence,
   setTimeOffset,
+  setTimeScale,
   sortNotes,
   timeOffset,
+  timeScale,
   togglePlaying,
   VELOCITY,
   WIDTH
@@ -101,7 +103,11 @@ function Note(props: { note: NoteData }) {
       if (isNoteSelected(props.note)) {
         event.stopPropagation()
         event.preventDefault()
+
+        selectedNotes().sort((a, b) => (a.time < b.time ? -1 : 1))
+
         if (selectedNotes().length > 0) {
+          const offset = selectedNotes()[0].time % timeScale()
           const initialNotes = Object.fromEntries(
             selectedNotes().map(note => [
               note.id,
@@ -112,10 +118,18 @@ function Note(props: { note: NoteData }) {
             ])
           )
           const { delta } = await pointerHelper(event, ({ delta }) => {
+            let time = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
+
+            if (time === timeScale() * -1) {
+              time = 0
+            } else if (time < timeScale() * -1) {
+              time = time + timeScale()
+            }
+
             setNotes(
               isNoteSelected,
               produce(note => {
-                note.time = initialNotes[note.id].time + Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                note.time = initialNotes[note.id].time + time - offset
                 note.pitch =
                   initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
               })
@@ -153,7 +167,8 @@ function Note(props: { note: NoteData }) {
       if (event.clientX < left + (WIDTH * props.note.duration) / 2) {
         const offset = event.layerX - initialTime * WIDTH - origin().x
         const { delta } = await pointerHelper(event, ({ delta }) => {
-          const deltaX = Math.floor((delta.x + offset) / WIDTH)
+          const deltaX = Math.floor((delta.x + offset) / WIDTH / timeScale()) * timeScale()
+
           initialSelectedNotes.forEach(note => {
             if (deltaX < note.duration) {
               setNotes(({ id }) => note.id === id, {
@@ -171,21 +186,15 @@ function Note(props: { note: NoteData }) {
       } else {
         await pointerHelper(event, ({ delta }) => {
           batch(() => {
-            const scaledDelta = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-            // ...
-            // ... -2 -1 0 1 2 ...
-            const normalizedDelta =
-              scaledDelta > 0 ? scaledDelta : scaledDelta < -1 ? scaledDelta + 1 : 0
-
+            const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
             initialSelectedNotes.forEach(note => {
-              const duration = note.duration + Math.floor(normalizedDelta)
-
-              if (duration > 1) {
+              const duration = note.duration + deltaX
+              if (duration > timeScale()) {
                 setNotes(({ id }) => id === note.id, 'duration', duration)
               } else {
                 setNotes(({ id }) => id === note.id, {
                   time: note.time,
-                  duration: 1
+                  duration: timeScale()
                 })
               }
             })
@@ -207,9 +216,9 @@ function Note(props: { note: NoteData }) {
       let previousTime = initialTime
       setSelectedNotes([props.note])
       await pointerHelper(event, ({ delta }) => {
-        const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-        const time = initialTime + deltaX
+        const time = Math.floor((initialTime + delta.x / WIDTH) / timeScale()) * timeScale()
         const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+
         setNote({ time, pitch })
 
         if (previousTime !== time) {
@@ -346,6 +355,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           })
         }}
       />
+
       <Show when={props.loop}>
         {loop => (
           <rect
@@ -403,8 +413,19 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           />
         )}
       </Show>
+      {/* Now Indicator */}
+      <rect
+        class={styles.now}
+        width={WIDTH * timeScale()}
+        height={HEIGHT}
+        style={{
+          opacity: 0.5,
+          transform: `translateX(${
+            origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()
+          }px)`
+        }}
+      />
       <line x1={0} x2={dimensions().width} y1={HEIGHT} y2={HEIGHT} stroke="var(--color-stroke)" />
-
       <g style={{ transform: `translateX(${origin().x % (WIDTH * 8)}px)` }}>
         <Index each={new Array(Math.floor(dimensions().width / WIDTH / 8) + 2)}>
           {(_, index) => (
@@ -442,13 +463,13 @@ function Grid() {
   return (
     <>
       <g style={{ transform: `translateX(${origin().x % WIDTH}px)` }}>
-        <Index each={new Array(Math.floor(dimensions().width / WIDTH) + 2)}>
+        <Index each={new Array(Math.floor(dimensions().width / WIDTH / timeScale()) + 2)}>
           {(_, index) => (
             <line
               y1={0}
               y2={dimensions().height}
-              x1={index * WIDTH}
-              x2={index * WIDTH}
+              x1={index * timeScale() * WIDTH}
+              x2={index * timeScale() * WIDTH}
               stroke="var(--color-stroke-secondary)"
             />
           )}
@@ -680,6 +701,33 @@ function BottomHud() {
         >
           <button
             onClick={() => {
+              setTimeScale(duration => duration / 2)
+            }}
+          >
+            <IconGrommetIconsFormPreviousLink />
+          </button>
+          {timeScale() < 1 ? `1 / ${1 / timeScale()}` : timeScale()}
+          <button
+            onClick={() => {
+              setTimeScale(duration => duration * 2)
+            }}
+          >
+            <IconGrommetIconsFormNextLink />
+          </button>
+        </div>
+      </div>
+      <div>
+        <div
+          style={{
+            display: 'flex',
+            width: '90px',
+            'justify-content': 'space-evenly',
+            'padding-top': '5px',
+            'padding-bottom': '5px'
+          }}
+        >
+          <button
+            onClick={() => {
               if (instrument() > 0) {
                 setInstrument(instrument => instrument - 1)
               } else {
@@ -810,13 +858,12 @@ function App() {
           }
         }
 
-        const now = Math.floor(time)
-        setNow(now)
+        setNow(time)
 
         notes.forEach(note => {
-          if (note.active && note.time === now && !playedNotes.has(note)) {
+          if (note.active && note.time >= time && note.time < time + 1 && !playedNotes.has(note)) {
             playedNotes.add(note)
-            playNote(note)
+            playNote(note, (note.time - time) / VELOCITY)
           }
         })
 
@@ -870,7 +917,7 @@ function App() {
         onPointerDown={async event => {
           switch (mode()) {
             case 'note':
-              handleNote(event)
+              handleCreateNote(event)
               break
             case 'select':
               handleSelectionBox(event)
@@ -917,17 +964,20 @@ function App() {
                   <For each={notes}>{note => <Note note={note} />}</For>
                 </g>
               </Show>
-              <Ruler loop={loop} setLoop={setLoop} />
-              {/* Now Indicator */}
+              {/* Now Underlay */}
               <rect
                 class={styles.now}
-                width={WIDTH}
+                width={WIDTH * timeScale()}
                 height={dimensions().height}
-                fill="var(--color-stroke)"
                 style={{
-                  transform: `translateX(${origin().x + now() * WIDTH}px)`
+                  opacity: 0.075,
+                  transform: `translateX(${
+                    origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()
+                  }px)`
                 }}
               />
+              <Ruler loop={loop} setLoop={setLoop} />
+
               <Piano />
               <PlayingNotes isPitchPlaying={isPitchPlaying} />
             </dimensionsContext.Provider>

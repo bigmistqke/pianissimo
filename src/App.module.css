@@ -68,6 +68,5 @@
 
 .now {
   fill: var(--color-now);
-  opacity: var(--opacity-now);
   pointer-events: none;
 }
