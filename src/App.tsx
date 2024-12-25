@@ -7,6 +7,7 @@ import {
   createSignal,
   For,
   Index,
+  mapArray,
   on,
   onCleanup,
   onMount,
@@ -321,6 +322,7 @@ function App() {
   // Select-related state
   const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
   const [selectionArea, setSelectionArea] = createSignal<SelectionArea>()
+  const [selectionPresence, setSelectionPresence] = createSignal<Vector>()
   const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
   // Playing related state
   const [instrument, setInstrument] = createSignal(24)
@@ -334,7 +336,7 @@ function App() {
 
   const velocity = 4
   let audioContext: AudioContext | undefined
-  let player: Instruments
+  let player: Instruments | undefined
   let offset = 0
   let playedNotes = new Set<NoteData>()
 
@@ -368,7 +370,6 @@ function App() {
   function play() {
     if (!audioContext) {
       audioContext = new AudioContext()
-      player = new Instruments()
     } else offset = audioContext.currentTime * velocity - now()
     setPlaying(true)
   }
@@ -394,6 +395,8 @@ function App() {
       pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
       time: Math.floor(absolutePosition.x / WIDTH)
     }
+
+    playNote(note.pitch, note.duration)
 
     setNotes(
       produce(notes => {
@@ -427,19 +430,25 @@ function App() {
       x: event.clientX - origin().x,
       y: event.clientY - origin().y
     }
+    const normalizedPosition = normalize(position)
     setSelectionArea({
-      start: normalize(position),
-      end: normalize(position)
+      start: normalizedPosition,
+      end: normalizedPosition
     })
+    setSelectionPresence(normalizedPosition)
     await pointerHelper(event, ({ delta }) => {
+      const newPosition = {
+        x: position.x + delta.x,
+        y: position.y + delta.y
+      }
       const box = {
         start: {
-          x: delta.x < 0 ? position.x + delta.x : position.x,
-          y: delta.y < 0 ? position.y + delta.y : position.y
+          x: delta.x < 0 ? newPosition.x : position.x,
+          y: delta.y < 0 ? newPosition.y : position.y
         },
         end: {
-          x: delta.x > 0 ? position.x + delta.x : position.x,
-          y: delta.y > 0 ? position.y + delta.y : position.y
+          x: delta.x > 0 ? newPosition.x : position.x,
+          y: delta.y > 0 ? newPosition.y : position.y
         }
       }
       selectNotesFromSelectionArea(box)
@@ -447,11 +456,9 @@ function App() {
         start: normalize(box.start),
         end: normalize(box.end)
       })
+      setSelectionPresence(normalize(newPosition))
     })
-    setSelectionArea(area => ({
-      start: area!.end,
-      end: area!.end
-    }))
+    setSelectionArea()
   }
 
   async function handlePan(event: PointerEvent) {
@@ -498,6 +505,21 @@ function App() {
     )
   }
 
+  function playNote(pitch: number, duration: number) {
+    if (!player) {
+      player = new Instruments()
+    }
+    player.play(
+      instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
+      pitch, // note: midi number or frequency in Hz (if > 127)
+      1, // velocity: 0..1
+      0, // delay in seconds
+      duration / velocity, // duration in seconds
+      0, // (optional - specify channel for tinysynth to use)
+      0.05 // (optional - override envelope "attack" parameter)
+    )
+  }
+
   // Audio Loop
   createEffect(
     on(playing, playing => {
@@ -528,15 +550,7 @@ function App() {
         notes.forEach(note => {
           if (note.active && note.time === now && !playedNotes.has(note)) {
             playedNotes.add(note)
-            player.play(
-              instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
-              note.pitch, // note: midi number or frequency in Hz (if > 127)
-              1, // velocity: 0..1
-              0, // delay in seconds
-              note.duration / velocity, // duration in seconds
-              0, // (optional - specify channel for tinysynth to use)
-              0.05 // (optional - override envelope "attack" parameter)
-            )
+            playNote(note.pitch, note.duration)
           }
         })
 
@@ -564,8 +578,30 @@ function App() {
   createEffect(() => {
     if (mode() !== 'select') {
       setSelectedNotes([])
+      setSelectionPresence()
     }
   })
+
+  createEffect(
+    mapArray(
+      () => notes,
+      note => {
+        createEffect(() => {
+          if (isNoteSelected(note)) {
+            playNote(note.pitch, note.duration)
+          }
+        })
+        createEffect(
+          on(
+            () => note.pitch,
+            pitch => {
+              playNote(pitch, note.duration)
+            }
+          )
+        )
+      }
+    )
+  )
 
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
@@ -864,6 +900,19 @@ function App() {
                   />
                 )}
               </Show>
+              {/* Selection Area */}
+              <Show when={mode() === 'select' && selectionPresence()}>
+                {presence => (
+                  <rect
+                    x={presence().x * WIDTH + origin().x}
+                    y={presence().y * HEIGHT + origin().y}
+                    width={(presence().x - presence().x + 1) * WIDTH}
+                    height={(presence().y - presence().y + 1) * HEIGHT}
+                    opacity={0.8}
+                    fill="var(--color-selection-area)"
+                  />
+                )}
+              </Show>
               {/* Notes */}
               <Show when={notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
@@ -977,18 +1026,16 @@ function App() {
                                 e.preventDefault()
                                 const originalTime = note.time
                                 const originalPitch = note.pitch
-                                let previous = originalTime
+                                let previousTime = originalTime
                                 pointerHelper(e, ({ delta }) => {
                                   const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
                                   const time = originalTime + deltaX
-                                  setNote({
-                                    time,
-                                    pitch:
-                                      originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-                                  })
-                                  if (previous !== time) {
+                                  const pitch =
+                                    originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                  setNote({ time, pitch })
+                                  if (previousTime !== time) {
                                     sortNotes()
-                                    previous = time
+                                    previousTime = time
                                   }
                                 })
                               }
