@@ -1,17 +1,17 @@
 body {
-  --color-stroke: #686666;
+  --color-stroke: #6c6c6c;
   --color-stroke-secondary: #303030;
   --color-loop: #323332;
-  --color-note: #acaaaa;
+  --color-note: #c6c6c6;
   --color-note-selected: #04f9ac;
   --color-selection-area: #077955;
   --color-piano-black: #000000;
-  --color-piano-white: #9c9c9c;
+  --color-piano-white: #cccccc;
   --color-piano-underlay: #060606;
   --color-background: #191919;
   --color-now: #9d9d9d;
   --color-hud: #151515;
-  --color-text: #9c9c9c;
+  --color-text: #c6c6c6;
 
   --opacity-now: 0.2;
 
