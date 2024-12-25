@@ -937,7 +937,7 @@ function App() {
                   <rect
                     x={area().start.x * WIDTH + origin().x}
                     y={area().start.y * HEIGHT + origin().y}
-                    width={(area().end.x - area().start.x + 1) * WIDTH}
+                    width={(area().end.x - area().start.x) * WIDTH + timeScale() * WIDTH}
                     height={(area().end.y - area().start.y + 1) * HEIGHT}
                     opacity={0.3}
                     fill="var(--color-selection-area)"
@@ -950,8 +950,8 @@ function App() {
                   <rect
                     x={presence().x * WIDTH + origin().x}
                     y={presence().y * HEIGHT + origin().y}
-                    width={(presence().x - presence().x + 1) * WIDTH}
-                    height={(presence().y - presence().y + 1) * HEIGHT}
+                    width={WIDTH * timeScale()}
+                    height={HEIGHT}
                     opacity={0.8}
                     fill="var(--color-selection-area)"
                   />

@@ -36,12 +36,22 @@ export const [loop, setLoop] = createStore<Loop>({
   duration: 4
 })
 
-function normalize(value: Vector) {
+function normalizeVector(value: Vector) {
   return {
-    x: Math.floor(value.x / WIDTH),
+    x: Math.floor(value.x / WIDTH / timeScale()) * timeScale(),
     y: Math.floor(value.y / HEIGHT)
   }
 }
+
+export const isNoteSelected = createSelector(
+  selectedNotes,
+  (note: NoteData, selectedNotes) => !!selectedNotes.find(_note => _note.id === note.id)
+)
+
+export const isPitchPlaying = createSelector(
+  playingNotes,
+  (pitch: number, playingNotes) => !!playingNotes.find(_note => _note.pitch === pitch)
+)
 
 export function selectNotesFromSelectionArea(area: SelectionArea) {
   setSelectedNotes(
@@ -54,16 +64,6 @@ export function selectNotesFromSelectionArea(area: SelectionArea) {
     })
   )
 }
-
-export const isNoteSelected = createSelector(
-  selectedNotes,
-  (note: NoteData, selectedNotes) => !!selectedNotes.find(_note => _note.id === note.id)
-)
-
-export const isPitchPlaying = createSelector(
-  playingNotes,
-  (pitch: number, playingNotes) => !!playingNotes.find(_note => _note.pitch === pitch)
-)
 
 export function play() {
   if (!audioContext) {
@@ -78,6 +78,25 @@ export function togglePlaying() {
   } else {
     setPlaying(false)
   }
+}
+
+export function playNote(note: NoteData, delay = 0) {
+  if (!player) {
+    player = new Instruments()
+  }
+  player.play(
+    instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
+    note.pitch, // note: midi number or frequency in Hz (if > 127)
+    1, // velocity
+    delay, // delay
+    note.duration / VELOCITY, // duration
+    0, // (optional - specify channel for tinysynth to use)
+    0.05 // (optional - override envelope "attack" parameter)
+  )
+  setPlayingNotes(pitches => [...pitches, note])
+  setTimeout(() => {
+    setPlayingNotes(pitches => pitches.filter(({ id }) => id !== note.id))
+  }, (note.duration / VELOCITY) * 1000)
 }
 
 export async function handleCreateNote(event: PointerEvent) {
@@ -135,14 +154,14 @@ export async function handleSelectionBox(event: PointerEvent) {
     x: event.clientX - origin().x,
     y: event.clientY - origin().y
   }
-  const normalizedPosition = normalize(position)
+  const normalizedPosition = normalizeVector(position)
   setSelectionArea({
     start: normalizedPosition,
     end: normalizedPosition
   })
   setSelectionPresence(normalizedPosition)
   await pointerHelper(event, ({ delta }) => {
-    const newPosition = normalize({
+    const newPosition = normalizeVector({
       x: position.x + delta.x,
       y: position.y + delta.y
     })
@@ -348,23 +367,4 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
       }
     })
   })
-}
-
-export function playNote(note: NoteData, delay = 0) {
-  if (!player) {
-    player = new Instruments()
-  }
-  player.play(
-    instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
-    note.pitch, // note: midi number or frequency in Hz (if > 127)
-    1, // velocity
-    delay, // delay
-    note.duration / VELOCITY, // duration
-    0, // (optional - specify channel for tinysynth to use)
-    0.05 // (optional - override envelope "attack" parameter)
-  )
-  setPlayingNotes(pitches => [...pitches, note])
-  setTimeout(() => {
-    setPlayingNotes(pitches => pitches.filter(({ id }) => id !== note.id))
-  }, (note.duration / VELOCITY) * 1000)
 }
