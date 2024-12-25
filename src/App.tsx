@@ -17,7 +17,6 @@ import {
 import { DOMElement } from 'solid-js/jsx-runtime'
 import { createStore, produce, SetStoreFunction } from 'solid-js/store'
 import zeptoid from 'zeptoid'
-import './App.css'
 import styles from './App.module.css'
 import {
   audioContext,

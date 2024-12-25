@@ -2,7 +2,6 @@ import { batch, createSelector, createSignal } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import zeptoid from 'zeptoid'
-import './App.css'
 import { Loop, Mode, NoteData, SelectionArea, Vector } from './types'
 import { pointerHelper } from './utils/pointer-helper'
 
