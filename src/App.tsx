@@ -14,7 +14,7 @@ import {
   Show,
   useContext
 } from 'solid-js'
-import { createStore, produce, SetStoreFunction, unwrap } from 'solid-js/store'
+import { createStore, produce, SetStoreFunction } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import zeptoid from 'zeptoid'
 import './App.css'
@@ -134,19 +134,19 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
 
           props.setLoop(loop)
 
-          const originalTime = loop.time
-          const originalDuration = loop.duration
-          const offset = absolutePosition.x - originalTime * WIDTH
+          const initialTime = loop.time
+          const initialDuration = loop.duration
+          const offset = absolutePosition.x - initialTime * WIDTH
 
           pointerHelper(event, ({ delta }) => {
             const deltaX = Math.floor((offset + delta.x) / WIDTH)
             if (deltaX < 0) {
-              props.setLoop('time', originalTime + deltaX)
+              props.setLoop('time', initialTime + deltaX)
               props.setLoop('duration', 1 - deltaX)
             } else if (deltaX > 0) {
-              props.setLoop('duration', originalDuration + deltaX)
+              props.setLoop('duration', initialDuration + deltaX)
             } else {
-              props.setLoop('time', originalTime)
+              props.setLoop('time', initialTime)
               props.setLoop('duration', 1)
             }
           })
@@ -167,41 +167,41 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
 
               const { width, left } = e.target.getBoundingClientRect()
 
-              const originalTime = loop().time
-              const originalDuration = loop().duration
+              const initialTime = loop().time
+              const initialDuration = loop().duration
 
               if (e.clientX < left + WIDTH / 3) {
-                const offset = e.layerX - originalTime * WIDTH - context.origin.x
+                const offset = e.layerX - initialTime * WIDTH - context.origin.x
 
                 pointerHelper(e, ({ delta }) => {
                   const deltaX = Math.floor((delta.x + offset) / WIDTH)
-                  if (deltaX >= originalDuration) {
-                    props.setLoop('duration', deltaX - originalDuration + 2)
+                  if (deltaX >= initialDuration) {
+                    props.setLoop('duration', deltaX - initialDuration + 2)
                   } else {
-                    const time = originalTime + deltaX
+                    const time = initialTime + deltaX
                     props.setLoop('time', time)
-                    props.setLoop('duration', originalDuration - deltaX)
+                    props.setLoop('duration', initialDuration - deltaX)
                   }
                 })
               } else if (e.layerX > left + width - WIDTH / 3) {
                 pointerHelper(e, ({ delta }) => {
                   const duration =
-                    Math.floor((e.layerX - context.origin.x + delta.x) / WIDTH) - originalTime
+                    Math.floor((e.layerX - context.origin.x + delta.x) / WIDTH) - initialTime
 
                   if (duration > 0) {
                     props.setLoop('duration', 1 + duration)
                   } else if (duration < 0) {
                     props.setLoop('duration', 1 - duration)
-                    props.setLoop('time', originalTime + duration)
+                    props.setLoop('time', initialTime + duration)
                   } else {
-                    props.setLoop('time', originalTime)
+                    props.setLoop('time', initialTime)
                     props.setLoop('duration', 1)
                   }
                 })
               } else {
                 pointerHelper(e, ({ delta }) => {
                   const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                  const time = originalTime + deltaX
+                  const time = initialTime + deltaX
                   props.setLoop('time', time)
                 })
               }
@@ -347,16 +347,13 @@ function App() {
     }
   }
 
-  function selectNotesFromSelectionArea(box: SelectionArea) {
-    const start = normalize(box.start)
-    const end = normalize(box.end)
-
+  function selectNotesFromSelectionArea(area: SelectionArea) {
     setSelectedNotes(
       notes.filter(note => {
         const noteStartTime = note.time
         const noteEndTime = note.time + note.duration
-        const isWithinXBounds = noteStartTime <= end.x && noteEndTime > start.x
-        const isWithinYBounds = -note.pitch >= start.y && -note.pitch <= end.y
+        const isWithinXBounds = noteStartTime <= area.end.x && noteEndTime > area.start.x
+        const isWithinYBounds = -note.pitch >= area.start.y && -note.pitch <= area.end.y
         return isWithinXBounds && isWithinYBounds
       })
     )
@@ -405,22 +402,26 @@ function App() {
       })
     )
 
-    const index = unwrap(notes).findIndex(_note => note === _note)
+    const index = notes.findIndex(_note => note.id === _note.id)
 
-    const originalTime = note.time
-    const originalDuration = note.duration
-    const offset = absolutePosition.x - originalTime * WIDTH
+    const initialTime = note.time
+    const initialDuration = note.duration
+    const offset = absolutePosition.x - initialTime * WIDTH
 
     await pointerHelper(event, ({ delta }) => {
       const deltaX = Math.floor((offset + delta.x) / WIDTH)
       if (deltaX < 0) {
-        setNotes(index, 'time', originalTime + deltaX)
-        setNotes(index, 'duration', 1 - deltaX)
+        setNotes(index, {
+          time: initialTime + deltaX,
+          duration: 1 - deltaX
+        })
       } else if (deltaX > 0) {
-        setNotes(index, 'duration', originalDuration + deltaX)
+        setNotes(index, 'duration', initialDuration + deltaX)
       } else {
-        setNotes(index, 'time', originalTime)
-        setNotes(index, 'duration', 1)
+        setNotes(index, {
+          time: initialTime,
+          duration: 1
+        })
       }
     })
 
@@ -439,26 +440,23 @@ function App() {
     })
     setSelectionPresence(normalizedPosition)
     await pointerHelper(event, ({ delta }) => {
-      const newPosition = {
+      const newPosition = normalize({
         x: position.x + delta.x,
         y: position.y + delta.y
-      }
-      const box = {
+      })
+      const area = {
         start: {
-          x: delta.x < 0 ? newPosition.x : position.x,
-          y: delta.y < 0 ? newPosition.y : position.y
+          x: delta.x < 0 ? newPosition.x : normalizedPosition.x,
+          y: delta.y < 0 ? newPosition.y : normalizedPosition.y
         },
         end: {
-          x: delta.x > 0 ? newPosition.x : position.x,
-          y: delta.y > 0 ? newPosition.y : position.y
+          x: delta.x > 0 ? newPosition.x : normalizedPosition.x,
+          y: delta.y > 0 ? newPosition.y : normalizedPosition.y
         }
       }
-      selectNotesFromSelectionArea(box)
-      setSelectionArea({
-        start: normalize(box.start),
-        end: normalize(box.end)
-      })
-      setSelectionPresence(normalize(newPosition))
+      selectNotesFromSelectionArea(area)
+      setSelectionArea(area)
+      setSelectionPresence(newPosition)
     })
     setSelectionArea()
   }
@@ -1033,19 +1031,19 @@ function App() {
                               case 'stretch': {
                                 e.stopPropagation()
                                 e.preventDefault()
-                                const originalTime = note.time
-                                const originalDuration = note.duration
+                                const initialTime = note.time
+                                const initialDuration = note.duration
 
                                 // NOTE: it irks me that the 2 implementations aren't symmetrical
                                 if (e.clientX < left + (WIDTH * note.duration) / 2) {
-                                  const offset = e.layerX - originalTime * WIDTH - origin().x
+                                  const offset = e.layerX - initialTime * WIDTH - origin().x
                                   const { delta } = await pointerHelper(e, ({ delta }) => {
                                     const deltaX = Math.floor((delta.x + offset) / WIDTH)
-                                    if (deltaX >= originalDuration) {
-                                      setNote('duration', deltaX - originalDuration + 2)
+                                    if (deltaX >= initialDuration) {
+                                      setNote('duration', deltaX - initialDuration + 2)
                                     } else {
-                                      const time = originalTime + deltaX
-                                      setNote({ time, duration: originalDuration - deltaX })
+                                      const time = initialTime + deltaX
+                                      setNote({ time, duration: initialDuration - deltaX })
                                     }
                                   })
                                   if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
@@ -1056,18 +1054,18 @@ function App() {
                                   await pointerHelper(e, ({ delta }) => {
                                     const duration =
                                       Math.floor((e.layerX - origin().x + delta.x) / WIDTH) -
-                                      originalTime
+                                      initialTime
 
                                     if (duration > 0) {
                                       setNote('duration', 1 + duration)
                                     } else if (duration < 0) {
                                       setNote({
                                         duration: 1 - duration,
-                                        time: originalTime + duration
+                                        time: initialTime + duration
                                       })
                                     } else {
                                       setNote({
-                                        time: originalTime,
+                                        time: initialTime,
                                         duration: 1
                                       })
                                     }
@@ -1079,14 +1077,14 @@ function App() {
                               case 'note': {
                                 e.stopPropagation()
                                 e.preventDefault()
-                                const originalTime = note.time
-                                const originalPitch = note.pitch
-                                let previousTime = originalTime
+                                const initialTime = note.time
+                                const initialPitch = note.pitch
+                                let previousTime = initialTime
                                 await pointerHelper(e, ({ delta }) => {
                                   const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                                  const time = originalTime + deltaX
+                                  const time = initialTime + deltaX
                                   const pitch =
-                                    originalPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                                    initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
                                   setNote({ time, pitch })
 
                                   if (previousTime !== time) {
