@@ -820,13 +820,13 @@ function App() {
         createEffect(
           on(
             () => isNoteSelected(note),
-            selected => selected && playNote(note)
+            selected => selected && playNote({ ...note, duration: Math.min(1, note.duration) })
           )
         )
         createEffect(
           on(
             () => note.pitch,
-            () => playNote(note)
+            () => playNote({ ...note, duration: Math.min(1, note.duration) })
           )
         )
       }
