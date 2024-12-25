@@ -461,7 +461,7 @@ function Grid() {
   const dimensions = useDimensions()
   return (
     <>
-      <g style={{ transform: `translateX(${origin().x % WIDTH}px)` }}>
+      <g style={{ transform: `translateX(${origin().x % (WIDTH * timeScale())}px)` }}>
         <Index each={new Array(Math.floor(dimensions().width / WIDTH / timeScale()) + 2)}>
           {(_, index) => (
             <line
