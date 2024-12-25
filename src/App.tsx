@@ -1,11 +1,10 @@
 import clsx from 'clsx'
 import MidiWriter from 'midi-writer-js'
 import {
+  Accessor,
   batch,
   createContext,
   createEffect,
-  createSelector,
-  createSignal,
   For,
   Index,
   mapArray,
@@ -16,79 +15,216 @@ import {
   useContext
 } from 'solid-js'
 import { createStore, produce, SetStoreFunction } from 'solid-js/store'
-import Instruments from 'webaudio-instruments'
 import zeptoid from 'zeptoid'
 import './App.css'
 import styles from './App.module.css'
-import { pointerHelper } from './pointer-helper'
-
-interface Vector {
-  x: number
-  y: number
-}
-interface NoteData {
-  pitch: number
-  time: number
-  duration: number
-  active: boolean
-  id: string
-  _remove?: boolean // Temporary data: do not serialise
-  _duration?: number // Temporary data: do not serialise
-}
-interface SelectionArea {
-  start: Vector
-  end: Vector
-}
-interface Loop {
-  time: number
-  duration: number
-}
-type Mode = 'note' | 'select' | 'pan' | 'stretch'
-
-const KEY_COLORS = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1].reverse()
-const HEIGHT = 20
-const WIDTH = 60
-const MARGIN = 2
+import {
+  audioContext,
+  clipboard,
+  clipOverlappingNotes,
+  copyNotes,
+  dimensions,
+  handleNote,
+  handlePan,
+  handleSelectionBox,
+  HEIGHT,
+  instrument,
+  isNoteSelected,
+  isPitchPlaying,
+  KEY_COLORS,
+  loop,
+  MARGIN,
+  markOverlappingNotes,
+  mode,
+  notes,
+  now,
+  origin,
+  pasteNotes,
+  playedNotes,
+  playing,
+  playNote,
+  selectedNotes,
+  selectionArea,
+  selectionPresence,
+  setDimensions,
+  setInstrument,
+  setLoop,
+  setMode,
+  setNotes,
+  setNow,
+  setOrigin,
+  setPlaying,
+  setSelectedNotes,
+  setSelectionPresence,
+  setTimeOffset,
+  sortNotes,
+  timeOffset,
+  togglePlaying,
+  VELOCITY,
+  WIDTH
+} from './state'
+import { Loop, NoteData } from './types'
+import { downloadDataUri } from './utils/download-data-uri'
+import { pointerHelper } from './utils/pointer-helper'
 
 function mod(n: number, m: number): number {
   return ((n % m) + m) % m
 }
 
-function createMidiDataUri(notes: Array<NoteData>) {
-  const track = new MidiWriter.Track()
-  const division = 8
+function Note(props: { note: NoteData }) {
+  {
+    const setNote: ReturnType<typeof createStore<NoteData>>[1] = (...args: any[]) =>
+      setNotes(
+        _note => _note.id === props.note.id,
+        // @ts-ignore
+        ...args
+      )
+    return (
+      <rect
+        class={clsx(styles.note, isNoteSelected(props.note) && styles.selected)}
+        x={props.note.time * WIDTH + MARGIN}
+        y={-props.note.pitch * HEIGHT + MARGIN}
+        width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
+        height={HEIGHT - MARGIN * 2}
+        opacity={!props.note._remove && props.note.active ? 1 : 0.25}
+        onDblClick={() => {
+          if (mode() === 'note') {
+            setNotes(notes => notes.filter(note => note.id !== props.note.id))
+          }
+        }}
+        onPointerDown={async e => {
+          const { left } = e.target.getBoundingClientRect()
+          switch (mode()) {
+            case 'select': {
+              if (isNoteSelected(props.note)) {
+                e.stopPropagation()
+                e.preventDefault()
+                if (selectedNotes().length > 0) {
+                  const initialNotes = Object.fromEntries(
+                    selectedNotes().map(note => [
+                      note.id,
+                      {
+                        time: note.time,
+                        pitch: note.pitch
+                      }
+                    ])
+                  )
+                  const { delta } = await pointerHelper(e, ({ delta }) => {
+                    setNotes(
+                      isNoteSelected,
+                      produce(note => {
+                        note.time =
+                          initialNotes[note.id].time + Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                        note.pitch =
+                          initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                      })
+                    )
+                    markOverlappingNotes(...selectedNotes())
+                  })
+                  if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+                    sortNotes()
+                  }
+                  clipOverlappingNotes(...selectedNotes())
+                }
+              }
+              return
+            }
+            case 'stretch': {
+              e.stopPropagation()
+              e.preventDefault()
+              const initialTime = props.note.time
+              if (!isNoteSelected(props.note)) {
+                setSelectedNotes([props.note])
+              }
 
-  notes.forEach(note => {
-    track.addEvent(
-      new MidiWriter.NoteEvent({
-        pitch: [MidiWriter.Utils.getPitch(note.pitch)],
-        duration: Array.from({ length: note.duration }).fill(division),
-        startTick: note.time * (512 / division),
-        velocity: 100
-      })
+              const initialSelectedNotes = selectedNotes().map(note => ({
+                ...note
+              }))
+
+              // NOTE: it irks me that the 2 implementations aren't symmetrical
+              if (e.clientX < left + (WIDTH * props.note.duration) / 2) {
+                const offset = e.layerX - initialTime * WIDTH - origin().x
+                const { delta } = await pointerHelper(e, ({ delta }) => {
+                  const deltaX = Math.floor((delta.x + offset) / WIDTH)
+                  initialSelectedNotes.forEach(note => {
+                    if (deltaX < note.duration) {
+                      setNotes(({ id }) => note.id === id, {
+                        time: note.time + deltaX,
+                        duration: note.duration - deltaX
+                      })
+                    }
+                  })
+                  markOverlappingNotes(...selectedNotes())
+                })
+                if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+                  clipOverlappingNotes(...selectedNotes())
+                  sortNotes()
+                }
+              } else {
+                await pointerHelper(e, ({ delta }) => {
+                  batch(() => {
+                    const scaledDelta = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                    // ...
+                    // ... -2 -1 0 1 2 ...
+                    const normalizedDelta =
+                      scaledDelta > 0 ? scaledDelta : scaledDelta < -1 ? scaledDelta + 1 : 0
+
+                    initialSelectedNotes.forEach(note => {
+                      const duration = note.duration + Math.floor(normalizedDelta)
+
+                      if (duration > 1) {
+                        setNotes(({ id }) => id === note.id, 'duration', duration)
+                      } else {
+                        setNotes(({ id }) => id === note.id, {
+                          time: note.time,
+                          duration: 1
+                        })
+                      }
+                    })
+                    markOverlappingNotes(...selectedNotes())
+                  })
+                })
+              }
+              clipOverlappingNotes(...selectedNotes())
+              return
+            }
+            case 'note': {
+              e.stopPropagation()
+              e.preventDefault()
+              const initialTime = props.note.time
+              const initialPitch = props.note.pitch
+              let previousTime = initialTime
+              setSelectedNotes([props.note])
+              await pointerHelper(e, ({ delta }) => {
+                const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                const time = initialTime + deltaX
+                const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                setNote({ time, pitch })
+
+                if (previousTime !== time) {
+                  sortNotes()
+                  previousTime = time
+                }
+
+                markOverlappingNotes(props.note)
+              })
+              setSelectedNotes([])
+              clipOverlappingNotes(props.note)
+            }
+          }
+        }}
+      />
     )
-  })
-
-  const write = new MidiWriter.Writer(track)
-  return write.dataUri()
-}
-
-function downloadDataUri(dataUri: string, filename: string) {
-  const link = document.createElement('a')
-  link.href = dataUri
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  }
 }
 
 function Piano() {
-  const context = usePiano()
+  const dimensions = useDimensions()
   return (
     <>
-      <rect width={WIDTH} height={context.dimensions.height} fill="var(--color-piano-white)" />
-      <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 2)}>
+      <rect width={WIDTH} height={dimensions().height} fill="var(--color-piano-white)" />
+      <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
           {(_, index) => (
             <rect
               y={index * HEIGHT}
@@ -96,9 +232,7 @@ function Piano() {
               width={WIDTH}
               height={HEIGHT}
               style={{
-                fill: KEY_COLORS[
-                  mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length)
-                ]
+                fill: KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)]
                   ? 'none'
                   : 'var(--color-piano-black)'
               }}
@@ -111,11 +245,11 @@ function Piano() {
 }
 
 function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
-  const context = usePiano()
+  const dimensions = useDimensions()
   return (
     <>
-      <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 2)}>
+      <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
           {(_, index) => {
             return (
               <rect
@@ -125,7 +259,7 @@ function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
                 height={HEIGHT}
                 opacity={0.8}
                 style={{
-                  fill: props.isPitchPlaying(-(index + Math.floor(-context.origin.y / HEIGHT)))
+                  fill: props.isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT)))
                     ? 'var(--color-note-selected)'
                     : 'none'
                 }}
@@ -139,21 +273,21 @@ function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
 }
 
 function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
-  const context = usePiano()
+  const dimensions = useDimensions()
   return (
     <>
       <rect
         x={0}
         y={0}
-        width={context.dimensions.width}
+        width={dimensions().width}
         height={HEIGHT}
         fill="var(--color-piano-black)"
         onPointerDown={event => {
           event.stopPropagation()
 
           const absolutePosition = {
-            x: event.layerX - context.origin.x,
-            y: event.layerY - context.origin.y
+            x: event.layerX - origin().x,
+            y: event.layerY - origin().y
           }
 
           const loop = {
@@ -189,7 +323,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
             width={loop().duration * WIDTH}
             height={HEIGHT}
             fill="var(--color-loop)"
-            style={{ transform: `translateX(${context.origin.x}px)` }}
+            style={{ transform: `translateX(${origin().x}px)` }}
             onPointerDown={e => {
               e.stopPropagation()
               e.preventDefault()
@@ -200,7 +334,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
               const initialDuration = loop().duration
 
               if (e.clientX < left + WIDTH / 3) {
-                const offset = e.layerX - initialTime * WIDTH - context.origin.x
+                const offset = e.layerX - initialTime * WIDTH - origin().x
 
                 pointerHelper(e, ({ delta }) => {
                   const deltaX = Math.floor((delta.x + offset) / WIDTH)
@@ -215,7 +349,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
               } else if (e.layerX > left + width - WIDTH / 3) {
                 pointerHelper(e, ({ delta }) => {
                   const duration =
-                    Math.floor((e.layerX - context.origin.x + delta.x) / WIDTH) - initialTime
+                    Math.floor((e.layerX - origin().x + delta.x) / WIDTH) - initialTime
 
                   if (duration > 0) {
                     props.setLoop('duration', 1 + duration)
@@ -238,16 +372,10 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           />
         )}
       </Show>
-      <line
-        x1={0}
-        x2={context.dimensions.width}
-        y1={HEIGHT}
-        y2={HEIGHT}
-        stroke="var(--color-stroke)"
-      />
+      <line x1={0} x2={dimensions().width} y1={HEIGHT} y2={HEIGHT} stroke="var(--color-stroke)" />
 
-      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 8)}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 8) + 2)}>
+      <g style={{ transform: `translateX(${origin().x % (WIDTH * 8)}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().width / WIDTH / 8) + 2)}>
           {(_, index) => (
             <line
               y1={0}
@@ -260,8 +388,8 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${context.origin.x % WIDTH}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH) + 2)}>
+      <g style={{ transform: `translateX(${origin().x % WIDTH}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().width / WIDTH) + 2)}>
           {(_, index) => (
             <line
               y1={0}
@@ -279,15 +407,15 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
 }
 
 function Grid() {
-  const context = usePiano()
+  const dimensions = useDimensions()
   return (
     <>
-      <g style={{ transform: `translateX(${context.origin.x % WIDTH}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH) + 2)}>
+      <g style={{ transform: `translateX(${origin().x % WIDTH}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().width / WIDTH) + 2)}>
           {(_, index) => (
             <line
               y1={0}
-              y2={context.dimensions.height}
+              y2={dimensions().height}
               x1={index * WIDTH}
               x2={index * WIDTH}
               stroke="var(--color-stroke-secondary)"
@@ -295,12 +423,12 @@ function Grid() {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${context.origin.x % (WIDTH * 8)}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.width / WIDTH / 8) + 2)}>
+      <g style={{ transform: `translateX(${origin().x % (WIDTH * 8)}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().width / WIDTH / 8) + 2)}>
           {(_, index) => (
             <line
               y1={0}
-              y2={context.dimensions.height}
+              y2={dimensions().height}
               x1={index * WIDTH * 8}
               x2={index * WIDTH * 8}
               stroke="var(--color-stroke)"
@@ -309,7 +437,7 @@ function Grid() {
           )}
         </Index>
       </g>
-      {/* <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
+      {/* <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
         <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 1)}>
           {(_, index) => (
             <line
@@ -319,7 +447,7 @@ function Grid() {
               x2={context.dimensions.width}
               stroke="var(--color-stroke)"
               stroke-width={
-                mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length) === 0
+                mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length) === 0
                   ? '2px'
                   : '1px'
               }
@@ -331,13 +459,9 @@ function Grid() {
   )
 }
 
-const pianoContext = createContext<{
-  dimensions: DOMRect
-  origin: Vector
-  mode: Mode
-}>()
-function usePiano() {
-  const context = useContext(pianoContext)
+const dimensionsContext = createContext<Accessor<DOMRect>>()
+function useDimensions() {
+  const context = useContext(dimensionsContext)
   if (!context) {
     throw `PianoContext is undefined.`
   }
@@ -345,426 +469,24 @@ function usePiano() {
 }
 
 function App() {
-  const [mode, setMode] = createSignal<Mode>('note')
-  const [dimensions, setDimensions] = createSignal<DOMRect>()
-  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 6 * HEIGHT * 12 })
-  // Select-related state
-  const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
-  const [selectionArea, setSelectionArea] = createSignal<SelectionArea>()
-  const [selectionPresence, setSelectionPresence] = createSignal<Vector>()
-  const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
-  // Playing related state
-  const [instrument, setInstrument] = createSignal(24)
-  const [loop, setLoop] = createStore<Loop>({
-    time: 0,
-    duration: 4
-  })
-  const [now, setNow] = createSignal(0)
-  const [playing, setPlaying] = createSignal(false)
-  const [notes, setNotes] = createStore<Array<NoteData>>([])
-  const [playingNotes, setPlayingNotes] = createSignal<Array<NoteData>>([])
+  function createMidiDataUri(notes: Array<NoteData>) {
+    const track = new MidiWriter.Track()
+    const division = 8
 
-  const velocity = 4
-  let audioContext: AudioContext | undefined
-  let player: Instruments | undefined
-  let offset = 0
-  let playedNotes = new Set<NoteData>()
-
-  function normalize(value: Vector) {
-    return {
-      x: Math.floor(value.x / WIDTH),
-      y: Math.floor(value.y / HEIGHT)
-    }
-  }
-
-  function selectNotesFromSelectionArea(area: SelectionArea) {
-    setSelectedNotes(
-      notes.filter(note => {
-        const noteStartTime = note.time
-        const noteEndTime = note.time + note.duration
-        const isWithinXBounds = noteStartTime <= area.end.x && noteEndTime > area.start.x
-        const isWithinYBounds = -note.pitch >= area.start.y && -note.pitch <= area.end.y
-        return isWithinXBounds && isWithinYBounds
-      })
-    )
-  }
-
-  const isNoteSelected = createSelector(
-    selectedNotes,
-    (note: NoteData, selectedNotes) => !!selectedNotes.find(_note => _note.id === note.id)
-  )
-
-  const isPitchPlaying = createSelector(
-    playingNotes,
-    (pitch: number, playingNotes) => !!playingNotes.find(_note => _note.pitch === pitch)
-  )
-
-  function play() {
-    if (!audioContext) {
-      audioContext = new AudioContext()
-    } else offset = audioContext.currentTime * velocity - now()
-    setPlaying(true)
-  }
-
-  function togglePlaying() {
-    if (!playing()) {
-      play()
-    } else {
-      setPlaying(false)
-    }
-  }
-
-  async function handleNote(event: PointerEvent) {
-    const absolutePosition = {
-      x: event.layerX - origin().x,
-      y: event.layerY - origin().y
-    }
-
-    const note = {
-      id: zeptoid(),
-      active: true,
-      duration: 1,
-      pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
-      time: Math.floor(absolutePosition.x / WIDTH)
-    }
-
-    setNotes(
-      produce(notes => {
-        notes.push(note)
-        notes.sort((a, b) => (a.time < b.time ? -1 : 1))
-      })
-    )
-
-    const index = notes.findIndex(_note => note.id === _note.id)
-
-    const initialTime = note.time
-    const initialDuration = note.duration
-    const offset = absolutePosition.x - initialTime * WIDTH
-
-    setSelectedNotes([note])
-
-    await pointerHelper(event, ({ delta }) => {
-      const deltaX = Math.floor((offset + delta.x) / WIDTH)
-      if (deltaX < 0) {
-        setNotes(index, {
-          time: initialTime + deltaX,
-          duration: 1 - deltaX
-        })
-      } else if (deltaX > 0) {
-        setNotes(index, 'duration', initialDuration + deltaX)
-      } else {
-        setNotes(index, {
-          time: initialTime,
-          duration: 1
-        })
-      }
-    })
-
-    setSelectedNotes([])
-    clipOverlappingNotes(note)
-  }
-
-  async function handleSelectionBox(event: PointerEvent) {
-    const position = {
-      x: event.clientX - origin().x,
-      y: event.clientY - origin().y
-    }
-    const normalizedPosition = normalize(position)
-    setSelectionArea({
-      start: normalizedPosition,
-      end: normalizedPosition
-    })
-    setSelectionPresence(normalizedPosition)
-    await pointerHelper(event, ({ delta }) => {
-      const newPosition = normalize({
-        x: position.x + delta.x,
-        y: position.y + delta.y
-      })
-      const area = {
-        start: {
-          x: delta.x < 0 ? newPosition.x : normalizedPosition.x,
-          y: delta.y < 0 ? newPosition.y : normalizedPosition.y
-        },
-        end: {
-          x: delta.x > 0 ? newPosition.x : normalizedPosition.x,
-          y: delta.y > 0 ? newPosition.y : normalizedPosition.y
-        }
-      }
-      selectNotesFromSelectionArea(area)
-      setSelectionArea(area)
-      setSelectionPresence(newPosition)
-    })
-    setSelectionArea()
-  }
-
-  async function handlePan(event: PointerEvent) {
-    const initialOrigin = { ...origin() }
-    await pointerHelper(event, ({ delta }) => {
-      setOrigin({
-        x: initialOrigin.x + delta.x,
-        y: initialOrigin.y + delta.y
-      })
-    })
-  }
-
-  function sortNotes() {
-    setNotes(produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1))))
-  }
-
-  function copyNotes() {
-    let offset = Infinity
-    selectedNotes().forEach(note => {
-      if (note.time < offset) {
-        offset = note.time
-      }
-    })
-    setClipboard(
-      selectedNotes().map(note => ({
-        ...note,
-        id: zeptoid(),
-        time: note.time - offset
-      }))
-    )
-  }
-
-  function pasteNotes(position: Vector) {
-    const newNotes = clipboard()!.map(note => ({
-      ...note,
-      time: note.time + position.x,
-      id: zeptoid()
-    }))
-    setNotes(
-      produce(notes => {
-        notes.push(...newNotes)
-      })
-    )
-    clipOverlappingNotes(...newNotes)
-  }
-
-  function clipOverlappingNotes(...sources: Array<NoteData>) {
-    batch(() => {
-      // Remove all notes that are
-      // - intersecting with source and
-      // - come after source
-      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) => {
-        if (sources.find(source => source.id === id)) {
-          return
-        }
-        return sources.find(
-          source =>
-            source.pitch === pitch &&
-            id !== source.id &&
-            source.time < time &&
-            source.time + source.duration > time
-        )
-      }
-      setNotes(notes =>
-        notes.filter(note => {
-          if (isIntersectingAndAfterSource(note)) {
-            return false
-          }
-          return true
-        })
-      )
-      // Clip all notes that are
-      // - intersecting with source and
-      // - come before source
-      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) => {
-        if (sources.find(source => source.id === id)) {
-          return
-        }
-        return sources.find(
-          source =>
-            source.pitch === pitch &&
-            id !== source.id &&
-            source.time >= time &&
-            source.time <= time + duration
-        )
-      }
-      setNotes(
-        produce(notes =>
-          notes.forEach((note, index) => {
-            const source = isIntersectingAndBeforeSource(note)
-            if (source) {
-              notes[index].duration = source.time - note.time
-            }
-          })
-        )
-      )
-
-      // Self intersecting sources
-      sources
-        .sort((a, b) => (a.time < b.time ? -1 : 1))
-        .forEach((source, index) => {
-          const end = source.time + source.duration
-          while (index + 1 < sources.length) {
-            if (sources[index + 1].pitch !== source.pitch) {
-              index++
-              continue
-            }
-            if (sources[index + 1].time <= end) {
-              setNotes(
-                ({ id }) => id === source.id,
-                'duration',
-                sources[index + 1].time - source.time
-              )
-              break
-            }
-            break
-          }
-        })
-
-      setNotes(
-        produce(notes => {
-          notes.forEach(note => {
-            // Remove temporary values
-            delete note._duration
-            delete note._remove
-          })
+    notes.forEach(note => {
+      track.addEvent(
+        new MidiWriter.NoteEvent({
+          pitch: [MidiWriter.Utils.getPitch(note.pitch)],
+          duration: Array.from({ length: note.duration }).fill(division),
+          startTick: note.time * (512 / division),
+          velocity: 100
         })
       )
     })
+
+    const write = new MidiWriter.Writer(track)
+    return write.dataUri()
   }
-
-  function markOverlappingNotes(...sources: Array<NoteData>) {
-    batch(() => {
-      // Remove all notes that are
-      // - intersecting with source and
-      // - come after source
-      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) => {
-        if (sources.find(source => source.id === id)) {
-          return
-        }
-        return sources.find(
-          source =>
-            source.pitch === pitch &&
-            id !== source.id &&
-            source.time < time &&
-            source.time + source.duration > time
-        )
-      }
-      setNotes(
-        produce(notes =>
-          notes.forEach(note => {
-            if (isIntersectingAndAfterSource(note)) {
-              note._remove = true
-            } else {
-              delete note._remove
-            }
-          })
-        )
-      )
-      // Clip all notes that are
-      // - intersecting with source and
-      // - come before source
-      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) => {
-        if (sources.find(source => source.id === id)) {
-          return
-        }
-        return sources.find(
-          source =>
-            source.pitch === pitch &&
-            id !== source.id &&
-            source.time >= time &&
-            source.time <= time + duration
-        )
-      }
-      setNotes(
-        produce(notes =>
-          notes.forEach((note, index) => {
-            const source = isIntersectingAndBeforeSource(note)
-            if (source) {
-              notes[index]._duration = source.time - note.time
-            } else {
-              delete notes[index]._duration
-            }
-          })
-        )
-      )
-
-      sources
-        .sort((a, b) => (a.time < b.time ? -1 : 1))
-        .forEach((source, index) => {
-          const end = source.time + source.duration
-          while (index + 1 < sources.length) {
-            if (sources[index + 1].pitch !== source.pitch) {
-              index++
-              continue
-            }
-            if (sources[index + 1].time <= end) {
-              setNotes(
-                ({ id }) => id === source.id,
-                '_duration',
-                sources[index + 1].time - source.time
-              )
-              break
-            }
-            setNotes(({ id }) => id === source.id, '_duration', undefined)
-            break
-          }
-        })
-    })
-  }
-
-  function playNote(note: NoteData) {
-    if (!player) {
-      player = new Instruments()
-    }
-    player.play(
-      instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
-      note.pitch, // note: midi number or frequency in Hz (if > 127)
-      1, // velocity: 0..1
-      0, // delay in seconds
-      note.duration / velocity, // duration in seconds
-      0, // (optional - specify channel for tinysynth to use)
-      0.05 // (optional - override envelope "attack" parameter)
-    )
-    setPlayingNotes(pitches => [...pitches, note])
-    setTimeout(() => {
-      setPlayingNotes(pitches => pitches.filter(({ id }) => id !== note.id))
-    }, (note.duration / velocity) * 1000)
-  }
-
-  // Audio Loop
-  createEffect(
-    on(playing, playing => {
-      if (!playing || !audioContext) return
-
-      let shouldPlay = true
-
-      function clock() {
-        if (!shouldPlay) return
-        let time = audioContext!.currentTime * velocity - offset
-
-        if (loop) {
-          if (time < loop.time) {
-            playedNotes.clear()
-            time = loop.time
-            offset = audioContext!.currentTime * velocity - loop.time
-          } else if (time > loop.time + loop.duration) {
-            playedNotes.clear()
-            offset = audioContext!.currentTime * velocity - loop.time
-            clock()
-            return
-          }
-        }
-
-        const now = Math.floor(time)
-        setNow(now)
-
-        notes.forEach(note => {
-          if (note.active && note.time === now && !playedNotes.has(note)) {
-            playedNotes.add(note)
-            playNote(note)
-          }
-        })
-
-        requestAnimationFrame(clock)
-      }
-      clock()
-      onCleanup(() => (shouldPlay = false))
-    })
-  )
 
   createEffect(() => {
     if (mode() !== 'select') {
@@ -792,6 +514,47 @@ function App() {
     )
   )
 
+  // Audio Loop
+  createEffect(
+    on(playing, playing => {
+      if (!playing || !audioContext) return
+
+      let shouldPlay = true
+
+      function clock() {
+        if (!shouldPlay) return
+        let time = audioContext!.currentTime * VELOCITY - timeOffset()
+
+        if (loop) {
+          if (time < loop.time) {
+            playedNotes.clear()
+            time = loop.time
+            setTimeOffset(audioContext!.currentTime * VELOCITY - loop.time)
+          } else if (time > loop.time + loop.duration) {
+            playedNotes.clear()
+            setTimeOffset(audioContext!.currentTime * VELOCITY - loop.time)
+            clock()
+            return
+          }
+        }
+
+        const now = Math.floor(time)
+        setNow(now)
+
+        notes.forEach(note => {
+          if (note.active && note.time === now && !playedNotes.has(note)) {
+            playedNotes.add(note)
+            playNote(note)
+          }
+        })
+
+        requestAnimationFrame(clock)
+      }
+      clock()
+      onCleanup(() => (shouldPlay = false))
+    })
+  )
+
   onMount(() => {
     window.addEventListener('keydown', e => {
       if (e.code === 'Space') {
@@ -801,8 +564,9 @@ function App() {
           copyNotes()
         } else if (e.code === 'KeyV' && (e.ctrlKey || e.metaKey)) {
           const presence = selectionPresence()
-          if (presence) {
-            pasteNotes(presence)
+          const notes = clipboard()
+          if (notes && presence) {
+            pasteNotes(notes, presence)
           }
         }
       }
@@ -936,8 +700,15 @@ function App() {
             </button>
           </div>
         </Show> */}
-        <Show when={mode() === 'select' && clipboard() && selectionPresence()}>
-          {presence => (
+        <Show
+          when={
+            mode() === 'select' &&
+            clipboard() &&
+            selectionPresence() &&
+            ([clipboard()!, selectionPresence()!] as const)
+          }
+        >
+          {clipboardAndPresence => (
             <div
               style={{
                 display: 'grid',
@@ -946,7 +717,7 @@ function App() {
             >
               <button
                 class={mode() === 'stretch' ? styles.active : undefined}
-                onClick={() => pasteNotes(presence())}
+                onClick={() => pasteNotes(...clipboardAndPresence())}
               >
                 <IconGrommetIconsCopy />
               </button>
@@ -1064,19 +835,7 @@ function App() {
       >
         <Show when={dimensions()}>
           {dimensions => (
-            <pianoContext.Provider
-              value={{
-                get dimensions() {
-                  return dimensions()
-                },
-                get origin() {
-                  return origin()
-                },
-                get mode() {
-                  return mode()
-                }
-              }}
-            >
+            <dimensionsContext.Provider value={dimensions}>
               {/* Piano underlay */}
               <g style={{ transform: `translateY(${-mod(-origin().y, HEIGHT)}px)` }}>
                 <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
@@ -1127,161 +886,7 @@ function App() {
               {/* Notes */}
               <Show when={notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
-                  <For each={notes}>
-                    {(note, index) => {
-                      const setNote: ReturnType<typeof createStore<typeof note>>[1] = (
-                        ...args: any[]
-                      ) =>
-                        setNotes(
-                          _note => _note.id === note.id,
-                          // @ts-ignore
-                          ...args
-                        )
-                      return (
-                        <rect
-                          class={clsx(styles.note, isNoteSelected(note) && styles.selected)}
-                          x={note.time * WIDTH + MARGIN}
-                          y={-note.pitch * HEIGHT + MARGIN}
-                          width={(note._duration ?? note.duration) * WIDTH - MARGIN * 2}
-                          height={HEIGHT - MARGIN * 2}
-                          opacity={!note._remove && note.active ? 1 : 0.25}
-                          onDblClick={() => {
-                            if (mode() === 'note') {
-                              setNotes(produce(notes => notes.splice(index(), 1)))
-                            }
-                          }}
-                          onPointerDown={async e => {
-                            const { left } = e.target.getBoundingClientRect()
-                            switch (mode()) {
-                              case 'select': {
-                                if (isNoteSelected(note)) {
-                                  e.stopPropagation()
-                                  e.preventDefault()
-                                  if (selectedNotes().length > 0) {
-                                    const initialNotes = Object.fromEntries(
-                                      selectedNotes().map(note => [
-                                        note.id,
-                                        {
-                                          time: note.time,
-                                          pitch: note.pitch
-                                        }
-                                      ])
-                                    )
-                                    const { delta } = await pointerHelper(e, ({ delta }) => {
-                                      setNotes(
-                                        isNoteSelected,
-                                        produce(note => {
-                                          note.time =
-                                            initialNotes[note.id].time +
-                                            Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                                          note.pitch =
-                                            initialNotes[note.id].pitch -
-                                            Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-                                        })
-                                      )
-                                      markOverlappingNotes(...selectedNotes())
-                                    })
-                                    if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-                                      sortNotes()
-                                    }
-                                    clipOverlappingNotes(...selectedNotes())
-                                  }
-                                }
-                                return
-                              }
-                              case 'stretch': {
-                                e.stopPropagation()
-                                e.preventDefault()
-                                const initialTime = note.time
-                                if (!isNoteSelected(note)) {
-                                  setSelectedNotes([note])
-                                }
-
-                                const initialSelectedNotes = selectedNotes().map(note => ({
-                                  ...note
-                                }))
-
-                                // NOTE: it irks me that the 2 implementations aren't symmetrical
-                                if (e.clientX < left + (WIDTH * note.duration) / 2) {
-                                  const offset = e.layerX - initialTime * WIDTH - origin().x
-                                  const { delta } = await pointerHelper(e, ({ delta }) => {
-                                    const deltaX = Math.floor((delta.x + offset) / WIDTH)
-                                    initialSelectedNotes.forEach(note => {
-                                      if (deltaX < note.duration) {
-                                        setNotes(({ id }) => note.id === id, {
-                                          time: note.time + deltaX,
-                                          duration: note.duration - deltaX
-                                        })
-                                      }
-                                    })
-                                    markOverlappingNotes(...selectedNotes())
-                                  })
-                                  if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-                                    clipOverlappingNotes(...selectedNotes())
-                                    sortNotes()
-                                  }
-                                } else {
-                                  await pointerHelper(e, ({ delta }) => {
-                                    batch(() => {
-                                      const scaledDelta = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                                      // ...
-                                      // ... -2 -1 0 1 2 ...
-                                      const normalizedDelta =
-                                        scaledDelta > 0
-                                          ? scaledDelta
-                                          : scaledDelta < -1
-                                          ? scaledDelta + 1
-                                          : 0
-
-                                      initialSelectedNotes.forEach(note => {
-                                        const duration = note.duration + Math.floor(normalizedDelta)
-
-                                        if (duration > 1) {
-                                          setNotes(({ id }) => id === note.id, 'duration', duration)
-                                        } else {
-                                          setNotes(({ id }) => id === note.id, {
-                                            time: note.time,
-                                            duration: 1
-                                          })
-                                        }
-                                      })
-                                      markOverlappingNotes(...selectedNotes())
-                                    })
-                                  })
-                                }
-                                clipOverlappingNotes(...selectedNotes())
-                                return
-                              }
-                              case 'note': {
-                                e.stopPropagation()
-                                e.preventDefault()
-                                const initialTime = note.time
-                                const initialPitch = note.pitch
-                                let previousTime = initialTime
-                                setSelectedNotes([note])
-                                await pointerHelper(e, ({ delta }) => {
-                                  const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                                  const time = initialTime + deltaX
-                                  const pitch =
-                                    initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-                                  setNote({ time, pitch })
-
-                                  if (previousTime !== time) {
-                                    sortNotes()
-                                    previousTime = time
-                                  }
-
-                                  markOverlappingNotes(note)
-                                })
-                                setSelectedNotes([])
-                                clipOverlappingNotes(note)
-                              }
-                            }
-                          }}
-                        />
-                      )
-                    }}
-                  </For>
+                  <For each={notes}>{note => <Note note={note} />}</For>
                 </g>
               </Show>
               <Ruler loop={loop} setLoop={setLoop} />
@@ -1297,7 +902,7 @@ function App() {
               />
               <Piano />
               <PlayingNotes isPitchPlaying={isPitchPlaying} />
-            </pianoContext.Provider>
+            </dimensionsContext.Provider>
           )}
         </Show>
       </svg>

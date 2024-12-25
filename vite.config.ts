@@ -12,7 +12,7 @@ export default defineConfig(async () => ({
   plugins: [
     solid(),
     AutoImport({
-      dts: './src/auto-imports.d.ts',
+      dts: './src/types/auto-imports.d.ts',
       resolvers: [
         IconsResolver({
           prefix: 'Icon',

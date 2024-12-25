@@ -6,12 +6,8 @@
 // biome-ignore lint: disable
 export {}
 declare global {
-  const IconGrommetIconsActions: typeof import('~icons/grommet-icons/actions.jsx')['default']
-  const IconGrommetIconsAdd: typeof import('~icons/grommet-icons/add.jsx')['default']
   const IconGrommetIconsClipboard: typeof import('~icons/grommet-icons/clipboard.jsx')['default']
   const IconGrommetIconsCopy: typeof import('~icons/grommet-icons/copy.jsx')['default']
-  const IconGrommetIconsCycle: typeof import('~icons/grommet-icons/cycle.jsx')['default']
-  const IconGrommetIconsDisable: typeof import('~icons/grommet-icons/disable.jsx')['default']
   const IconGrommetIconsDisabledOutline: typeof import('~icons/grommet-icons/disabled-outline.jsx')['default']
   const IconGrommetIconsDocument: typeof import('~icons/grommet-icons/document.jsx')['default']
   const IconGrommetIconsDuplicate: typeof import('~icons/grommet-icons/duplicate.jsx')['default']
@@ -27,5 +23,4 @@ declare global {
   const IconGrommetIconsShare: typeof import('~icons/grommet-icons/share.jsx')['default']
   const IconGrommetIconsShift: typeof import('~icons/grommet-icons/shift.jsx')['default']
   const IconGrommetIconsStop: typeof import('~icons/grommet-icons/stop.jsx')['default']
-  const IconGrommetIconsTrash: typeof import('~icons/grommet-icons/trash.jsx')['default']
 }
