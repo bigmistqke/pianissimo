@@ -31,7 +31,7 @@ interface NoteData {
   active: boolean
   id: string
 }
-interface SelectionBoxData {
+interface SelectionArea {
   start: Vector
   end: Vector
 }
@@ -81,40 +81,30 @@ function downloadDataUri(dataUri: string, filename: string) {
 function Piano() {
   const context = usePiano()
   return (
-    <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
-      <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 2)}>
-        {(_, index) => (
-          <>
-            <rect
-              y={index * HEIGHT}
-              x={0}
-              width={WIDTH}
-              height={HEIGHT}
-              style={{
-                stroke: 'var(--color-stroke)',
-                fill: KEY_COLORS[
-                  mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length)
-                ]
-                  ? 'white'
-                  : 'var(--color-piano)'
-              }}
-            />
-            <line
-              y1={index * HEIGHT}
-              y2={index * HEIGHT}
-              x1={0}
-              x2={WIDTH}
-              stroke="var(--color-stroke)"
-              stroke-width={
-                mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length) === 0
-                  ? '2px'
-                  : '1px'
-              }
-            />
-          </>
-        )}
-      </Index>
-    </g>
+    <>
+      <rect width={WIDTH} height={context.dimensions.height} fill="var(--color-piano-white)" />
+      <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
+        <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 2)}>
+          {(_, index) => (
+            <>
+              <rect
+                y={index * HEIGHT}
+                x={0}
+                width={WIDTH}
+                height={HEIGHT}
+                style={{
+                  fill: KEY_COLORS[
+                    mod(index + Math.floor(-context.origin.y / HEIGHT), KEY_COLORS.length)
+                  ]
+                    ? 'none'
+                    : 'var(--color-piano-black)'
+                }}
+              />
+            </>
+          )}
+        </Index>
+      </g>
+    </>
   )
 }
 
@@ -127,7 +117,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         y={0}
         width={context.dimensions.width}
         height={HEIGHT}
-        fill="var(--color-piano)"
+        fill="var(--color-piano-black)"
         onPointerDown={event => {
           event.stopPropagation()
 
@@ -270,7 +260,7 @@ function Grid() {
               y2={context.dimensions.height}
               x1={index * WIDTH}
               x2={index * WIDTH}
-              stroke="var(--color-stroke)"
+              stroke="var(--color-stroke-secondary)"
             />
           )}
         </Index>
@@ -289,7 +279,7 @@ function Grid() {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
+      {/* <g style={{ transform: `translateY(${mod(-context.origin.y, HEIGHT) * -1}px)` }}>
         <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 1)}>
           {(_, index) => (
             <line
@@ -306,32 +296,8 @@ function Grid() {
             />
           )}
         </Index>
-      </g>
+      </g> */}
     </>
-  )
-}
-
-function SelectionBox(props: {
-  selectionBox?: SelectionBoxData
-  stroke?: string
-  fill?: string
-  opacity?: number
-}) {
-  const context = usePiano()
-  return (
-    <Show when={props.selectionBox}>
-      {box => (
-        <rect
-          x={box().start.x + context.origin.x}
-          y={box().start.y + context.origin.y}
-          width={Math.abs(box().end.x - box().start.x)}
-          height={Math.abs(box().end.y - box().start.y)}
-          stroke={props.stroke ?? 'none'}
-          fill={props.fill ?? 'none'}
-          opacity={props.opacity}
-        />
-      )}
-    </Show>
   )
 }
 
@@ -351,10 +317,10 @@ function usePiano() {
 function App() {
   const [mode, setMode] = createSignal<Mode>('note')
   const [dimensions, setDimensions] = createSignal<DOMRect>()
-  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 8 * HEIGHT * 12 })
+  const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 6 * HEIGHT * 12 })
   // Select-related state
   const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
-  const [selectionArea, setSelectionArea] = createSignal<SelectionBoxData>()
+  const [selectionArea, setSelectionArea] = createSignal<SelectionArea>()
   const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
   // Playing related state
   const [instrument, setInstrument] = createSignal(24)
@@ -379,7 +345,7 @@ function App() {
     }
   }
 
-  function selectNotesFromSelectionBox(box: SelectionBoxData) {
+  function selectNotesFromSelectionArea(box: SelectionArea) {
     const start = normalize(box.start)
     const end = normalize(box.end)
 
@@ -476,7 +442,7 @@ function App() {
           y: delta.y > 0 ? position.y + delta.y : position.y
         }
       }
-      selectNotesFromSelectionBox(box)
+      selectNotesFromSelectionArea(box)
       setSelectionArea({
         start: normalize(box.start),
         end: normalize(box.end)
@@ -885,6 +851,7 @@ function App() {
                 </Index>
               </g>
               <Grid />
+              {/* Selection Area */}
               <Show when={mode() === 'select' && selectionArea()}>
                 {area => (
                   <rect
@@ -893,7 +860,7 @@ function App() {
                     width={(area().end.x - area().start.x + 1) * WIDTH}
                     height={(area().end.y - area().start.y + 1) * HEIGHT}
                     opacity={0.3}
-                    fill="var(--color-loop)"
+                    fill="var(--color-selection-area)"
                   />
                 )}
               </Show>
@@ -1036,13 +1003,12 @@ function App() {
               <Ruler loop={loop} setLoop={setLoop} />
               {/* Now Indicator */}
               <rect
+                class={styles.now}
                 width={WIDTH}
                 height={dimensions().height}
                 fill="var(--color-stroke)"
                 style={{
-                  opacity: 0.1,
-                  transform: `translateX(${origin().x + now() * WIDTH}px)`,
-                  'pointer-events': 'none'
+                  transform: `translateX(${origin().x + now() * WIDTH}px)`
                 }}
               />
               <Piano />

@@ -10,7 +10,7 @@
     flex-direction: column;
     border: 1px solid var(--color-stroke);
     border-radius: 3px;
-    background: white;
+    background: var(--color-hud);
     color: var(--color-text);
     text-align: center;
 
@@ -25,7 +25,7 @@
 
       &.active {
         background: var(--color-text);
-        color: white;
+        color: var(--color-hud);
       }
     }
   }
@@ -43,7 +43,7 @@
     display: flex;
     border: 1px solid var(--color-stroke);
     border-radius: 3px;
-    background: white;
+    background: var(--color-hud);
     color: var(--color-text);
     text-align: center;
 
@@ -60,6 +60,12 @@
 .note {
   fill: var(--color-note);
   &.selected {
-    fill: var(--color-selected);
+    fill: var(--color-note-selected);
   }
+}
+
+.now {
+  fill: var(--color-now);
+  opacity: var(--opacity-now);
+  pointer-events: none;
 }
