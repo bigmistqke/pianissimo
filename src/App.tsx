@@ -411,6 +411,8 @@ function App() {
     const initialDuration = note.duration
     const offset = absolutePosition.x - initialTime * WIDTH
 
+    setSelectedNotes([note])
+
     await pointerHelper(event, ({ delta }) => {
       const deltaX = Math.floor((offset + delta.x) / WIDTH)
       if (deltaX < 0) {
@@ -428,6 +430,7 @@ function App() {
       }
     })
 
+    setSelectedNotes([])
     clipOverlappingNotes(note)
   }
 
@@ -697,11 +700,16 @@ function App() {
     mapArray(
       () => notes,
       note => {
-        createEffect(() => {
-          if (isNoteSelected(note)) {
-            playNote(note.pitch, note.duration)
-          }
-        })
+        createEffect(
+          on(
+            () => isNoteSelected(note),
+            selected => {
+              if (selected) {
+                playNote(note.pitch, note.duration)
+              }
+            }
+          )
+        )
         createEffect(
           on(
             () => note.pitch,
