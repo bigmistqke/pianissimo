@@ -14,6 +14,7 @@ import {
   Show,
   useContext
 } from 'solid-js'
+import { DOMElement } from 'solid-js/jsx-runtime'
 import { createStore, produce, SetStoreFunction } from 'solid-js/store'
 import zeptoid from 'zeptoid'
 import './App.css'
@@ -65,10 +66,26 @@ import {
 } from './state'
 import { Loop, NoteData } from './types'
 import { downloadDataUri } from './utils/download-data-uri'
+import { mod } from './utils/mod'
 import { pointerHelper } from './utils/pointer-helper'
 
-function mod(n: number, m: number): number {
-  return ((n % m) + m) % m
+function createMidiDataUri(notes: Array<NoteData>) {
+  const track = new MidiWriter.Track()
+  const division = 8
+
+  notes.forEach(note => {
+    track.addEvent(
+      new MidiWriter.NoteEvent({
+        pitch: [MidiWriter.Utils.getPitch(note.pitch)],
+        duration: Array.from({ length: note.duration }).fill(division),
+        startTick: note.time * (512 / division),
+        velocity: 100
+      })
+    )
+  })
+
+  const write = new MidiWriter.Writer(track)
+  return write.dataUri()
 }
 
 function Note(props: { note: NoteData }) {
@@ -79,6 +96,133 @@ function Note(props: { note: NoteData }) {
         // @ts-ignore
         ...args
       )
+
+    async function handleSelection(event: PointerEvent) {
+      if (isNoteSelected(props.note)) {
+        event.stopPropagation()
+        event.preventDefault()
+        if (selectedNotes().length > 0) {
+          const initialNotes = Object.fromEntries(
+            selectedNotes().map(note => [
+              note.id,
+              {
+                time: note.time,
+                pitch: note.pitch
+              }
+            ])
+          )
+          const { delta } = await pointerHelper(event, ({ delta }) => {
+            setNotes(
+              isNoteSelected,
+              produce(note => {
+                note.time = initialNotes[note.id].time + Math.floor((delta.x + WIDTH / 2) / WIDTH)
+                note.pitch =
+                  initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+              })
+            )
+            markOverlappingNotes(...selectedNotes())
+          })
+          if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+            sortNotes()
+          }
+          clipOverlappingNotes(...selectedNotes())
+        }
+      }
+    }
+
+    async function handleStretch(
+      event: PointerEvent & {
+        currentTarget: SVGRectElement
+        target: DOMElement
+      }
+    ) {
+      const { left } = event.target.getBoundingClientRect()
+
+      event.stopPropagation()
+      event.preventDefault()
+      const initialTime = props.note.time
+      if (!isNoteSelected(props.note)) {
+        setSelectedNotes([props.note])
+      }
+
+      const initialSelectedNotes = selectedNotes().map(note => ({
+        ...note
+      }))
+
+      // NOTE: it irks me that the 2 implementations aren't symmetrical
+      if (event.clientX < left + (WIDTH * props.note.duration) / 2) {
+        const offset = event.layerX - initialTime * WIDTH - origin().x
+        const { delta } = await pointerHelper(event, ({ delta }) => {
+          const deltaX = Math.floor((delta.x + offset) / WIDTH)
+          initialSelectedNotes.forEach(note => {
+            if (deltaX < note.duration) {
+              setNotes(({ id }) => note.id === id, {
+                time: note.time + deltaX,
+                duration: note.duration - deltaX
+              })
+            }
+          })
+          markOverlappingNotes(...selectedNotes())
+        })
+        if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+          clipOverlappingNotes(...selectedNotes())
+          sortNotes()
+        }
+      } else {
+        await pointerHelper(event, ({ delta }) => {
+          batch(() => {
+            const scaledDelta = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+            // ...
+            // ... -2 -1 0 1 2 ...
+            const normalizedDelta =
+              scaledDelta > 0 ? scaledDelta : scaledDelta < -1 ? scaledDelta + 1 : 0
+
+            initialSelectedNotes.forEach(note => {
+              const duration = note.duration + Math.floor(normalizedDelta)
+
+              if (duration > 1) {
+                setNotes(({ id }) => id === note.id, 'duration', duration)
+              } else {
+                setNotes(({ id }) => id === note.id, {
+                  time: note.time,
+                  duration: 1
+                })
+              }
+            })
+            markOverlappingNotes(...selectedNotes())
+          })
+        })
+      }
+      clipOverlappingNotes(...selectedNotes())
+      if (selectedNotes().length === 1) {
+        setSelectedNotes([])
+      }
+    }
+
+    async function handleNote(event: PointerEvent) {
+      event.stopPropagation()
+      event.preventDefault()
+      const initialTime = props.note.time
+      const initialPitch = props.note.pitch
+      let previousTime = initialTime
+      setSelectedNotes([props.note])
+      await pointerHelper(event, ({ delta }) => {
+        const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+        const time = initialTime + deltaX
+        const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+        setNote({ time, pitch })
+
+        if (previousTime !== time) {
+          sortNotes()
+          previousTime = time
+        }
+
+        markOverlappingNotes(props.note)
+      })
+      setSelectedNotes([])
+      clipOverlappingNotes(props.note)
+    }
+
     return (
       <rect
         class={clsx(styles.note, isNoteSelected(props.note) && styles.selected)}
@@ -92,128 +236,14 @@ function Note(props: { note: NoteData }) {
             setNotes(notes => notes.filter(note => note.id !== props.note.id))
           }
         }}
-        onPointerDown={async e => {
-          const { left } = e.target.getBoundingClientRect()
+        onPointerDown={async event => {
           switch (mode()) {
-            case 'select': {
-              if (isNoteSelected(props.note)) {
-                e.stopPropagation()
-                e.preventDefault()
-                if (selectedNotes().length > 0) {
-                  const initialNotes = Object.fromEntries(
-                    selectedNotes().map(note => [
-                      note.id,
-                      {
-                        time: note.time,
-                        pitch: note.pitch
-                      }
-                    ])
-                  )
-                  const { delta } = await pointerHelper(e, ({ delta }) => {
-                    setNotes(
-                      isNoteSelected,
-                      produce(note => {
-                        note.time =
-                          initialNotes[note.id].time + Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                        note.pitch =
-                          initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-                      })
-                    )
-                    markOverlappingNotes(...selectedNotes())
-                  })
-                  if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-                    sortNotes()
-                  }
-                  clipOverlappingNotes(...selectedNotes())
-                }
-              }
-              return
-            }
-            case 'stretch': {
-              e.stopPropagation()
-              e.preventDefault()
-              const initialTime = props.note.time
-              if (!isNoteSelected(props.note)) {
-                setSelectedNotes([props.note])
-              }
-
-              const initialSelectedNotes = selectedNotes().map(note => ({
-                ...note
-              }))
-
-              // NOTE: it irks me that the 2 implementations aren't symmetrical
-              if (e.clientX < left + (WIDTH * props.note.duration) / 2) {
-                const offset = e.layerX - initialTime * WIDTH - origin().x
-                const { delta } = await pointerHelper(e, ({ delta }) => {
-                  const deltaX = Math.floor((delta.x + offset) / WIDTH)
-                  initialSelectedNotes.forEach(note => {
-                    if (deltaX < note.duration) {
-                      setNotes(({ id }) => note.id === id, {
-                        time: note.time + deltaX,
-                        duration: note.duration - deltaX
-                      })
-                    }
-                  })
-                  markOverlappingNotes(...selectedNotes())
-                })
-                if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-                  clipOverlappingNotes(...selectedNotes())
-                  sortNotes()
-                }
-              } else {
-                await pointerHelper(e, ({ delta }) => {
-                  batch(() => {
-                    const scaledDelta = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                    // ...
-                    // ... -2 -1 0 1 2 ...
-                    const normalizedDelta =
-                      scaledDelta > 0 ? scaledDelta : scaledDelta < -1 ? scaledDelta + 1 : 0
-
-                    initialSelectedNotes.forEach(note => {
-                      const duration = note.duration + Math.floor(normalizedDelta)
-
-                      if (duration > 1) {
-                        setNotes(({ id }) => id === note.id, 'duration', duration)
-                      } else {
-                        setNotes(({ id }) => id === note.id, {
-                          time: note.time,
-                          duration: 1
-                        })
-                      }
-                    })
-                    markOverlappingNotes(...selectedNotes())
-                  })
-                })
-              }
-              clipOverlappingNotes(...selectedNotes())
-              if (selectedNotes().length === 1) {
-                setSelectedNotes([])
-              }
-              return
-            }
-            case 'note': {
-              e.stopPropagation()
-              e.preventDefault()
-              const initialTime = props.note.time
-              const initialPitch = props.note.pitch
-              let previousTime = initialTime
-              setSelectedNotes([props.note])
-              await pointerHelper(e, ({ delta }) => {
-                const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
-                const time = initialTime + deltaX
-                const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
-                setNote({ time, pitch })
-
-                if (previousTime !== time) {
-                  sortNotes()
-                  previousTime = time
-                }
-
-                markOverlappingNotes(props.note)
-              })
-              setSelectedNotes([])
-              clipOverlappingNotes(props.note)
-            }
+            case 'select':
+              return await handleSelection(event)
+            case 'stretch':
+              return handleStretch(event)
+            case 'note':
+              return handleNote(event)
           }
         }}
       />
@@ -250,28 +280,26 @@ function Piano() {
 function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
   const dimensions = useDimensions()
   return (
-    <>
-      <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
-        <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
-          {(_, index) => {
-            return (
-              <rect
-                y={index * HEIGHT}
-                x={0}
-                width={WIDTH}
-                height={HEIGHT}
-                opacity={0.8}
-                style={{
-                  fill: props.isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT)))
-                    ? 'var(--color-note-selected)'
-                    : 'none'
-                }}
-              />
-            )
-          }}
-        </Index>
-      </g>
-    </>
+    <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
+      <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
+        {(_, index) => {
+          return (
+            <rect
+              y={index * HEIGHT}
+              x={0}
+              width={WIDTH}
+              height={HEIGHT}
+              opacity={0.8}
+              style={{
+                fill: props.isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT)))
+                  ? 'var(--color-note-selected)'
+                  : 'none'
+              }}
+            />
+          )
+        }}
+      </Index>
+    </g>
   )
 }
 
@@ -462,6 +490,264 @@ function Grid() {
   )
 }
 
+function PianoUnderlay() {
+  const dimensions = useDimensions()
+  return (
+    <g style={{ transform: `translateY(${-mod(-origin().y, HEIGHT)}px)` }}>
+      <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
+        {(_, index) => (
+          <rect
+            y={index * HEIGHT}
+            width={dimensions().width}
+            height={HEIGHT}
+            style={{
+              'pointer-events': 'none',
+              fill: KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)]
+                ? 'none'
+                : 'var(--color-piano-underlay)'
+            }}
+          />
+        )}
+      </Index>
+    </g>
+  )
+}
+
+function TopHud() {
+  return (
+    <div
+      class={styles.topHud}
+      style={{
+        top: `${HEIGHT}px`,
+        gap: '5px'
+      }}
+    >
+      <div>
+        <button
+          class={mode() === 'note' ? styles.active : undefined}
+          onClick={() => setMode('note')}
+        >
+          <IconGrommetIconsMusic />
+        </button>
+        <button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
+          <IconGrommetIconsPan />
+        </button>
+        <button
+          class={mode() === 'select' ? styles.active : undefined}
+          onClick={() => setMode('select')}
+        >
+          <IconGrommetIconsSelect />
+        </button>
+        <button
+          class={mode() === 'stretch' ? styles.active : undefined}
+          onClick={() => setMode('stretch')}
+        >
+          <IconGrommetIconsShift />
+        </button>
+      </div>
+      <Show when={selectedNotes().length > 0 && mode() === 'select'}>
+        <div>
+          <button class={mode() === 'stretch' ? styles.active : undefined} onClick={copyNotes}>
+            <IconGrommetIconsClipboard />
+          </button>
+          <button
+            class={mode() === 'stretch' ? styles.active : undefined}
+            onClick={() => {
+              let inactiveSelectedNotes = 0
+              selectedNotes().forEach(note => {
+                if (!note.active) {
+                  inactiveSelectedNotes++
+                }
+              })
+
+              const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
+
+              selectedNotes().forEach(selectedNote => {
+                setNotes(note => note.id === selectedNote.id, 'active', shouldActivate)
+              })
+            }}
+          >
+            <IconGrommetIconsDisabledOutline />
+          </button>
+          <button
+            class={mode() === 'stretch' ? styles.active : undefined}
+            onClick={() => {
+              setNotes(notes.filter(note => !isNoteSelected(note)))
+              setSelectedNotes([])
+            }}
+          >
+            <IconGrommetIconsErase />
+          </button>
+        </div>
+      </Show>
+      <Show when={mode() === 'note'}>
+        <div>
+          <button
+            onClick={() => {
+              const selection = notes.filter(
+                note => note.time >= loop.time && note.time < loop.time + loop.duration
+              )
+              const newNotes = selection.map(note => ({
+                ...note,
+                id: zeptoid(),
+                time: note.time + loop.duration
+              }))
+              setNotes(
+                produce(notes => {
+                  notes.push(...newNotes)
+                })
+              )
+              setLoop('duration', duration => duration * 2)
+              clipOverlappingNotes(...newNotes)
+            }}
+          >
+            <IconGrommetIconsDuplicate />
+          </button>
+        </div>
+      </Show>
+      {/*  <Show when={selectedNotes().length > 0}>
+          <div
+            style={{
+              display: 'grid',
+              'grid-template-rows': `${HEIGHT * 2 - 2}px`
+            }}
+          >
+            <button
+              class={mode() === 'stretch' ? styles.active : undefined}
+              onClick={() => {
+                const loop = {
+                  start: Infinity,
+                  end: -Infinity
+                }
+                selectedNotes().forEach(note => {
+                  if (note.time < loop.start) {
+                    loop.start = note.time
+                  }
+                  if (note.time + note.duration > loop.end) {
+                    loop.end = note.time + note.duration
+                  }
+                })
+                setLoop({
+                  time: loop.start,
+                  duration: loop.end - loop.start
+                })
+              }}
+            >
+              <IconGrommetIconsCycle />
+            </button>
+          </div>
+        </Show> */}
+      <Show
+        when={
+          mode() === 'select' &&
+          clipboard() &&
+          selectionPresence() &&
+          ([clipboard()!, selectionPresence()!] as const)
+        }
+      >
+        {clipboardAndPresence => (
+          <div
+            style={{
+              display: 'grid',
+              'grid-template-rows': `${HEIGHT * 2 - 2}px`
+            }}
+          >
+            <button
+              class={mode() === 'stretch' ? styles.active : undefined}
+              onClick={() => pasteNotes(...clipboardAndPresence())}
+            >
+              <IconGrommetIconsCopy />
+            </button>
+          </div>
+        )}
+      </Show>
+    </div>
+  )
+}
+
+function BottomHud() {
+  return (
+    <div class={styles.bottomHud}>
+      <div>
+        <div
+          style={{
+            display: 'flex',
+            width: '90px',
+            'justify-content': 'space-evenly',
+            'padding-top': '5px',
+            'padding-bottom': '5px'
+          }}
+        >
+          <button
+            onClick={() => {
+              if (instrument() > 0) {
+                setInstrument(instrument => instrument - 1)
+              } else {
+                setInstrument(174)
+              }
+            }}
+          >
+            <IconGrommetIconsFormPreviousLink />
+          </button>
+          {instrument()}
+          <button
+            onClick={() => {
+              if (instrument() >= 174) {
+                setInstrument(0)
+              } else {
+                setInstrument(instrument => instrument + 1)
+              }
+            }}
+          >
+            <IconGrommetIconsFormNextLink />
+          </button>
+        </div>
+      </div>
+      <div>
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => {
+            setNotes([])
+            setNow(0)
+          }}
+        >
+          <IconGrommetIconsSave />
+        </button>
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => {
+            setNotes([])
+            setNow(0)
+          }}
+        >
+          <IconGrommetIconsDocument />
+        </button>
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}
+        >
+          <IconGrommetIconsShare />
+        </button>
+      </div>
+      <div>
+        <button
+          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
+          onClick={() => {
+            setNow(loop.time)
+            setPlaying(false)
+            playedNotes.clear()
+          }}
+        >
+          <IconGrommetIconsStop />
+        </button>
+        <button style={{ 'padding-top': '5px', 'padding-bottom': '5px' }} onClick={togglePlaying}>
+          {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const dimensionsContext = createContext<Accessor<DOMRect>>()
 function useDimensions() {
   const context = useContext(dimensionsContext)
@@ -472,31 +758,14 @@ function useDimensions() {
 }
 
 function App() {
-  function createMidiDataUri(notes: Array<NoteData>) {
-    const track = new MidiWriter.Track()
-    const division = 8
-
-    notes.forEach(note => {
-      track.addEvent(
-        new MidiWriter.NoteEvent({
-          pitch: [MidiWriter.Utils.getPitch(note.pitch)],
-          duration: Array.from({ length: note.duration }).fill(division),
-          startTick: note.time * (512 / division),
-          velocity: 100
-        })
-      )
-    })
-
-    const write = new MidiWriter.Writer(track)
-    return write.dataUri()
-  }
-
+  // Reset selection-presence after switching mode from select-mode
   createEffect(() => {
     if (mode() !== 'select') {
       setSelectionPresence()
     }
   })
 
+  // Play notes when they are selected/change pitch
   createEffect(
     mapArray(
       () => notes,
@@ -578,234 +847,8 @@ function App() {
 
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-      <div
-        class={styles.topHud}
-        style={{
-          top: `${HEIGHT}px`,
-          gap: '5px'
-        }}
-      >
-        <div>
-          <button
-            class={mode() === 'note' ? styles.active : undefined}
-            onClick={() => setMode('note')}
-          >
-            <IconGrommetIconsMusic />
-          </button>
-          <button
-            class={mode() === 'pan' ? styles.active : undefined}
-            onClick={() => setMode('pan')}
-          >
-            <IconGrommetIconsPan />
-          </button>
-          <button
-            class={mode() === 'select' ? styles.active : undefined}
-            onClick={() => setMode('select')}
-          >
-            <IconGrommetIconsSelect />
-          </button>
-          <button
-            class={mode() === 'stretch' ? styles.active : undefined}
-            onClick={() => setMode('stretch')}
-          >
-            <IconGrommetIconsShift />
-          </button>
-        </div>
-        <Show when={selectedNotes().length > 0 && mode() === 'select'}>
-          <div>
-            <button class={mode() === 'stretch' ? styles.active : undefined} onClick={copyNotes}>
-              <IconGrommetIconsClipboard />
-            </button>
-            <button
-              class={mode() === 'stretch' ? styles.active : undefined}
-              onClick={() => {
-                let inactiveSelectedNotes = 0
-                selectedNotes().forEach(note => {
-                  if (!note.active) {
-                    inactiveSelectedNotes++
-                  }
-                })
-
-                const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
-
-                selectedNotes().forEach(selectedNote => {
-                  setNotes(note => note.id === selectedNote.id, 'active', shouldActivate)
-                })
-              }}
-            >
-              <IconGrommetIconsDisabledOutline />
-            </button>
-            <button
-              class={mode() === 'stretch' ? styles.active : undefined}
-              onClick={() => {
-                setNotes(notes.filter(note => !isNoteSelected(note)))
-                setSelectedNotes([])
-              }}
-            >
-              <IconGrommetIconsErase />
-            </button>
-          </div>
-        </Show>
-        <Show when={mode() === 'note'}>
-          <div>
-            <button
-              onClick={() => {
-                const selection = notes.filter(
-                  note => note.time >= loop.time && note.time < loop.time + loop.duration
-                )
-                const newNotes = selection.map(note => ({
-                  ...note,
-                  id: zeptoid(),
-                  time: note.time + loop.duration
-                }))
-                setNotes(
-                  produce(notes => {
-                    notes.push(...newNotes)
-                  })
-                )
-                setLoop('duration', duration => duration * 2)
-                clipOverlappingNotes(...newNotes)
-              }}
-            >
-              <IconGrommetIconsDuplicate />
-            </button>
-          </div>
-        </Show>
-        {/*  <Show when={selectedNotes().length > 0}>
-          <div
-            style={{
-              display: 'grid',
-              'grid-template-rows': `${HEIGHT * 2 - 2}px`
-            }}
-          >
-            <button
-              class={mode() === 'stretch' ? styles.active : undefined}
-              onClick={() => {
-                const loop = {
-                  start: Infinity,
-                  end: -Infinity
-                }
-                selectedNotes().forEach(note => {
-                  if (note.time < loop.start) {
-                    loop.start = note.time
-                  }
-                  if (note.time + note.duration > loop.end) {
-                    loop.end = note.time + note.duration
-                  }
-                })
-                setLoop({
-                  time: loop.start,
-                  duration: loop.end - loop.start
-                })
-              }}
-            >
-              <IconGrommetIconsCycle />
-            </button>
-          </div>
-        </Show> */}
-        <Show
-          when={
-            mode() === 'select' &&
-            clipboard() &&
-            selectionPresence() &&
-            ([clipboard()!, selectionPresence()!] as const)
-          }
-        >
-          {clipboardAndPresence => (
-            <div
-              style={{
-                display: 'grid',
-                'grid-template-rows': `${HEIGHT * 2 - 2}px`
-              }}
-            >
-              <button
-                class={mode() === 'stretch' ? styles.active : undefined}
-                onClick={() => pasteNotes(...clipboardAndPresence())}
-              >
-                <IconGrommetIconsCopy />
-              </button>
-            </div>
-          )}
-        </Show>
-      </div>
-      <div class={styles.bottomHud}>
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              width: '90px',
-              'justify-content': 'space-evenly',
-              'padding-top': '5px',
-              'padding-bottom': '5px'
-            }}
-          >
-            <button
-              onClick={() => {
-                if (instrument() > 0) {
-                  setInstrument(instrument => instrument - 1)
-                } else {
-                  setInstrument(174)
-                }
-              }}
-            >
-              <IconGrommetIconsFormPreviousLink />
-            </button>
-            {instrument()}
-            <button
-              onClick={() => {
-                if (instrument() >= 174) {
-                  setInstrument(0)
-                } else {
-                  setInstrument(instrument => instrument + 1)
-                }
-              }}
-            >
-              <IconGrommetIconsFormNextLink />
-            </button>
-          </div>
-        </div>
-        <div>
-          <button
-            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-            onClick={() => {
-              setNotes([])
-              setNow(0)
-            }}
-          >
-            <IconGrommetIconsSave />
-          </button>
-          <button
-            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-            onClick={() => {
-              setNotes([])
-              setNow(0)
-            }}
-          >
-            <IconGrommetIconsDocument />
-          </button>
-          <button
-            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-            onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}
-          >
-            <IconGrommetIconsShare />
-          </button>
-        </div>
-        <div>
-          <button
-            style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-            onClick={() => {
-              setNow(loop.time)
-              setPlaying(false)
-              playedNotes.clear()
-            }}
-          >
-            <IconGrommetIconsStop />
-          </button>
-          <button style={{ 'padding-top': '5px', 'padding-bottom': '5px' }} onClick={togglePlaying}>
-            {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
-          </button>
-        </div>
-      </div>
+      <TopHud />
+      <BottomHud />
       <svg
         style={{ width: '100%', height: '100%', overflow: 'hidden' }}
         ref={element => {
@@ -840,26 +883,7 @@ function App() {
         <Show when={dimensions()}>
           {dimensions => (
             <dimensionsContext.Provider value={dimensions}>
-              {/* Piano underlay */}
-              <g style={{ transform: `translateY(${-mod(-origin().y, HEIGHT)}px)` }}>
-                <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
-                  {(_, index) => (
-                    <rect
-                      y={index * HEIGHT}
-                      width={dimensions().width}
-                      height={HEIGHT}
-                      style={{
-                        'pointer-events': 'none',
-                        fill: KEY_COLORS[
-                          mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)
-                        ]
-                          ? 'none'
-                          : 'var(--color-piano-underlay)'
-                      }}
-                    />
-                  )}
-                </Index>
-              </g>
+              <PianoUnderlay />
               <Grid />
               {/* Selection Area */}
               <Show when={mode() === 'select' && selectionArea()}>
@@ -874,7 +898,7 @@ function App() {
                   />
                 )}
               </Show>
-              {/* Selection Area */}
+              {/* Selection Presence */}
               <Show when={mode() === 'select' && selectionPresence()}>
                 {presence => (
                   <rect
