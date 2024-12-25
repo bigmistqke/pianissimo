@@ -186,6 +186,9 @@ function Note(props: { note: NoteData }) {
                 })
               }
               clipOverlappingNotes(...selectedNotes())
+              if (selectedNotes().length === 1) {
+                setSelectedNotes([])
+              }
               return
             }
             case 'note': {
