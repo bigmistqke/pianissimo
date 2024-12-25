@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import MidiWriter from 'midi-writer-js'
 import {
+  batch,
   createContext,
   createEffect,
   createSelector,
@@ -31,6 +32,8 @@ interface NoteData {
   duration: number
   active: boolean
   id: string
+  _remove?: boolean
+  _duration?: number
 }
 interface SelectionArea {
   start: Vector
@@ -506,46 +509,108 @@ function App() {
   }
 
   function clipOverlappingNotes(...sources: Array<NoteData>) {
-    // Remove all notes that are
-    // - intersecting with source and
-    // - come after source
-    const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) =>
-      sources.find(
-        source =>
-          source.pitch === pitch &&
-          id !== source.id &&
-          source.time < time &&
-          source.time + source.duration > time
-      )
-    setNotes(notes =>
-      notes.filter(note => {
-        if (isIntersectingAndAfterSource(note)) {
-          return false
-        }
-        return true
-      })
-    )
-    // Clip all notes that are
-    // - intersecting with source and
-    // - come before source
-    const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) =>
-      sources.find(
-        source =>
-          source.pitch === pitch &&
-          id !== source.id &&
-          source.time >= time &&
-          source.time <= time + duration
-      )
-    setNotes(
-      produce(notes =>
-        notes.forEach((note, index) => {
-          const source = isIntersectingAndBeforeSource(note)
-          if (source) {
-            notes[index].duration = source.time - note.time
-          }
+    batch(() => {
+      setNotes(
+        produce(notes => {
+          notes.forEach(note => {
+            // Remove temporary values
+            delete note._duration
+            delete note._remove
+          })
         })
       )
-    )
+
+      // Remove all notes that are
+      // - intersecting with source and
+      // - come after source
+      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) =>
+        sources.find(
+          source =>
+            source.pitch === pitch &&
+            id !== source.id &&
+            source.time < time &&
+            source.time + source.duration > time
+        )
+      setNotes(notes =>
+        notes.filter(note => {
+          if (isIntersectingAndAfterSource(note)) {
+            return false
+          }
+          return true
+        })
+      )
+      // Clip all notes that are
+      // - intersecting with source and
+      // - come before source
+      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) =>
+        sources.find(
+          source =>
+            source.pitch === pitch &&
+            id !== source.id &&
+            source.time >= time &&
+            source.time <= time + duration
+        )
+      setNotes(
+        produce(notes =>
+          notes.forEach((note, index) => {
+            const source = isIntersectingAndBeforeSource(note)
+            if (source) {
+              notes[index].duration = source.time - note.time
+            }
+          })
+        )
+      )
+    })
+  }
+
+  function markOverlappingNotes(...sources: Array<NoteData>) {
+    batch(() => {
+      // Remove all notes that are
+      // - intersecting with source and
+      // - come after source
+      const isIntersectingAndAfterSource = ({ id, time, pitch }: NoteData) =>
+        sources.find(
+          source =>
+            source.pitch === pitch &&
+            id !== source.id &&
+            source.time < time &&
+            source.time + source.duration > time
+        )
+      setNotes(
+        produce(notes =>
+          notes.forEach(note => {
+            if (isIntersectingAndAfterSource(note)) {
+              note._remove = true
+            } else {
+              delete note._remove
+            }
+          })
+        )
+      )
+      // Clip all notes that are
+      // - intersecting with source and
+      // - come before source
+      const isIntersectingAndBeforeSource = ({ id, time, duration, pitch }: NoteData) =>
+        sources.find(
+          source =>
+            source.pitch === pitch &&
+            id !== source.id &&
+            source.time >= time &&
+            source.time <= time + duration
+        )
+      setNotes(
+        produce(notes =>
+          notes.forEach((note, index) => {
+            const source = isIntersectingAndBeforeSource(note)
+            if (source) {
+              notes[index]._duration = source.time - note.time
+            } else {
+              delete notes[index]._duration
+            }
+          })
+        )
+      )
+    })
   }
 
   function playNote(pitch: number, duration: number) {
@@ -982,9 +1047,9 @@ function App() {
                           class={clsx(styles.note, isNoteSelected(note) && styles.selected)}
                           x={note.time * WIDTH + MARGIN}
                           y={-note.pitch * HEIGHT + MARGIN}
-                          width={note.duration * WIDTH - MARGIN * 2}
+                          width={(note._duration ?? note.duration) * WIDTH - MARGIN * 2}
                           height={HEIGHT - MARGIN * 2}
-                          opacity={note.active ? 1 : 0.25}
+                          opacity={!note._remove && note.active ? 1 : 0.25}
                           onDblClick={() => {
                             if (mode() === 'note') {
                               setNotes(produce(notes => notes.splice(index(), 1)))
@@ -1019,6 +1084,7 @@ function App() {
                                             Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
                                         })
                                       )
+                                      markOverlappingNotes(...selectedNotes())
                                     })
                                     if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
                                       sortNotes()
@@ -1045,6 +1111,7 @@ function App() {
                                       const time = initialTime + deltaX
                                       setNote({ time, duration: initialDuration - deltaX })
                                     }
+                                    markOverlappingNotes(note)
                                   })
                                   if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
                                     clipOverlappingNotes(note)
@@ -1069,6 +1136,7 @@ function App() {
                                         duration: 1
                                       })
                                     }
+                                    markOverlappingNotes(note)
                                   })
                                 }
                                 clipOverlappingNotes(note)
@@ -1091,6 +1159,8 @@ function App() {
                                     sortNotes()
                                     previousTime = time
                                   }
+
+                                  markOverlappingNotes(note)
                                 })
 
                                 clipOverlappingNotes(note)
