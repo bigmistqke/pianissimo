@@ -8,12 +8,18 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "types": "tsc --noEmit"
   },
   "license": "MIT",
   "dependencies": {
+    "@automerge/automerge": "^2.2.8",
+    "@automerge/automerge-repo": "^1.2.1",
+    "@automerge/automerge-repo-network-websocket": "^1.2.1",
+    "@automerge/automerge-repo-storage-indexeddb": "^1.2.1",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "cabbages": "^0.1.0",
     "clsx": "^2.1.1",
     "midi-writer-js": "^3.1.1",
     "solid-js": "^1.9.3",
@@ -28,6 +34,7 @@
     "typescript": "~5.6.2",
     "unplugin-icons": "^0.22.0",
     "vite": "^6.0.3",
-    "vite-plugin-solid": "^2.11.0"
+    "vite-plugin-solid": "^2.11.0",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

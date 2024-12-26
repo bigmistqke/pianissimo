@@ -18,7 +18,7 @@ import {
 } from 'solid-js'
 import { JSX } from 'solid-js/h/jsx-runtime'
 import { DOMElement } from 'solid-js/jsx-runtime'
-import { createStore, produce, SetStoreFunction } from 'solid-js/store'
+import { SetStoreFunction } from 'solid-js/store'
 import zeptoid from 'zeptoid'
 import styles from './App.module.css'
 import {
@@ -27,12 +27,12 @@ import {
   clipOverlappingNotes,
   copyNotes,
   dimensions,
+  doc,
   filterNote,
   handleCreateNote,
   handlePan,
   handleSelectionBox,
   HEIGHT,
-  instrument,
   isNotePlaying,
   isNoteSelected,
   isPitchPlaying,
@@ -41,7 +41,6 @@ import {
   MARGIN,
   markOverlappingNotes,
   mode,
-  notes,
   now,
   origin,
   pasteNotes,
@@ -52,10 +51,9 @@ import {
   selectionArea,
   selectionPresence,
   setDimensions,
-  setInstrument,
+  setDoc,
   setLoop,
   setMode,
-  setNotes,
   setNow,
   setOrigin,
   setPlaying,
@@ -137,14 +135,7 @@ function NumberButton(props: { increment(): void; decrement(): void; value: stri
 }
 
 function Note(props: { note: NoteData }) {
-  const setNote: ReturnType<typeof createStore<NoteData>>[1] = (...args: any[]) =>
-    setNotes(
-      _note => _note.id === props.note.id,
-      // @ts-ignore
-      ...args
-    )
-
-  async function handleSelection(event: PointerEvent) {
+  async function handleSelect(event: PointerEvent) {
     if (isNoteSelected(props.note)) {
       event.stopPropagation()
       event.preventDefault()
@@ -162,6 +153,8 @@ function Note(props: { note: NoteData }) {
             }
           ])
         )
+
+        let previous = 0
         const { delta } = await pointerHelper(event, ({ delta }) => {
           let time = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
 
@@ -171,13 +164,21 @@ function Note(props: { note: NoteData }) {
             time = time + timeScale()
           }
 
-          setNotes(
-            isNoteSelected,
-            produce(note => {
-              note.time = initialNotes[note.id].time + time - offset
-              note.pitch = initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+          const hasChanged = previous !== time
+          previous = time
+
+          setDoc(doc => {
+            doc.notes.forEach(note => {
+              if (isNoteSelected(note)) {
+                note.time = initialNotes[note.id].time + time - offset
+                note.pitch =
+                  initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                if (hasChanged) {
+                  playNote(note)
+                }
+              }
             })
-          )
+          })
           markOverlappingNotes(...selectedNotes())
         })
         if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
@@ -201,21 +202,26 @@ function Note(props: { note: NoteData }) {
       setSelectedNotes([props.note])
     }
 
-    const initialSelectedNotes = selectedNotes().map(note => ({ ...note }))
+    const initialSelectedNotes = Object.fromEntries(
+      selectedNotes().map(note => [note.id, { ...note }])
+    )
+
+    console.log(initialSelectedNotes.length)
 
     await pointerHelper(event, ({ delta }) => {
       batch(() => {
         const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
-        initialSelectedNotes.forEach(note => {
-          const duration = note.duration + deltaX
-          if (duration > timeScale()) {
-            setNotes(filterNote(note), 'duration', duration)
-          } else {
-            setNotes(filterNote(note), {
-              time: note.time,
-              duration: timeScale()
-            })
-          }
+        setDoc(doc => {
+          doc.notes.forEach(note => {
+            if (!isNoteSelected(note)) return
+            const duration = initialSelectedNotes[note.id].duration + deltaX
+            if (duration > timeScale()) {
+              note.duration = duration
+            } else {
+              note.time = initialSelectedNotes[note.id].time
+              note.duration = timeScale()
+            }
+          })
         })
         markOverlappingNotes(...selectedNotes())
       })
@@ -233,17 +239,28 @@ function Note(props: { note: NoteData }) {
     const initialTime = props.note.time
     const initialPitch = props.note.pitch
     let previousTime = initialTime
+    let previousPitch = initialPitch
     setSelectedNotes([props.note])
     await pointerHelper(event, ({ delta }) => {
       const time = Math.floor((initialTime + delta.x / WIDTH) / timeScale()) * timeScale()
       const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
 
-      setNote({ time, pitch })
+      setDoc(doc => {
+        const note = doc.notes.find(note => note.id === props.note.id)
+        if (!note) return
+        note.time = time
+        note.pitch = pitch
 
-      if (previousTime !== time) {
-        sortNotes()
-        previousTime = time
-      }
+        if (previousPitch !== pitch) {
+          playNote(note)
+          previousPitch = pitch
+        }
+
+        if (previousTime !== time) {
+          sortNotes()
+          previousTime = time
+        }
+      })
 
       markOverlappingNotes(props.note)
     })
@@ -258,15 +275,16 @@ function Note(props: { note: NoteData }) {
     }
     const initialNotes = Object.fromEntries(selectedNotes().map(note => [note.id, { ...note }]))
     await pointerHelper(event, ({ delta }) => {
-      setNotes(
-        filterNote(...selectedNotes()),
-        produce(note => {
+      setDoc(doc => {
+        doc.notes.forEach(note => {
           if (!note.active) {
             note.active = true
           }
-          note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100))
+          if (note.id in initialNotes) {
+            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100))
+          }
         })
-      )
+      })
     })
     if (!initiallySelected) {
       setSelectedNotes([])
@@ -286,13 +304,16 @@ function Note(props: { note: NoteData }) {
       opacity={!props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25}
       onDblClick={() => {
         if (mode() === 'note') {
-          setNotes(notes => notes.filter(note => note.id !== props.note.id))
+          setDoc(doc => {
+            const index = doc.notes.findIndex(filterNote(props.note))
+            if (index !== -1) doc.notes.splice(index, 1)
+          })
         }
       }}
       onPointerDown={async event => {
         switch (mode()) {
           case 'select':
-            return await handleSelection(event)
+            return await handleSelect(event)
           case 'stretch':
             return handleStretch(event)
           case 'note':
@@ -628,19 +649,20 @@ function TopLeftHud() {
       <div>
         <ActionButton
           onClick={() => {
-            const selection = notes.filter(
+            const selection = doc().notes?.filter(
               note => note.time >= loop.time && note.time < loop.time + loop.duration
             )
+
+            if (!selection) return
+
             const newNotes = selection.map(note => ({
               ...note,
               id: zeptoid(),
               time: note.time + loop.duration
             }))
-            setNotes(
-              produce(notes => {
-                notes.push(...newNotes)
-              })
-            )
+
+            setDoc(doc => doc.notes.push(...newNotes))
+
             setLoop('duration', duration => duration * 2)
             clipOverlappingNotes(...newNotes)
           }}
@@ -768,22 +790,29 @@ function TopRightHud() {
                   }
                 })
 
-              setNotes(produce(notes => notes.push(...newNotes)))
+              setDoc(doc => doc.notes.push(...newNotes))
               setSelectedNotes(notes => [...notes, ...newNotes])
 
-              setNotes(
-                note => !!(selectedNotes().find(({ id }) => note.id === id) && note.time < cutLine),
-                produce(note => {
-                  note.duration = cutLine - note.time
+              setDoc(doc => {
+                doc.notes.forEach(note => {
+                  if (isNoteSelected(note) && note.time < cutLine) {
+                    note.duration = cutLine - note.time
+                  }
                 })
-              )
+              })
             }}
           >
             <IconGrommetIconsCut />
           </ActionButton>
           <ActionButton
             onClick={() => {
-              setNotes(notes.filter(note => !isNoteSelected(note)))
+              setDoc(doc => {
+                for (let index = doc.notes.length - 1; index >= 0; index--) {
+                  if (isNoteSelected(doc.notes[index])) {
+                    doc.notes.splice(index, 1)
+                  }
+                }
+              })
               setSelectedNotes([])
             }}
           >
@@ -800,8 +829,12 @@ function TopRightHud() {
 
               const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
 
-              selectedNotes().forEach(selectedNote => {
-                setNotes(note => note.id === selectedNote.id, 'active', shouldActivate)
+              setDoc(doc => {
+                doc.notes.forEach(note => {
+                  if (isNoteSelected(note)) {
+                    note.active = shouldActivate
+                  }
+                })
               })
             }}
           >
@@ -837,44 +870,31 @@ function BottomRightHud() {
       </div>
       <div>
         <NumberButton
-          value={instrument()}
+          value={doc().instrument}
           decrement={() => {
-            if (instrument() > 0) {
-              setInstrument(instrument => instrument - 1)
+            if (doc().instrument > 0) {
+              setDoc(doc => {
+                doc.instrument = doc.instrument - 1
+              })
             } else {
-              setInstrument(174)
+              setDoc(doc => {
+                doc.instrument = 174
+              })
             }
           }}
           increment={() => {
-            if (instrument() >= 174) {
-              setInstrument(0)
+            if (doc().instrument >= 174) {
+              setDoc(doc => {
+                doc.instrument = 0
+              })
             } else {
-              setInstrument(instrument => instrument + 1)
+              setDoc(doc => {
+                doc.instrument = doc.instrument + 1
+              })
             }
           }}
         />
       </div>
-      {/* <div>
-        <button
-          onClick={() => {
-            setNotes([])
-            setNow(0)
-          }}
-        >
-          <IconGrommetIconsSave />
-        </button>
-        <button
-          onClick={() => {
-            setNotes([])
-            setNow(0)
-          }}
-        >
-          <IconGrommetIconsDocument />
-        </button>
-        <button onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}>
-          <IconGrommetIconsShare />
-        </button>
-      </div> */}
       <div>
         <button
           onClick={() => {
@@ -914,18 +934,12 @@ function App() {
   // Play notes when they are selected/change pitch
   createEffect(
     mapArray(
-      () => notes,
+      () => doc().notes,
       note => {
         createEffect(
           on(
             () => isNoteSelected(note),
             selected => selected && playNote({ ...note, duration: Math.min(1, note.duration) })
-          )
-        )
-        createEffect(
-          on(
-            () => note.pitch,
-            () => playNote({ ...note, duration: Math.min(1, note.duration) })
           )
         )
       }
@@ -958,7 +972,7 @@ function App() {
 
         setNow(time)
 
-        notes.forEach(note => {
+        doc().notes.forEach(note => {
           if (!note.active) return
           if (playedNotes.has(note)) return
 
@@ -1073,9 +1087,9 @@ function App() {
                 )}
               </Show>
               {/* Notes */}
-              <Show when={notes.length > 0}>
+              <Show when={doc().notes.length > 0}>
                 <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
-                  <For each={notes}>{note => <Note note={note} />}</For>
+                  <For each={doc().notes}>{note => <Note note={note} />}</For>
                 </g>
               </Show>
               {/* Now Underlay */}

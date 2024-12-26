@@ -3,6 +3,7 @@ import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
+import wasm from 'vite-plugin-wasm'
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST
@@ -21,7 +22,8 @@ export default defineConfig(async () => ({
         })
       ]
     }),
-    Icons({ compiler: 'solid', autoInstall: true })
+    Icons({ compiler: 'solid', autoInstall: true }),
+    wasm()
   ],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

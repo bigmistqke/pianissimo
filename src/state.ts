@@ -1,15 +1,44 @@
-import { batch, createSelector, createSignal } from 'solid-js'
+import { Repo } from '@automerge/automerge-repo'
+import { BrowserWebSocketClientAdapter } from '@automerge/automerge-repo-network-websocket'
+import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-indexeddb'
+import { batch, createRoot, createSelector, createSignal } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import zeptoid from 'zeptoid'
-import { Loop, Mode, NoteData, SelectionArea, Vector } from './types'
+import { Loop, Mode, NoteData, SelectionArea, SharedState, Vector } from './types'
+import { createDocumentStore } from './utils/create-document-store'
 import { pointerHelper } from './utils/pointer-helper'
+
+// Constants
 
 export const KEY_COLORS = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1].reverse()
 export const HEIGHT = 20
 export const WIDTH = 60
 export const MARGIN = 2
 export const VELOCITY = 4
+
+// Initialise automerge-state
+
+export const repo = new Repo({
+  network: [new BrowserWebSocketClientAdapter(import.meta.env.VITE_AUTOMERGE_URL)],
+  storage: new IndexedDBStorageAdapter()
+})
+const rootDocUrl = `${document.location.hash.substring(1)}`
+
+export const [doc, setDoc, handleUrl] = createRoot(() =>
+  createDocumentStore<SharedState>({
+    repo,
+    url: rootDocUrl,
+    initialValue: {
+      notes: [],
+      instrument: 24
+    }
+  })
+)
+
+document.location.hash = handleUrl
+
+// Initialise local state
 
 export let audioContext: AudioContext | undefined
 export let player: Instruments | undefined
@@ -20,21 +49,40 @@ export const [timeOffset, setTimeOffset] = createSignal(0)
 export const [dimensions, setDimensions] = createSignal<DOMRect>()
 export const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 6 * HEIGHT * 12 })
 export const [timeScale, setTimeScale] = createSignal(1)
+
 // Select-related state
 export const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([])
 export const [selectionArea, setSelectionArea] = createSignal<SelectionArea>()
 export const [selectionPresence, setSelectionPresence] = createSignal<Vector>()
 export const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
-// Playing related state
-export const [notes, setNotes] = createStore<Array<NoteData>>([])
+
+// Play-related state
 export const [playing, setPlaying] = createSignal(false)
 export const [playingNotes, setPlayingNotes] = createStore<Array<NoteData>>([])
 export const [now, setNow] = createSignal(0)
-export const [instrument, setInstrument] = createSignal(24)
 export const [loop, setLoop] = createStore<Loop>({
   time: 0,
   duration: 4
 })
+
+// Selectors
+
+export const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
+  createSelector(
+    selectedNotes,
+    (note: NoteData, selectedNotes) => !!selectedNotes.find(filterNote(note))
+  ),
+  createSelector(
+    () => playingNotes,
+    (note: NoteData, playingNotes) => !!playingNotes.find(filterNote(note))
+  ),
+  createSelector(
+    () => playingNotes,
+    (pitch: number, playingNotes) => !!playingNotes.find(note => note.pitch === pitch)
+  )
+])
+
+// Actions
 
 function normalizeVector(value: Vector) {
   return {
@@ -47,24 +95,9 @@ export function filterNote(...notes: Array<NoteData>) {
   return ({ id }: NoteData) => !!notes.find(note => note.id === id)
 }
 
-export const isNoteSelected = createSelector(
-  selectedNotes,
-  (note: NoteData, selectedNotes) => !!selectedNotes.find(filterNote(note))
-)
-
-export const isNotePlaying = createSelector(
-  () => playingNotes,
-  (note: NoteData, playingNotes) => !!playingNotes.find(filterNote(note))
-)
-
-export const isPitchPlaying = createSelector(
-  () => playingNotes,
-  (pitch: number, playingNotes) => !!playingNotes.find(note => note.pitch === pitch)
-)
-
 export function selectNotesFromSelectionArea(area: SelectionArea) {
   setSelectedNotes(
-    notes.filter(note => {
+    doc().notes.filter(note => {
       const noteStartTime = note.time
       const noteEndTime = note.time + note.duration
       const isWithinXBounds =
@@ -98,7 +131,7 @@ export function playNote(note: NoteData, delay = 0) {
     return
   }
   player.play(
-    instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
+    doc().instrument, // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch, // note: midi number or frequency in Hz (if > 127)
     note.velocity, // velocity
     delay, // delay
@@ -108,7 +141,7 @@ export function playNote(note: NoteData, delay = 0) {
   )
 
   setTimeout(() => {
-    setPlayingNotes(produce(pitches => pitches.push(note)))
+    setPlayingNotes(produce(pitches => pitches.push({ ...note })))
     setTimeout(() => {
       setPlayingNotes(
         produce(pitches => {
@@ -134,14 +167,10 @@ export async function handleCreateNote(event: PointerEvent) {
     velocity: 1
   }
 
-  setNotes(
-    produce(notes => {
-      notes.push(note)
-      notes.sort((a, b) => (a.time < b.time ? -1 : 1))
-    })
-  )
-
-  const index = notes.findIndex(_note => note.id === _note.id)
+  setDoc(doc => {
+    doc.notes.push(note)
+    // notes.sort((a, b) => (a.time < b.time ? -1 : 1))
+  })
 
   const initialTime = note.time
   const initialDuration = note.duration
@@ -152,16 +181,24 @@ export async function handleCreateNote(event: PointerEvent) {
   await pointerHelper(event, ({ delta }) => {
     const deltaX = Math.floor((offset + delta.x) / WIDTH / timeScale()) * timeScale()
     if (deltaX < 0) {
-      setNotes(index, {
-        time: initialTime + deltaX,
-        duration: 1 - deltaX
+      setDoc(doc => {
+        const _note = doc.notes.find(filterNote(note))
+        if (!_note) return
+        _note.time = initialTime + deltaX
+        _note.duration = 1 - deltaX
       })
     } else if (deltaX > 0) {
-      setNotes(index, 'duration', initialDuration + deltaX)
+      setDoc(doc => {
+        const _note = doc.notes.find(filterNote(note))
+        if (!_note) return
+        _note.duration = initialDuration + deltaX
+      })
     } else {
-      setNotes(index, {
-        time: initialTime,
-        duration: timeScale()
+      setDoc(doc => {
+        const _note = doc.notes.find(filterNote(note))
+        if (!_note) return
+        _note.time = initialTime
+        _note.duration = timeScale()
       })
     }
     markOverlappingNotes(note)
@@ -214,7 +251,7 @@ export async function handlePan(event: PointerEvent) {
 }
 
 export function sortNotes() {
-  setNotes(produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1))))
+  // setNotes(produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1))))
 }
 
 export function copyNotes() {
@@ -241,12 +278,10 @@ export function pasteNotes(clipboard: Array<NoteData>, position: Vector) {
       id: zeptoid()
     }))
     // Remove all the notes that start on the same pitch/time then an existing note
-    .filter(note => !notes.find(({ pitch, time }) => note.pitch === pitch && note.time === time))
-  setNotes(
-    produce(notes => {
-      notes.push(...newNotes)
-    })
-  )
+    .filter(
+      note => !doc().notes.find(({ pitch, time }) => note.pitch === pitch && note.time === time)
+    )
+  setDoc(doc => doc.notes.push(...newNotes))
   clipOverlappingNotes(...newNotes)
 }
 
@@ -288,55 +323,69 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
   // Sort sources
   sources.sort((a, b) => (a.time < b.time ? -1 : 1))
 
-  batch(() => {
-    // Remove all notes that are
-    // - intersecting with source and
-    // - come after source
-    setNotes(notes => notes.filter(note => !findSourceIntersectingAndBeforeNote(sources, note)))
+  // Remove all notes that are
+  // - intersecting with source and
+  // - come after source
+  setDoc(doc => {
+    for (let index = doc.notes.length - 1; index >= 0; index--) {
+      const note = doc.notes[index]
+      if (findSourceIntersectingAndBeforeNote(sources, note)) {
+        doc.notes.splice(index, 1)
+      }
+    }
+  })
 
-    // Clip all notes that are
-    // - intersecting with source and
-    // - come before source
-    setNotes(
-      produce(notes =>
-        notes.forEach((note, index) => {
-          const source = findSourceIntersectingAndAfterNote(sources, note)
-          if (source) {
-            notes[index].duration = source.time - note.time
-          }
-        })
-      )
-    )
-
-    // Remove all notes that have 0 duration (after being clipped)
-    setNotes(notes => notes.filter(note => note.duration !== 0))
-
-    // Handle sources intersecting with other sources
-    sources.forEach((note, index) => {
-      // Loop starting from note after this note
-      while (index + 1 < sources.length) {
-        const source = sources[index + 1]
-        // Ignore sources that aren't same pitch
-        if (source.pitch !== note.pitch) {
-          index++
-          continue
-        }
-        if (source.time < note.time + note.duration) {
-          setNotes(filterNote(note), 'duration', source.time - note.time)
-        }
-        break
+  // Clip all notes that are
+  // - intersecting with source and
+  // - come before source
+  setDoc(doc =>
+    doc.notes.forEach((note, index) => {
+      const source = findSourceIntersectingAndAfterNote(sources, note)
+      if (source) {
+        doc.notes[index].duration = source.time - note.time
       }
     })
+  )
 
-    // Remove temporary values
-    setNotes(
-      produce(notes => {
-        notes.forEach(note => {
-          delete note._duration
-          delete note._remove
+  // Remove all notes that have 0 duration (after being clipped)
+  setDoc(doc => {
+    for (let index = doc.notes.length - 1; index >= 0; index--) {
+      const note = doc.notes[index]
+      if (note.duration === 0) {
+        doc.notes.splice(index, 1)
+      }
+    }
+  })
+
+  // Handle sources intersecting with other sources
+  sources.forEach((note, index) => {
+    // Loop starting from note after this note
+    while (index + 1 < sources.length) {
+      const source = sources[index + 1]
+      // Ignore sources that aren't same pitch
+      if (source.pitch !== note.pitch) {
+        index++
+        continue
+      }
+      if (source.time < note.time + note.duration) {
+        setDoc(doc => {
+          doc.notes.forEach(_note => {
+            if (_note.id === note.id) {
+              _note.duration = source.time - note.time
+            }
+          })
         })
-      })
-    )
+      }
+      break
+    }
+  })
+
+  // Remove temporary values
+  setDoc(doc => {
+    doc.notes.forEach(note => {
+      delete note._duration
+      delete note._remove
+    })
   })
 }
 
@@ -353,31 +402,27 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
     // Remove all notes that are
     // - intersecting with source and
     // - come after source
-    setNotes(
-      produce(notes =>
-        notes.forEach(note => {
-          if (findSourceIntersectingAndBeforeNote(sources, note)) {
-            note._remove = true
-          } else {
-            delete note._remove
-          }
-        })
-      )
+    setDoc(doc =>
+      doc.notes.forEach(note => {
+        if (findSourceIntersectingAndBeforeNote(sources, note)) {
+          note._remove = true
+        } else {
+          delete note._remove
+        }
+      })
     )
     // Clip all notes that are
     // - intersecting with source and
     // - come before source
-    setNotes(
-      produce(notes =>
-        notes.forEach((note, index) => {
-          const source = findSourceIntersectingAndAfterNote(sources, note)
-          if (source) {
-            notes[index]._duration = source.time - note.time
-          } else {
-            delete notes[index]._duration
-          }
-        })
-      )
+    setDoc(doc =>
+      doc.notes.forEach((note, index) => {
+        const source = findSourceIntersectingAndAfterNote(sources, note)
+        if (source) {
+          doc.notes[index]._duration = source.time - note.time
+        } else {
+          delete doc.notes[index]._duration
+        }
+      })
     )
 
     // Handle sources intersecting with other sources
@@ -389,10 +434,24 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
           continue
         }
         if (sources[index + 1].time <= end) {
-          setNotes(filterNote(source), '_duration', sources[index + 1].time - source.time)
+          setDoc(doc => {
+            doc.notes.forEach(note => {
+              if (note.id === source.id) {
+                note._duration = sources[index + 1].time - source.time
+              }
+            })
+          })
+
           break
         }
-        setNotes(filterNote(source), '_duration', undefined)
+        setDoc(doc => {
+          doc.notes.forEach(note => {
+            if (note.id === source.id) {
+              delete note._duration
+            }
+          })
+        })
+
         break
       }
     })

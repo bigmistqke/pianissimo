@@ -21,3 +21,8 @@ export interface Loop {
   duration: number
 }
 export type Mode = 'note' | 'select' | 'pan' | 'stretch' | 'velocity'
+
+export interface SharedState {
+  notes: Array<NoteData>
+  instrument: number
+}
