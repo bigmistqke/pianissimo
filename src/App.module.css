@@ -2,6 +2,7 @@ body {
   --color-stroke: #6c6c6c;
   --color-stroke-secondary: #303030;
   --color-loop: #323332;
+  --color-loop-selected: #04ba81;
   --color-note: #c6c6c6;
   --color-note-selected: #04f9ac;
   --color-selection-area: #077955;
@@ -25,12 +26,39 @@ body {
   height: 100vh;
   overscroll-behavior-x: none;
   overscroll-behavior-y: none;
-  font-family: Helvetica, sans-serif;
+  font-family: Helvetica;
 }
 
 button {
   all: unset;
+  transition: background 0.125s, color 0.125s;
   font-family: inherit;
+
+  &:hover,
+  &.active {
+    background: var(--color-text);
+    color: var(--color-hud);
+  }
+
+  &.trigger {
+    background: var(--color-note-selected);
+    color: var(--color-hud);
+  }
+}
+
+.numberButton {
+  display: flex;
+  justify-content: space-evenly;
+  width: 90px;
+
+  & > span {
+    white-space: nowrap;
+  }
+  & > * {
+    flex: 1;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
 }
 
 :global(#root) {
@@ -39,11 +67,13 @@ button {
   overflow: hidden;
 }
 
-.topHud {
-  display: grid;
+.topRightHud,
+.topLeftHud,
+.bottomLeftHud {
+  display: flex;
   position: fixed;
-  right: 0px;
-
+  flex-direction: column;
+  gap: 5px;
   margin: 10px;
 
   & > div {
@@ -57,23 +87,32 @@ button {
     text-align: center;
 
     & > button {
-      padding-right: 7px;
-      padding-left: 7px;
-      height: calc(var(--height) * 2);
+      width: calc(var(--height) * 2 - 2px);
+      height: calc(var(--height) * 2 - 2px);
 
       &:not(:last-child) {
         border-bottom: 1px solid var(--color-stroke);
-      }
-
-      &.active {
-        background: var(--color-text);
-        color: var(--color-hud);
       }
     }
   }
 }
 
-.bottomHud {
+.topLeftHud {
+  top: 0px;
+  left: var(--width);
+}
+
+.topRightHud {
+  top: var(--height);
+  right: 0px;
+}
+
+.bottomLeftHud {
+  bottom: 0px;
+  left: var(--width);
+}
+
+.bottomRightHud {
   display: flex;
   position: fixed;
   right: 0px;
@@ -95,6 +134,7 @@ button {
     }
 
     & > button {
+      padding: 5px 0px;
       width: 60px;
     }
   }

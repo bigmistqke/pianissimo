@@ -5,15 +5,18 @@ import {
   batch,
   createContext,
   createEffect,
+  createSignal,
   For,
   Index,
   mapArray,
   on,
   onCleanup,
   onMount,
+  ParentProps,
   Show,
   useContext
 } from 'solid-js'
+import { JSX } from 'solid-js/h/jsx-runtime'
 import { DOMElement } from 'solid-js/jsx-runtime'
 import { createStore, produce, SetStoreFunction } from 'solid-js/store'
 import zeptoid from 'zeptoid'
@@ -69,7 +72,6 @@ import {
   WIDTH
 } from './state'
 import { Loop, NoteData } from './types'
-import { downloadDataUri } from './utils/download-data-uri'
 import { mod } from './utils/mod'
 import { pointerHelper } from './utils/pointer-helper'
 
@@ -90,6 +92,48 @@ function createMidiDataUri(notes: Array<NoteData>) {
 
   const write = new MidiWriter.Writer(track)
   return write.dataUri()
+}
+
+function ActionButton(
+  props: ParentProps<{
+    onClick(
+      event: MouseEvent & {
+        currentTarget: HTMLButtonElement
+        target: DOMElement
+      }
+    ): void
+    class?: string
+    style?: JSX.CSSProperties
+  }>
+) {
+  const [trigger, setTrigger] = createSignal(false)
+  return (
+    <button
+      class={clsx(props.class, trigger() && styles.trigger)}
+      style={props.style}
+      onClick={event => {
+        setTrigger(true)
+        props.onClick(event)
+        setTimeout(() => setTrigger(false), 250)
+      }}
+    >
+      {props.children}
+    </button>
+  )
+}
+
+function NumberButton(props: { increment(): void; decrement(): void; value: string | number }) {
+  return (
+    <div class={styles.numberButton}>
+      <ActionButton onClick={props.decrement}>
+        <IconGrommetIconsFormPreviousLink />
+      </ActionButton>
+      <span>{props.value}</span>
+      <ActionButton onClick={props.increment}>
+        <IconGrommetIconsFormNextLink />
+      </ActionButton>
+    </div>
+  )
 }
 
 function Note(props: { note: NoteData }) {
@@ -316,6 +360,9 @@ function PlayingNotes() {
 function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
   const dimensions = useDimensions()
 
+  const [selected, setSelected] = createSignal(false)
+  const [trigger, setTrigger] = createSignal(false)
+
   function handleCreateLoop(event: PointerEvent) {
     event.stopPropagation()
 
@@ -349,7 +396,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     })
   }
 
-  function handleAdjustLoop(
+  async function handleAdjustLoop(
     event: PointerEvent & {
       currentTarget: SVGRectElement
       target: DOMElement
@@ -359,6 +406,8 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     event.stopPropagation()
     event.preventDefault()
 
+    setSelected(true)
+
     const { width, left } = event.target.getBoundingClientRect()
 
     const initialTime = loop.time
@@ -367,7 +416,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     if (event.clientX < left + WIDTH / 3) {
       const offset = event.layerX - initialTime * WIDTH - origin().x
 
-      pointerHelper(event, ({ delta }) => {
+      await pointerHelper(event, ({ delta }) => {
         const deltaX = Math.floor((delta.x + offset) / WIDTH)
         if (deltaX >= initialDuration) {
           props.setLoop('duration', deltaX - initialDuration + 2)
@@ -378,7 +427,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         }
       })
     } else if (event.layerX > left + width - WIDTH / 3) {
-      pointerHelper(event, ({ delta }) => {
+      await pointerHelper(event, ({ delta }) => {
         const duration = Math.floor((event.layerX - origin().x + delta.x) / WIDTH) - initialTime
 
         if (duration > 0) {
@@ -392,13 +441,32 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         }
       })
     } else {
-      pointerHelper(event, ({ delta }) => {
+      await pointerHelper(event, ({ delta }) => {
         const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
         const time = initialTime + deltaX
         props.setLoop('time', time)
       })
     }
+
+    setSelected(false)
   }
+
+  let initial = true
+  createEffect(
+    on(
+      () => [props.loop.duration, props.loop.time],
+      () => {
+        if (initial) {
+          initial = false
+          return
+        }
+        setTrigger(true)
+        setTimeout(() => {
+          setTrigger(false)
+        }, 250)
+      }
+    )
+  )
 
   return (
     <>
@@ -417,8 +485,8 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
             y={0}
             width={loop().duration * WIDTH}
             height={HEIGHT}
-            fill="var(--color-loop)"
-            style={{ transform: `translateX(${origin().x}px)` }}
+            fill={selected() || trigger() ? 'var(--color-loop-selected)' : 'var(--color-loop)'}
+            style={{ transform: `translateX(${origin().x}px)`, transition: 'fill 0.25s' }}
             onPointerDown={event => handleAdjustLoop(event, loop())}
           />
         )}
@@ -544,15 +612,74 @@ function PianoUnderlay() {
   )
 }
 
-function TopHud() {
+function TopLeftHud() {
+  const isSelectionAreaCyclable = () =>
+    selectionArea() === undefined ||
+    (selectionArea()!.start.x === selectionArea()!.end.x &&
+      selectionArea()!.start.y === selectionArea()!.end.y)
   return (
     <div
-      class={styles.topHud}
+      class={styles.topLeftHud}
       style={{
         top: `${HEIGHT}px`,
         gap: '5px'
       }}
     >
+      <div>
+        <ActionButton
+          onClick={() => {
+            const selection = notes.filter(
+              note => note.time >= loop.time && note.time < loop.time + loop.duration
+            )
+            const newNotes = selection.map(note => ({
+              ...note,
+              id: zeptoid(),
+              time: note.time + loop.duration
+            }))
+            setNotes(
+              produce(notes => {
+                notes.push(...newNotes)
+              })
+            )
+            setLoop('duration', duration => duration * 2)
+            clipOverlappingNotes(...newNotes)
+          }}
+        >
+          <IconGrommetIconsDuplicate />
+        </ActionButton>
+      </div>
+      <Show when={mode() === 'select'}>
+        <div
+          style={{
+            opacity: isSelectionAreaCyclable() ? 0.5 : undefined,
+            'pointer-events': isSelectionAreaCyclable() ? 'none' : undefined
+          }}
+        >
+          <ActionButton
+            class={mode() === 'stretch' ? styles.active : undefined}
+            onClick={() => {
+              const area = selectionArea()
+              if (!area) {
+                console.error('Trying to ')
+                return
+              }
+              setLoop({
+                time: area.start.x,
+                duration: area.end.x - area.start.x + timeScale()
+              })
+            }}
+          >
+            <IconGrommetIconsCycle style={{ 'margin-top': '3px' }} />
+          </ActionButton>
+        </div>
+      </Show>
+    </div>
+  )
+}
+
+function TopRightHud() {
+  return (
+    <div class={styles.topRightHud}>
       <div>
         <button
           class={mode() === 'note' ? styles.active : undefined}
@@ -597,21 +724,29 @@ function TopHud() {
               'grid-template-rows': `${HEIGHT * 2 - 2}px`
             }}
           >
-            <button
+            <ActionButton
               class={mode() === 'stretch' ? styles.active : undefined}
               onClick={() => pasteNotes(...clipboardAndPresence())}
             >
               <IconGrommetIconsCopy />
-            </button>
+            </ActionButton>
           </div>
         )}
       </Show>
-      <Show when={selectedNotes().length > 0 && mode() === 'select'}>
-        <div>
-          <button class={mode() === 'stretch' ? styles.active : undefined} onClick={copyNotes}>
+      <Show when={mode() === 'select'}>
+        <div
+          style={{
+            opacity: selectedNotes().length === 0 ? 0.5 : undefined,
+            'pointer-events': selectedNotes().length === 0 ? 'none' : undefined
+          }}
+        >
+          <ActionButton
+            class={mode() === 'stretch' ? styles.active : undefined}
+            onClick={copyNotes}
+          >
             <IconGrommetIconsClipboard />
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             onClick={() => {
               const cutLine = selectionArea()?.start.x
 
@@ -645,16 +780,16 @@ function TopHud() {
             }}
           >
             <IconGrommetIconsCut />
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             onClick={() => {
               setNotes(notes.filter(note => !isNoteSelected(note)))
               setSelectedNotes([])
             }}
           >
             <IconGrommetIconsErase />
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             onClick={() => {
               let inactiveSelectedNotes = 0
               selectedNotes().forEach(note => {
@@ -671,130 +806,56 @@ function TopHud() {
             }}
           >
             <IconGrommetIconsDisabledOutline />
-          </button>
+          </ActionButton>
         </div>
       </Show>
-      <Show when={mode() === 'note'}>
-        <div>
-          <button
-            onClick={() => {
-              const selection = notes.filter(
-                note => note.time >= loop.time && note.time < loop.time + loop.duration
-              )
-              const newNotes = selection.map(note => ({
-                ...note,
-                id: zeptoid(),
-                time: note.time + loop.duration
-              }))
-              setNotes(
-                produce(notes => {
-                  notes.push(...newNotes)
-                })
-              )
-              setLoop('duration', duration => duration * 2)
-              clipOverlappingNotes(...newNotes)
-            }}
-          >
-            <IconGrommetIconsDuplicate />
-          </button>
-        </div>
-      </Show>
-      {/*  <Show when={selectedNotes().length > 0}>
-          <div
-            style={{
-              display: 'grid',
-              'grid-template-rows': `${HEIGHT * 2 - 2}px`
-            }}
-          >
-            <button
-              class={mode() === 'stretch' ? styles.active : undefined}
-              onClick={() => {
-                const loop = {
-                  start: Infinity,
-                  end: -Infinity
-                }
-                selectedNotes().forEach(note => {
-                  if (note.time < loop.start) {
-                    loop.start = note.time
-                  }
-                  if (note.time + note.duration > loop.end) {
-                    loop.end = note.time + note.duration
-                  }
-                })
-                setLoop({
-                  time: loop.start,
-                  duration: loop.end - loop.start
-                })
-              }}
-            >
-              <IconGrommetIconsCycle />
-            </button>
-          </div>
-        </Show> */}
     </div>
   )
 }
 
-function BottomHud() {
+function BottomLeftHud() {
   return (
-    <div class={styles.bottomHud}>
+    <div class={styles.bottomLeftHud}>
       <div>
-        <div
-          style={{
-            display: 'flex',
-            width: '90px',
-            'justify-content': 'space-evenly',
-            'padding-top': '5px',
-            'padding-bottom': '5px'
-          }}
-        >
-          <button onClick={() => setTimeScale(duration => duration / 2)}>
-            <IconGrommetIconsFormPreviousLink />
-          </button>
-          {timeScale() < 1 ? `1 / ${1 / timeScale()}` : timeScale()}
-          <button onClick={() => setTimeScale(duration => duration * 2)}>
-            <IconGrommetIconsFormNextLink />
-          </button>
-        </div>
+        <button onClick={() => setTimeScale(duration => duration / 2)}>
+          <IconGrommetIconsMenu />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function BottomRightHud() {
+  return (
+    <div class={styles.bottomRightHud}>
+      <div>
+        <NumberButton
+          value={timeScale() < 1 ? `1:${1 / timeScale()}` : timeScale()}
+          decrement={() => setTimeScale(duration => duration / 2)}
+          increment={() => setTimeScale(duration => duration * 2)}
+        />
       </div>
       <div>
-        <div
-          style={{
-            display: 'flex',
-            width: '90px',
-            'justify-content': 'space-evenly',
-            'padding-top': '5px',
-            'padding-bottom': '5px'
+        <NumberButton
+          value={instrument()}
+          decrement={() => {
+            if (instrument() > 0) {
+              setInstrument(instrument => instrument - 1)
+            } else {
+              setInstrument(174)
+            }
           }}
-        >
-          <button
-            onClick={() => {
-              if (instrument() > 0) {
-                setInstrument(instrument => instrument - 1)
-              } else {
-                setInstrument(174)
-              }
-            }}
-          >
-            <IconGrommetIconsFormPreviousLink />
-          </button>
-          {instrument()}
-          <button
-            onClick={() => {
-              if (instrument() >= 174) {
-                setInstrument(0)
-              } else {
-                setInstrument(instrument => instrument + 1)
-              }
-            }}
-          >
-            <IconGrommetIconsFormNextLink />
-          </button>
-        </div>
+          increment={() => {
+            if (instrument() >= 174) {
+              setInstrument(0)
+            } else {
+              setInstrument(instrument => instrument + 1)
+            }
+          }}
+        />
       </div>
-      <div>
+      {/* <div>
         <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
           onClick={() => {
             setNotes([])
             setNow(0)
@@ -803,7 +864,6 @@ function BottomHud() {
           <IconGrommetIconsSave />
         </button>
         <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
           onClick={() => {
             setNotes([])
             setNow(0)
@@ -811,16 +871,12 @@ function BottomHud() {
         >
           <IconGrommetIconsDocument />
         </button>
-        <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
-          onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}
-        >
+        <button onClick={() => downloadDataUri(createMidiDataUri(notes), 'pianissimo.mid')}>
           <IconGrommetIconsShare />
         </button>
-      </div>
+      </div> */}
       <div>
         <button
-          style={{ 'padding-top': '5px', 'padding-bottom': '5px' }}
           onClick={() => {
             setNow(loop.time)
             setPlaying(false)
@@ -829,7 +885,7 @@ function BottomHud() {
         >
           <IconGrommetIconsStop />
         </button>
-        <button style={{ 'padding-top': '5px', 'padding-bottom': '5px' }} onClick={togglePlaying}>
+        <button onClick={togglePlaying}>
           {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
         </button>
       </div>
@@ -950,8 +1006,10 @@ function App() {
 
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-      <TopHud />
-      <BottomHud />
+      <TopLeftHud />
+      <TopRightHud />
+      <BottomRightHud />
+      <BottomLeftHud />
       <svg
         style={{ width: '100%', height: '100%', overflow: 'hidden' }}
         ref={element => {
