@@ -17,9 +17,9 @@ A pianoroll web app build with `solid-js`.
 - [x] stretch notes
   - [x] multi-note stretch
   - [x] handle overlapping notes
-- [ ] change measure
+- [x] velocity mode
 - [ ] change tempo/bpm
-- [ ] velocity mode
+- [ ] change measure
 - [ ] change volume
 - [ ] history: ctrl+z/ctrl+y
 - [ ] collaborative feature: add automerge/chee's lib

@@ -24,4 +24,5 @@ declare global {
   const IconGrommetIconsShare: typeof import('~icons/grommet-icons/share.jsx')['default']
   const IconGrommetIconsShift: typeof import('~icons/grommet-icons/shift.jsx')['default']
   const IconGrommetIconsStop: typeof import('~icons/grommet-icons/stop.jsx')['default']
+  const IconGrommetIconsVolumeControl: typeof import('~icons/grommet-icons/volume-control.jsx')['default']
 }

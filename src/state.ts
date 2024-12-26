@@ -28,7 +28,7 @@ export const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
 // Playing related state
 export const [notes, setNotes] = createStore<Array<NoteData>>([])
 export const [playing, setPlaying] = createSignal(false)
-export const [playingNotes, setPlayingNotes] = createSignal<Array<NoteData>>([])
+export const [playingNotes, setPlayingNotes] = createStore<Array<NoteData>>([])
 export const [now, setNow] = createSignal(0)
 export const [instrument, setInstrument] = createSignal(24)
 export const [loop, setLoop] = createStore<Loop>({
@@ -43,18 +43,22 @@ function normalizeVector(value: Vector) {
   }
 }
 
+export function filterNote(note: NoteData) {
+  return ({ id }: NoteData) => note.id === id
+}
+
 export const isNoteSelected = createSelector(
   selectedNotes,
-  (note: NoteData, selectedNotes) => !!selectedNotes.find(_note => _note.id === note.id)
+  (note: NoteData, selectedNotes) => !!selectedNotes.find(filterNote(note))
 )
 
 export const isNotePlaying = createSelector(
-  playingNotes,
-  (note: NoteData, playingNotes) => !!playingNotes.find(({ id }) => id === note.id)
+  () => playingNotes,
+  (note: NoteData, playingNotes) => !!playingNotes.find(filterNote(note))
 )
 
 export const isPitchPlaying = createSelector(
-  playingNotes,
+  () => playingNotes,
   (pitch: number, playingNotes) => !!playingNotes.find(note => note.pitch === pitch)
 )
 
@@ -93,16 +97,21 @@ export function playNote(note: NoteData, delay = 0) {
   player.play(
     instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch, // note: midi number or frequency in Hz (if > 127)
-    1, // velocity
+    note.velocity, // velocity
     delay, // delay
     note.duration / VELOCITY, // duration
     0, // (optional - specify channel for tinysynth to use)
     0.05 // (optional - override envelope "attack" parameter)
   )
+
   setTimeout(() => {
-    setPlayingNotes(pitches => [...pitches, note])
+    setPlayingNotes(produce(pitches => pitches.push(note)))
     setTimeout(() => {
-      setPlayingNotes(pitches => pitches.filter(({ id }) => id !== note.id))
+      setPlayingNotes(
+        produce(pitches => {
+          pitches.splice(pitches.findIndex(filterNote(note)), 1)
+        })
+      )
     }, (note.duration / VELOCITY) * 1000)
   }, delay * 1000)
 }
@@ -113,12 +122,13 @@ export async function handleCreateNote(event: PointerEvent) {
     y: event.layerY - origin().y
   }
 
-  const note = {
+  const note: NoteData = {
     id: zeptoid(),
     active: true,
     duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
-    time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale()
+    time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale(),
+    velocity: 1
   }
 
   setNotes(
@@ -309,7 +319,7 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
           continue
         }
         if (source.time < note.time + note.duration) {
-          setNotes(({ id }) => id === note.id, 'duration', source.time - note.time)
+          setNotes(filterNote(note), 'duration', source.time - note.time)
         }
         break
       }
@@ -376,10 +386,10 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
           continue
         }
         if (sources[index + 1].time <= end) {
-          setNotes(({ id }) => id === source.id, '_duration', sources[index + 1].time - source.time)
+          setNotes(filterNote(source), '_duration', sources[index + 1].time - source.time)
           break
         }
-        setNotes(({ id }) => id === source.id, '_duration', undefined)
+        setNotes(filterNote(source), '_duration', undefined)
         break
       }
     })

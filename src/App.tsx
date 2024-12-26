@@ -24,6 +24,7 @@ import {
   clipOverlappingNotes,
   copyNotes,
   dimensions,
+  filterNote,
   handleCreateNote,
   handlePan,
   handleSelectionBox,
@@ -164,9 +165,9 @@ function Note(props: { note: NoteData }) {
         initialSelectedNotes.forEach(note => {
           const duration = note.duration + deltaX
           if (duration > timeScale()) {
-            setNotes(({ id }) => id === note.id, 'duration', duration)
+            setNotes(filterNote(note), 'duration', duration)
           } else {
-            setNotes(({ id }) => id === note.id, {
+            setNotes(filterNote(note), {
               time: note.time,
               duration: timeScale()
             })
@@ -206,6 +207,17 @@ function Note(props: { note: NoteData }) {
     clipOverlappingNotes(props.note)
   }
 
+  async function handleVelocity(event: PointerEvent) {
+    const initialVelocity = props.note.velocity
+    await pointerHelper(event, ({ delta }) => {
+      setNotes(
+        filterNote(props.note),
+        'velocity',
+        Math.min(1, Math.max(0, initialVelocity - delta.y / 100))
+      )
+    })
+  }
+
   return (
     <rect
       class={clsx(
@@ -216,7 +228,7 @@ function Note(props: { note: NoteData }) {
       y={-props.note.pitch * HEIGHT + MARGIN}
       width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
       height={HEIGHT - MARGIN * 2}
-      opacity={!props.note._remove && props.note.active ? 1 : 0.25}
+      opacity={!props.note._remove && props.note.active ? props.note.velocity : 0.25}
       onDblClick={() => {
         if (mode() === 'note') {
           setNotes(notes => notes.filter(note => note.id !== props.note.id))
@@ -230,6 +242,8 @@ function Note(props: { note: NoteData }) {
             return handleStretch(event)
           case 'note':
             return handleNote(event)
+          case 'velocity':
+            return handleVelocity(event)
         }
       }}
     />
@@ -547,6 +561,12 @@ function TopHud() {
         >
           <IconGrommetIconsShift />
         </button>
+        <button
+          class={mode() === 'velocity' ? styles.active : undefined}
+          onClick={() => setMode('velocity')}
+        >
+          <IconGrommetIconsVolumeControl />
+        </button>
         <button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
           <IconGrommetIconsPan />
         </button>
@@ -593,11 +613,12 @@ function TopHud() {
                 .filter(note => note.time < selectionArea()!.start.x)
                 .map(note => {
                   return {
-                    pitch: note.pitch,
                     id: zeptoid(),
+                    active: true,
                     duration: note.duration - (cutLine - note.time),
+                    pitch: note.pitch,
                     time: cutLine,
-                    active: true
+                    velocity: note.velocity
                   }
                 })
 

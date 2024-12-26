@@ -8,6 +8,7 @@ export interface NoteData {
   duration: number
   active: boolean
   id: string
+  velocity: number
   _remove?: boolean // Temporary data: do not serialise
   _duration?: number // Temporary data: do not serialise
 }
@@ -19,4 +20,4 @@ export interface Loop {
   time: number
   duration: number
 }
-export type Mode = 'note' | 'select' | 'pan' | 'stretch'
+export type Mode = 'note' | 'select' | 'pan' | 'stretch' | 'velocity'
