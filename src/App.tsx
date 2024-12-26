@@ -147,58 +147,33 @@ function Note(props: { note: NoteData }) {
       target: DOMElement
     }
   ) {
-    const { left } = event.target.getBoundingClientRect()
-
     event.stopPropagation()
     event.preventDefault()
-    const initialTime = props.note.time
+
     if (!isNoteSelected(props.note)) {
       setSelectedNotes([props.note])
     }
 
-    const initialSelectedNotes = selectedNotes().map(note => ({
-      ...note
-    }))
+    const initialSelectedNotes = selectedNotes().map(note => ({ ...note }))
 
-    // NOTE: it irks me that the 2 implementations aren't symmetrical
-    if (event.clientX < left + (WIDTH * props.note.duration) / 2) {
-      const offset = event.layerX - initialTime * WIDTH - origin().x
-      const { delta } = await pointerHelper(event, ({ delta }) => {
-        const deltaX = Math.floor((delta.x + offset) / WIDTH / timeScale()) * timeScale()
-
+    await pointerHelper(event, ({ delta }) => {
+      batch(() => {
+        const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
         initialSelectedNotes.forEach(note => {
-          if (deltaX < note.duration) {
-            setNotes(({ id }) => note.id === id, {
-              time: note.time + deltaX,
-              duration: note.duration - deltaX
+          const duration = note.duration + deltaX
+          if (duration > timeScale()) {
+            setNotes(({ id }) => id === note.id, 'duration', duration)
+          } else {
+            setNotes(({ id }) => id === note.id, {
+              time: note.time,
+              duration: timeScale()
             })
           }
         })
         markOverlappingNotes(...selectedNotes())
       })
-      if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
-        clipOverlappingNotes(...selectedNotes())
-        sortNotes()
-      }
-    } else {
-      await pointerHelper(event, ({ delta }) => {
-        batch(() => {
-          const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
-          initialSelectedNotes.forEach(note => {
-            const duration = note.duration + deltaX
-            if (duration > timeScale()) {
-              setNotes(({ id }) => id === note.id, 'duration', duration)
-            } else {
-              setNotes(({ id }) => id === note.id, {
-                time: note.time,
-                duration: timeScale()
-              })
-            }
-          })
-          markOverlappingNotes(...selectedNotes())
-        })
-      })
-    }
+    })
+
     clipOverlappingNotes(...selectedNotes())
     if (selectedNotes().length === 1) {
       setSelectedNotes([])
