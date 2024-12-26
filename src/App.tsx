@@ -208,14 +208,25 @@ function Note(props: { note: NoteData }) {
   }
 
   async function handleVelocity(event: PointerEvent) {
-    const initialVelocity = props.note.velocity
+    let initiallySelected = !!selectedNotes().find(filterNote(props.note))
+    if (!initiallySelected) {
+      setSelectedNotes([props.note])
+    }
+    const initialNotes = Object.fromEntries(selectedNotes().map(note => [note.id, { ...note }]))
     await pointerHelper(event, ({ delta }) => {
       setNotes(
-        filterNote(props.note),
-        'velocity',
-        Math.min(1, Math.max(0, initialVelocity - delta.y / 100))
+        filterNote(...selectedNotes()),
+        produce(note => {
+          if (!note.active) {
+            note.active = true
+          }
+          note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100))
+        })
       )
     })
+    if (!initiallySelected) {
+      setSelectedNotes([])
+    }
   }
 
   return (
@@ -228,7 +239,7 @@ function Note(props: { note: NoteData }) {
       y={-props.note.pitch * HEIGHT + MARGIN}
       width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
       height={HEIGHT - MARGIN * 2}
-      opacity={!props.note._remove && props.note.active ? props.note.velocity : 0.25}
+      opacity={!props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25}
       onDblClick={() => {
         if (mode() === 'note') {
           setNotes(notes => notes.filter(note => note.id !== props.note.id))

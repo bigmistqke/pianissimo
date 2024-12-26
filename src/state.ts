@@ -43,8 +43,8 @@ function normalizeVector(value: Vector) {
   }
 }
 
-export function filterNote(note: NoteData) {
-  return ({ id }: NoteData) => note.id === id
+export function filterNote(...notes: Array<NoteData>) {
+  return ({ id }: NoteData) => !!notes.find(note => note.id === id)
 }
 
 export const isNoteSelected = createSelector(
@@ -93,6 +93,9 @@ export function togglePlaying() {
 export function playNote(note: NoteData, delay = 0) {
   if (!player) {
     player = new Instruments()
+  }
+  if (note.velocity === 0) {
+    return
   }
   player.play(
     instrument(), // instrument: 24 is "Acoustic Guitar (nylon)"
