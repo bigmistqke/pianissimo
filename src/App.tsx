@@ -29,6 +29,7 @@ import {
   handleSelectionBox,
   HEIGHT,
   instrument,
+  isNotePlaying,
   isNoteSelected,
   isPitchPlaying,
   KEY_COLORS,
@@ -55,6 +56,7 @@ import {
   setOrigin,
   setPlaying,
   setSelectedNotes,
+  setSelectionArea,
   setSelectionPresence,
   setTimeOffset,
   setTimeScale,
@@ -206,7 +208,10 @@ function Note(props: { note: NoteData }) {
 
   return (
     <rect
-      class={clsx(styles.note, isNoteSelected(props.note) && styles.selected)}
+      class={clsx(
+        styles.note,
+        (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected
+      )}
       x={props.note.time * WIDTH + MARGIN}
       y={-props.note.pitch * HEIGHT + MARGIN}
       width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
@@ -257,7 +262,7 @@ function Piano() {
   )
 }
 
-function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
+function PlayingNotes() {
   const dimensions = useDimensions()
   return (
     <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
@@ -271,7 +276,7 @@ function PlayingNotes(props: { isPitchPlaying: (pitch: number) => boolean }) {
               height={HEIGHT}
               opacity={0.8}
               style={{
-                fill: props.isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT)))
+                fill: isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT)))
                   ? 'var(--color-note-selected)'
                   : 'none'
               }}
@@ -530,9 +535,6 @@ function TopHud() {
         >
           <IconGrommetIconsMusic />
         </button>
-        <button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
-          <IconGrommetIconsPan />
-        </button>
         <button
           class={mode() === 'select' ? styles.active : undefined}
           onClick={() => setMode('select')}
@@ -545,14 +547,82 @@ function TopHud() {
         >
           <IconGrommetIconsShift />
         </button>
+        <button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
+          <IconGrommetIconsPan />
+        </button>
       </div>
+      <Show
+        when={
+          mode() === 'select' &&
+          clipboard() &&
+          selectionPresence() &&
+          ([clipboard()!, selectionPresence()!] as const)
+        }
+      >
+        {clipboardAndPresence => (
+          <div
+            style={{
+              display: 'grid',
+              'grid-template-rows': `${HEIGHT * 2 - 2}px`
+            }}
+          >
+            <button
+              class={mode() === 'stretch' ? styles.active : undefined}
+              onClick={() => pasteNotes(...clipboardAndPresence())}
+            >
+              <IconGrommetIconsCopy />
+            </button>
+          </div>
+        )}
+      </Show>
       <Show when={selectedNotes().length > 0 && mode() === 'select'}>
         <div>
           <button class={mode() === 'stretch' ? styles.active : undefined} onClick={copyNotes}>
             <IconGrommetIconsClipboard />
           </button>
           <button
-            class={mode() === 'stretch' ? styles.active : undefined}
+            onClick={() => {
+              const cutLine = selectionArea()?.start.x
+
+              if (!cutLine) {
+                console.error('Attempting to slice without slice-line')
+                return
+              }
+
+              const newNotes = selectedNotes()
+                .filter(note => note.time < selectionArea()!.start.x)
+                .map(note => {
+                  return {
+                    pitch: note.pitch,
+                    id: zeptoid(),
+                    duration: note.duration - (cutLine - note.time),
+                    time: cutLine,
+                    active: true
+                  }
+                })
+
+              setNotes(produce(notes => notes.push(...newNotes)))
+              setSelectedNotes(notes => [...notes, ...newNotes])
+
+              setNotes(
+                note => !!(selectedNotes().find(({ id }) => note.id === id) && note.time < cutLine),
+                produce(note => {
+                  note.duration = cutLine - note.time
+                })
+              )
+            }}
+          >
+            <IconGrommetIconsCut />
+          </button>
+          <button
+            onClick={() => {
+              setNotes(notes.filter(note => !isNoteSelected(note)))
+              setSelectedNotes([])
+            }}
+          >
+            <IconGrommetIconsErase />
+          </button>
+          <button
             onClick={() => {
               let inactiveSelectedNotes = 0
               selectedNotes().forEach(note => {
@@ -569,15 +639,6 @@ function TopHud() {
             }}
           >
             <IconGrommetIconsDisabledOutline />
-          </button>
-          <button
-            class={mode() === 'stretch' ? styles.active : undefined}
-            onClick={() => {
-              setNotes(notes.filter(note => !isNoteSelected(note)))
-              setSelectedNotes([])
-            }}
-          >
-            <IconGrommetIconsErase />
           </button>
         </div>
       </Show>
@@ -638,30 +699,6 @@ function TopHud() {
             </button>
           </div>
         </Show> */}
-      <Show
-        when={
-          mode() === 'select' &&
-          clipboard() &&
-          selectionPresence() &&
-          ([clipboard()!, selectionPresence()!] as const)
-        }
-      >
-        {clipboardAndPresence => (
-          <div
-            style={{
-              display: 'grid',
-              'grid-template-rows': `${HEIGHT * 2 - 2}px`
-            }}
-          >
-            <button
-              class={mode() === 'stretch' ? styles.active : undefined}
-              onClick={() => pasteNotes(...clipboardAndPresence())}
-            >
-              <IconGrommetIconsCopy />
-            </button>
-          </div>
-        )}
-      </Show>
     </div>
   )
 }
@@ -782,6 +819,7 @@ function App() {
   createEffect(() => {
     if (mode() !== 'select') {
       setSelectionPresence()
+      setSelectionArea()
     }
   })
 
@@ -833,7 +871,21 @@ function App() {
         setNow(time)
 
         notes.forEach(note => {
-          if (note.active && note.time >= time && note.time < time + 1 && !playedNotes.has(note)) {
+          if (!note.active) return
+          if (playedNotes.has(note)) return
+
+          const loopEnd = loop.time + loop.duration
+          const overflow = time + 1 - loopEnd
+
+          if (overflow > 0) {
+            if (note.time >= time && note.time < loopEnd) {
+              playedNotes.add(note)
+              playNote(note, (note.time - time) / VELOCITY)
+            } else if (note.time >= loop.time && note.time < loop.time + overflow) {
+              playedNotes.add(note)
+              playNote(note, (note.time + loopEnd - time) / VELOCITY)
+            }
+          } else if (note.time >= time && note.time < time + 1) {
             playedNotes.add(note)
             playNote(note, (note.time - time) / VELOCITY)
           }
@@ -950,7 +1002,7 @@ function App() {
               />
               <Ruler loop={loop} setLoop={setLoop} />
               <Piano />
-              <PlayingNotes isPitchPlaying={isPitchPlaying} />
+              <PlayingNotes />
             </dimensionsContext.Provider>
           )}
         </Show>

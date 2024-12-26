@@ -48,9 +48,14 @@ export const isNoteSelected = createSelector(
   (note: NoteData, selectedNotes) => !!selectedNotes.find(_note => _note.id === note.id)
 )
 
+export const isNotePlaying = createSelector(
+  playingNotes,
+  (note: NoteData, playingNotes) => !!playingNotes.find(({ id }) => id === note.id)
+)
+
 export const isPitchPlaying = createSelector(
   playingNotes,
-  (pitch: number, playingNotes) => !!playingNotes.find(_note => _note.pitch === pitch)
+  (pitch: number, playingNotes) => !!playingNotes.find(note => note.pitch === pitch)
 )
 
 export function selectNotesFromSelectionArea(area: SelectionArea) {
@@ -94,10 +99,12 @@ export function playNote(note: NoteData, delay = 0) {
     0, // (optional - specify channel for tinysynth to use)
     0.05 // (optional - override envelope "attack" parameter)
   )
-  setPlayingNotes(pitches => [...pitches, note])
   setTimeout(() => {
-    setPlayingNotes(pitches => pitches.filter(({ id }) => id !== note.id))
-  }, (note.duration / VELOCITY) * 1000)
+    setPlayingNotes(pitches => [...pitches, note])
+    setTimeout(() => {
+      setPlayingNotes(pitches => pitches.filter(({ id }) => id !== note.id))
+    }, (note.duration / VELOCITY) * 1000)
+  }, delay * 1000)
 }
 
 export async function handleCreateNote(event: PointerEvent) {
@@ -181,7 +188,6 @@ export async function handleSelectionBox(event: PointerEvent) {
     setSelectionArea(area)
     setSelectionPresence(newPosition)
   })
-  setSelectionArea()
 }
 
 export async function handlePan(event: PointerEvent) {

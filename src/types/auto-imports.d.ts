@@ -8,6 +8,7 @@ export {}
 declare global {
   const IconGrommetIconsClipboard: typeof import('~icons/grommet-icons/clipboard.jsx')['default']
   const IconGrommetIconsCopy: typeof import('~icons/grommet-icons/copy.jsx')['default']
+  const IconGrommetIconsCut: typeof import('~icons/grommet-icons/cut.jsx')['default']
   const IconGrommetIconsDisabledOutline: typeof import('~icons/grommet-icons/disabled-outline.jsx')['default']
   const IconGrommetIconsDocument: typeof import('~icons/grommet-icons/document.jsx')['default']
   const IconGrommetIconsDuplicate: typeof import('~icons/grommet-icons/duplicate.jsx')['default']
