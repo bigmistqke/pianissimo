@@ -37,7 +37,7 @@ body {
   font-family: geist;
 }
 
-button {
+._button_bcbch_40 {
   all: unset;
   transition:
     background 0.125s,
@@ -45,22 +45,22 @@ button {
   font-family: inherit;
 
   &:hover,
-  &._active_13s0n_48 {
+  &._active_bcbch_48 {
     background: var(--color-text) !important;
     color: var(--color-hud);
   }
-  &._inactive_13s0n_52 {
+  &._inactive_bcbch_52 {
     opacity: 0.5;
     pointer-events: none;
   }
 
-  &._trigger_13s0n_57 {
+  &._trigger_bcbch_57 {
     background: var(--color-note-selected);
     color: var(--color-hud);
   }
 }
 
-._numberButton_13s0n_63 {
+._numberButton_bcbch_63 {
   display: flex;
   position: relative;
   justify-content: space-evenly;
@@ -77,6 +77,7 @@ button {
     white-space: nowrap;
   }
   & > button {
+    all: unset;
     width: var(--hud-height);
     height: var(--hud-height);
     color: var(--color-stroke);
@@ -103,9 +104,9 @@ button {
   overflow: hidden;
 }
 
-._topRightHud_13s0n_106,
-._topLeftHud_13s0n_107,
-._bottomLeftHud_13s0n_108 {
+._topRightHud_bcbch_107,
+._topLeftHud_bcbch_108,
+._bottomLeftHud_bcbch_109 {
   display: flex;
   position: fixed;
   flex-direction: column;
@@ -133,22 +134,22 @@ button {
   }
 }
 
-._topLeftHud_13s0n_107 {
+._topLeftHud_bcbch_108 {
   top: 0px;
   left: var(--width);
 }
 
-._topRightHud_13s0n_106 {
+._topRightHud_bcbch_107 {
   top: var(--height);
   right: 0px;
 }
 
-._bottomLeftHud_13s0n_108 {
+._bottomLeftHud_bcbch_109 {
   bottom: 0px;
   left: var(--width);
 }
 
-._bottomRightHud_13s0n_151 {
+._bottomRightHud_bcbch_152 {
   display: flex;
   position: fixed;
   right: 0px;
@@ -179,24 +180,24 @@ button {
 }
 
 @media screen and (max-aspect-ratio: 1 / 1) {
-  ._bottomRightHud_13s0n_151 {
+  ._bottomRightHud_bcbch_152 {
     flex-direction: column;
   }
 }
 
-._note_13s0n_187 {
+._note_bcbch_188 {
   fill: var(--color-note);
-  &._selected_13s0n_189 {
+  &._selected_bcbch_190 {
     fill: var(--color-note-selected);
   }
 }
 
-._now_13s0n_194 {
+._now_bcbch_195 {
   fill: var(--color-now);
   pointer-events: none;
 }
 
-._dropdown-menu__trigger_13s0n_199 {
+._dropdown-menu__trigger_bcbch_200 {
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -211,15 +212,15 @@ button {
   overflow: hidden;
   line-height: 0;
 }
-._dropdown-menu__content_13s0n_214 {
+._dropdown-menu__content_bcbch_215 {
   margin-bottom: 10px;
 }
-._dropdown-menu__content_13s0n_214,
-._dropdown-menu__sub-content_13s0n_218 {
+._dropdown-menu__content_bcbch_215,
+._dropdown-menu__sub-content_bcbch_219 {
   display: flex;
   flex-direction: column;
   transform-origin: var(--kb-menu-content-transform-origin);
-  animation: _contentHide_13s0n_1 250ms ease-in forwards;
+  animation: _contentHide_bcbch_1 250ms ease-in forwards;
   outline: none;
   border: 1px solid var(--color-stroke);
   border-radius: 3px;
@@ -228,14 +229,14 @@ button {
   overflow: hidden;
   color: var(--color-text);
 }
-._dropdown-menu__content_13s0n_214[data-expanded],
-._dropdown-menu__sub-content_13s0n_218[data-expanded] {
-  animation: _contentShow_13s0n_1 250ms ease-out;
+._dropdown-menu__content_bcbch_215[data-expanded],
+._dropdown-menu__sub-content_bcbch_219[data-expanded] {
+  animation: _contentShow_bcbch_1 250ms ease-out;
 }
-._dropdown-menu__item_13s0n_235,
-._dropdown-menu__checkbox-item_13s0n_236,
-._dropdown-menu__radio-item_13s0n_237,
-._dropdown-menu__sub-trigger_13s0n_238 {
+._dropdown-menu__item_bcbch_236,
+._dropdown-menu__checkbox-item_bcbch_237,
+._dropdown-menu__radio-item_bcbch_238,
+._dropdown-menu__sub-trigger_bcbch_239 {
   display: flex;
   position: relative;
   align-items: center;
@@ -245,37 +246,37 @@ button {
   line-height: 1;
   user-select: none;
 }
-._dropdown-menu__sub-trigger_13s0n_238[data-expanded] {
+._dropdown-menu__sub-trigger_bcbch_239[data-expanded] {
   background-color: var(--color-text);
   color: var(--color-hud);
   /* background-color: hsl(204 94% 94%); */
   /* color: hsl(201 96% 32%); */
 }
-._dropdown-menu__item_13s0n_235[data-disabled],
-._dropdown-menu__checkbox-item_13s0n_236[data-disabled],
-._dropdown-menu__radio-item_13s0n_237[data-disabled],
-._dropdown-menu__sub-trigger_13s0n_238[data-disabled] {
+._dropdown-menu__item_bcbch_236[data-disabled],
+._dropdown-menu__checkbox-item_bcbch_237[data-disabled],
+._dropdown-menu__radio-item_bcbch_238[data-disabled],
+._dropdown-menu__sub-trigger_bcbch_239[data-disabled] {
   opacity: 0.5;
   pointer-events: none;
 }
-._dropdown-menu__item_13s0n_235[data-highlighted],
-._dropdown-menu__checkbox-item_13s0n_236[data-highlighted],
-._dropdown-menu__radio-item_13s0n_237[data-highlighted],
-._dropdown-menu__sub-trigger_13s0n_238[data-highlighted] {
+._dropdown-menu__item_bcbch_236[data-highlighted],
+._dropdown-menu__checkbox-item_bcbch_237[data-highlighted],
+._dropdown-menu__radio-item_bcbch_238[data-highlighted],
+._dropdown-menu__sub-trigger_bcbch_239[data-highlighted] {
   outline: none;
   /* background-color: hsl(200 98% 39%); */
 }
-._dropdown-menu__group-label_13s0n_268 {
+._dropdown-menu__group-label_bcbch_269 {
   padding: 0 24px;
   /* color: hsl(240 4% 46%); */
   line-height: 32px;
 }
-._dropdown-menu__separator_13s0n_273 {
+._dropdown-menu__separator_bcbch_274 {
   margin: 6px;
   border-top: 1px solid hsl(240 6% 90%);
   height: 1px;
 }
-._dropdown-menu__item-indicator_13s0n_278 {
+._dropdown-menu__item-indicator_bcbch_279 {
   display: inline-flex;
   position: absolute;
   left: 0;
@@ -284,19 +285,19 @@ button {
   width: 20px;
   height: 20px;
 }
-._dropdown-menu__item-right-slot_13s0n_287 {
+._dropdown-menu__item-right-slot_bcbch_288 {
   margin-left: auto;
   padding-left: 20px;
   /* color: hsl(240 4% 46%); */
 }
-[data-highlighted] > ._dropdown-menu__item-right-slot_13s0n_287 {
+[data-highlighted] > ._dropdown-menu__item-right-slot_bcbch_288 {
   /* color: white; */
 }
-[data-disabled] ._dropdown-menu__item-right-slot_13s0n_287 {
+[data-disabled] ._dropdown-menu__item-right-slot_bcbch_288 {
   opacity: 0.5;
   color: hsl(240 5% 65%);
 }
-@keyframes _contentShow_13s0n_1 {
+@keyframes _contentShow_bcbch_1 {
   from {
     transform: scale(0.96);
     opacity: 0;
@@ -306,7 +307,7 @@ button {
     opacity: 1;
   }
 }
-@keyframes _contentHide_13s0n_1 {
+@keyframes _contentHide_bcbch_1 {
   from {
     transform: scale(1);
     opacity: 1;
