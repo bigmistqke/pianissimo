@@ -4,6 +4,7 @@ import MidiWriter from 'midi-writer-js'
 import {
   Accessor,
   batch,
+  ComponentProps,
   createContext,
   createEffect,
   createSignal,
@@ -79,6 +80,10 @@ import { downloadDataUri } from './utils/download-data-uri'
 import { mod } from './utils/mod'
 import { pointerHelper } from './utils/pointer-helper'
 
+function Button(props: ComponentProps<'button'>) {
+  return <button {...props} class={clsx(props.class, styles.button)} />
+}
+
 function createMidiDataUri(notes: Array<NoteData>) {
   const track = new MidiWriter.Track()
   const division = 8
@@ -112,7 +117,7 @@ function ActionButton(
 ) {
   const [trigger, setTrigger] = createSignal(false)
   return (
-    <button
+    <Button
       class={clsx(props.class, trigger() && styles.trigger)}
       style={props.style}
       onClick={event => {
@@ -122,20 +127,20 @@ function ActionButton(
       }}
     >
       {props.children}
-    </button>
+    </Button>
   )
 }
 
 function NumberButton(props: { increment(): void; decrement(): void; value: string | number }) {
   return (
     <div class={styles.numberButton}>
-      <ActionButton onClick={props.decrement}>
+      <button onClick={props.decrement}>
         <IconGrommetIconsFormPreviousLink />
-      </ActionButton>
+      </button>
       <span>{props.value}</span>
-      <ActionButton onClick={props.increment}>
+      <button onClick={props.increment}>
         <IconGrommetIconsFormNextLink />
-      </ActionButton>
+      </button>
     </div>
   )
 }
@@ -640,10 +645,6 @@ function PianoUnderlay() {
 }
 
 function TopLeftHud() {
-  const isSelectionAreaCyclable = () =>
-    selectionArea() === undefined ||
-    (selectionArea()!.start.x === selectionArea()!.end.x &&
-      selectionArea()!.start.y === selectionArea()!.end.y)
   return (
     <div
       class={styles.topLeftHud}
@@ -675,13 +676,11 @@ function TopLeftHud() {
         >
           <IconGrommetIconsDuplicate />
         </ActionButton>
-      </div>
-      <Show when={mode() === 'select'}>
-        <div>
+        <Show when={mode() === 'select'}>
           <ActionButton
             class={clsx(
               mode() === 'stretch' && styles.active,
-              isSelectionAreaCyclable() && styles.inactive
+              selectionArea() === undefined && styles.inactive
             )}
             onClick={() => {
               const area = selectionArea()
@@ -691,14 +690,14 @@ function TopLeftHud() {
               }
               setLoop({
                 time: area.start.x,
-                duration: area.end.x - area.start.x + timeScale()
+                duration: area.end.x - area.start.x
               })
             }}
           >
             <IconGrommetIconsCycle style={{ 'margin-top': '3px' }} />
           </ActionButton>
-        </div>
-      </Show>
+        </Show>
+      </div>
     </div>
   )
 }
@@ -707,30 +706,33 @@ function TopRightHud() {
   return (
     <div class={styles.topRightHud}>
       <div>
-        <button
+        <Button
           class={mode() === 'note' ? styles.active : undefined}
           onClick={() => setMode('note')}
         >
           <IconGrommetIconsMusic />
-        </button>
-        <button
+        </Button>
+        <Button
           class={mode() === 'select' ? styles.active : undefined}
           onClick={() => setMode('select')}
         >
           <IconGrommetIconsSelect />
-        </button>
-        <button class={mode() === 'stretch' && styles.active} onClick={() => setMode('stretch')}>
+        </Button>
+        <Button
+          class={mode() === 'stretch' ? styles.active : undefined}
+          onClick={() => setMode('stretch')}
+        >
           <IconGrommetIconsShift />
-        </button>
-        <button
+        </Button>
+        <Button
           class={mode() === 'velocity' ? styles.active : undefined}
           onClick={() => setMode('velocity')}
         >
           <IconGrommetIconsVolumeControl />
-        </button>
-        <button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
+        </Button>
+        <Button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
           <IconGrommetIconsPan />
-        </button>
+        </Button>
       </div>
       <Show when={mode() === 'select'}>
         {_ => {
@@ -858,16 +860,16 @@ function BottomLeftHud() {
     <div class={styles.bottomLeftHud}>
       <div>
         <DropdownMenu>
-          <DropdownMenu.Trigger as="button" onClick={() => setTimeScale(duration => duration / 2)}>
+          <DropdownMenu.Trigger as={Button} onClick={() => setTimeScale(duration => duration / 2)}>
             <IconGrommetIconsMenu />
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content class={styles['dropdown-menu__content']}>
-              <DropdownMenu.Item as="button" class={styles['dropdown-menu__item']} onClick={newDoc}>
+              <DropdownMenu.Item as={Button} class={styles['dropdown-menu__item']} onClick={newDoc}>
                 New File <div class={styles['dropdown-menu__item-right-slot']}>⌘+N</div>
               </DropdownMenu.Item>
               <DropdownMenu.Sub overlap gutter={4} shift={-8}>
-                <DropdownMenu.SubTrigger as="button" class={styles['dropdown-menu__sub-trigger']}>
+                <DropdownMenu.SubTrigger as={Button} class={styles['dropdown-menu__sub-trigger']}>
                   Open File <div class={styles['dropdown-menu__item-right-slot']}>⌘+O</div>
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.Portal>
@@ -875,7 +877,7 @@ function BottomLeftHud() {
                     <For each={Object.entries(urls()).sort(([, a], [, b]) => (a - b > 0 ? -1 : 1))}>
                       {([url, date]) => (
                         <DropdownMenu.Item
-                          as="button"
+                          as={Button}
                           class={styles['dropdown-menu__item']}
                           onClick={() => openUrl(url)}
                         >
@@ -887,7 +889,7 @@ function BottomLeftHud() {
                 </DropdownMenu.Portal>
               </DropdownMenu.Sub>
               <DropdownMenu.Item
-                as="button"
+                as={Button}
                 closeOnSelect={false}
                 class={styles['dropdown-menu__item']}
                 onClick={() => downloadDataUri(createMidiDataUri(doc().notes), 'pianissimo.mid')}
@@ -940,7 +942,7 @@ function BottomRightHud() {
         />
       </div>
       <div>
-        <button
+        <Button
           onClick={() => {
             setNow(loop.time)
             setPlaying(false)
@@ -948,10 +950,10 @@ function BottomRightHud() {
           }}
         >
           <IconGrommetIconsStop />
-        </button>
-        <button onClick={togglePlaying}>
+        </Button>
+        <Button onClick={togglePlaying}>
           {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
-        </button>
+        </Button>
       </div>
     </div>
   )
