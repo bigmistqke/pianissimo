@@ -1,3 +1,4 @@
+import { DropdownMenu } from '@kobalte/core/dropdown-menu'
 import clsx from 'clsx'
 import MidiWriter from 'midi-writer-js'
 import {
@@ -26,6 +27,7 @@ import {
   clipboard,
   clipOverlappingNotes,
   copyNotes,
+  deserializeDate,
   dimensions,
   doc,
   filterNote,
@@ -41,7 +43,9 @@ import {
   MARGIN,
   markOverlappingNotes,
   mode,
+  newDoc,
   now,
+  openUrl,
   origin,
   pasteNotes,
   playedNotes,
@@ -66,10 +70,12 @@ import {
   timeOffset,
   timeScale,
   togglePlaying,
+  urls,
   VELOCITY,
   WIDTH
 } from './state'
 import { Loop, NoteData } from './types'
+import { downloadDataUri } from './utils/download-data-uri'
 import { mod } from './utils/mod'
 import { pointerHelper } from './utils/pointer-helper'
 
@@ -850,9 +856,46 @@ function BottomLeftHud() {
   return (
     <div class={styles.bottomLeftHud}>
       <div>
-        <button onClick={() => setTimeScale(duration => duration / 2)}>
-          <IconGrommetIconsMenu />
-        </button>
+        <DropdownMenu>
+          <DropdownMenu.Trigger as="button" onClick={() => setTimeScale(duration => duration / 2)}>
+            <IconGrommetIconsMenu />
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content class={styles['dropdown-menu__content']}>
+              <DropdownMenu.Item as="button" class={styles['dropdown-menu__item']} onClick={newDoc}>
+                New File <div class={styles['dropdown-menu__item-right-slot']}>⌘+N</div>
+              </DropdownMenu.Item>
+              <DropdownMenu.Sub overlap gutter={4} shift={-8}>
+                <DropdownMenu.SubTrigger as="button" class={styles['dropdown-menu__sub-trigger']}>
+                  Open File <div class={styles['dropdown-menu__item-right-slot']}>⌘+O</div>
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.SubContent class={styles['dropdown-menu__sub-content']}>
+                    <For each={Object.entries(urls()).sort(([, a], [, b]) => (a - b > 0 ? -1 : 1))}>
+                      {([url, date]) => (
+                        <DropdownMenu.Item
+                          as="button"
+                          class={styles['dropdown-menu__item']}
+                          onClick={() => openUrl(url)}
+                        >
+                          {deserializeDate(date)}
+                        </DropdownMenu.Item>
+                      )}
+                    </For>
+                  </DropdownMenu.SubContent>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Sub>
+              <DropdownMenu.Item
+                as="button"
+                closeOnSelect={false}
+                class={styles['dropdown-menu__item']}
+                onClick={() => downloadDataUri(createMidiDataUri(doc().notes), 'pianissimo.mid')}
+              >
+                Export to Midi <div class={styles['dropdown-menu__item-right-slot']}>⇧+⌘+E</div>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu>
       </div>
     </div>
   )

@@ -1,7 +1,8 @@
 import { Repo } from '@automerge/automerge-repo'
 import { BrowserWebSocketClientAdapter } from '@automerge/automerge-repo-network-websocket'
 import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-indexeddb'
-import { batch, createRoot, createSelector, createSignal } from 'solid-js'
+import { makePersisted } from '@solid-primitives/storage'
+import { batch, createEffect, createRoot, createSelector, createSignal } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import zeptoid from 'zeptoid'
@@ -17,26 +18,82 @@ export const WIDTH = 60
 export const MARGIN = 2
 export const VELOCITY = 4
 
+// Utils
+
+function serializeDate(): number {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1 // Months are zero-based
+  const date = now.getDate()
+  const hours = now.getHours()
+  const minutes = now.getMinutes()
+  const seconds = now.getSeconds()
+  const milliSeconds = now.getMilliseconds()
+
+  // Format as YYYYMMDDHHMMSS (padded with zeros)
+  const serialized = `${year}${month.toString().padStart(2, '0')}${date.toString().padStart(2, '0')}${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}${seconds.toString().padStart(2, '0')}${milliSeconds.toString().padStart(4, '0')}`
+  return Number(serialized) // Convert to a number
+}
+
+// Deserialize the number back to a readable string
+export function deserializeDate(serialized: number): string {
+  const str = serialized.toString()
+  const year = str.slice(0, 4)
+  const month = str.slice(4, 6)
+  const date = str.slice(6, 8)
+  const hours = str.slice(8, 10)
+  const minutes = str.slice(10, 12)
+  const seconds = str.slice(12, 14)
+  const milliseconds = str.slice(14, 18)
+
+  // Format as YYYY-MM-DD-HH-MM-SS
+  return `${year}-${month}-${date}-${hours}-${minutes}-${seconds}-${milliseconds}`
+}
+
 // Initialise automerge-state
 
 export const repo = new Repo({
   network: [new BrowserWebSocketClientAdapter('wss://sync.automerge.org')],
   storage: new IndexedDBStorageAdapter()
 })
-const rootDocUrl = `${document.location.hash.substring(1)}`
 
-export const [doc, setDoc, handleUrl] = createRoot(() =>
+export const {
+  document: doc,
+  setDocument: setDoc,
+  newDocument: newDoc,
+  url,
+  openUrl
+} = createRoot(() =>
   createDocumentStore<SharedState>({
     repo,
-    url: rootDocUrl,
+    url: `${document.location.hash.substring(1)}`,
     initialValue: {
       notes: [],
-      instrument: 24
+      instrument: 24,
+      get date() {
+        return serializeDate()
+      }
     }
   })
 )
 
-document.location.hash = handleUrl
+const [urls, setUrls] = makePersisted(createSignal<Record<string, number>>({}))
+
+export { urls }
+
+createRoot(() => {
+  createEffect(() => {
+    document.location.hash = url()
+  })
+  createEffect(() => {
+    if (doc().date) {
+      setUrls(urls => ({
+        ...urls,
+        [url()]: doc().date
+      }))
+    }
+  })
+})
 
 // Initialise local state
 

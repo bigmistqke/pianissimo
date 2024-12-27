@@ -18,6 +18,8 @@
     "@automerge/automerge-repo": "^1.2.1",
     "@automerge/automerge-repo-network-websocket": "^1.2.1",
     "@automerge/automerge-repo-storage-indexeddb": "^1.2.1",
+    "@kobalte/core": "^0.13.7",
+    "@solid-primitives/storage": "^4.2.1",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "cabbages": "^0.1.0",

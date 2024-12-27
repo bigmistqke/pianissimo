@@ -2,15 +2,22 @@
 
 import type { Patch } from '@automerge/automerge'
 import {
+  DocHandle,
   isValidAutomergeUrl,
   type ChangeFn,
   type Doc,
-  type DocHandle,
   type DocHandleChangePayload,
   type Repo
 } from '@automerge/automerge-repo'
 import { apply, fromAutomerge } from 'cabbages'
-import { createResource, getOwner, onCleanup, onMount, runWithOwner } from 'solid-js'
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  getOwner,
+  onCleanup,
+  runWithOwner
+} from 'solid-js'
 import { createStore, produce, type Store } from 'solid-js/store'
 
 export type DocumentStore<T> = [Store<Doc<T>>, (fn: ChangeFn<T>) => void]
@@ -35,12 +42,13 @@ export function createDocumentStore<T extends object>({
 }) {
   let owner = getOwner()
 
-  const handle: DocHandle<T> = isValidAutomergeUrl(url)
-    ? repo.find(url)
-    : repo.create<T>(initialValue)
+  const [handle, setHandle] = createSignal<DocHandle<T>>(
+    isValidAutomergeUrl(url) ? repo.find(url) : repo.create<T>(initialValue)
+  )
 
   let [document] = createResource(
-    async () => {
+    handle,
+    async handle => {
       await handle.whenReady()
 
       let [document, update] = createStore(handle.docSync() as Doc<T>)
@@ -55,33 +63,44 @@ export function createDocumentStore<T extends object>({
       return document
     },
     {
-      initialValue: handle.docSync() ?? initialValue
+      initialValue: handle().docSync() ?? initialValue
     }
   )
 
   let queue: ChangeFn<T>[] = []
 
-  onMount(async () => {
-    await handle.whenReady()
-    if (handle) {
+  createEffect(async () => {
+    await handle().whenReady()
+    if (handle()) {
       let next
       while ((next = queue.shift())) {
-        handle.change(next)
+        handle().change(next)
       }
     } else {
       queue = []
     }
   })
 
-  return [
+  return {
     document,
-    (fn: ChangeFn<T>) => {
-      if (handle.isReady()) {
-        handle.change(fn)
+    setDocument(fn: ChangeFn<T>) {
+      if (handle().isReady()) {
+        handle().change(fn)
       } else {
         queue.push(fn)
       }
     },
-    handle.url
-  ] as const
+    async newDocument() {
+      setHandle(repo.create<T>(initialValue))
+    },
+    url() {
+      return handle().url
+    },
+    async openUrl(url: string) {
+      if (!isValidAutomergeUrl(url)) {
+        throw `Url is not a valid automerge url`
+      }
+      setHandle(repo.find<T>(url))
+    }
+  }
 }
