@@ -9731,24 +9731,25 @@ const get = () => {
     return id;
 };
 
-const button = "_button_fukxc_48";
-const active = "_active_fukxc_61";
-const horizontal = "_horizontal_fukxc_83";
-const trigger = "_trigger_fukxc_102";
-const numberButton = "_numberButton_fukxc_108";
-const textContainer = "_textContainer_fukxc_123";
-const numberButtonLabel = "_numberButtonLabel_fukxc_127";
-const numberButtonValue = "_numberButtonValue_fukxc_134";
-const buttonContainer = "_buttonContainer_fukxc_150";
-const topRightHud = "_topRightHud_fukxc_232";
-const topLeftHud = "_topLeftHud_fukxc_233";
-const bottomLeftHud = "_bottomLeftHud_fukxc_234";
-const bottomRightHud = "_bottomRightHud_fukxc_286";
-const note = "_note_fukxc_323";
-const selected = "_selected_fukxc_325";
-const now$1 = "_now_fukxc_330";
-const contentHide = "_contentHide_fukxc_1";
-const contentShow = "_contentShow_fukxc_1";
+const button = "_button_i1gwz_48";
+const active = "_active_i1gwz_61";
+const horizontal = "_horizontal_i1gwz_83";
+const trigger = "_trigger_i1gwz_102";
+const numberButton = "_numberButton_i1gwz_108";
+const textContainer = "_textContainer_i1gwz_123";
+const numberButtonLabel = "_numberButtonLabel_i1gwz_127";
+const numberButtonValue = "_numberButtonValue_i1gwz_134";
+const buttonContainer = "_buttonContainer_i1gwz_150";
+const topRightHud = "_topRightHud_i1gwz_232";
+const topLeftHud = "_topLeftHud_i1gwz_233";
+const bottomLeftHud = "_bottomLeftHud_i1gwz_234";
+const bottomRightHud = "_bottomRightHud_i1gwz_286";
+const note = "_note_i1gwz_323";
+const selected = "_selected_i1gwz_325";
+const now$1 = "_now_i1gwz_330";
+const contentHide = "_contentHide_i1gwz_1";
+const contentShow = "_contentShow_i1gwz_1";
+const current = "_current_i1gwz_371";
 const styles = {
 	button: button,
 	active: active,
@@ -9766,19 +9767,20 @@ const styles = {
 	note: note,
 	selected: selected,
 	now: now$1,
-	"dropdown-menu__trigger": "_dropdown-menu__trigger_fukxc_335",
-	"dropdown-menu__content": "_dropdown-menu__content_fukxc_350",
-	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_fukxc_354",
+	"dropdown-menu__trigger": "_dropdown-menu__trigger_i1gwz_335",
+	"dropdown-menu__content": "_dropdown-menu__content_i1gwz_350",
+	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_i1gwz_354",
 	contentHide: contentHide,
 	contentShow: contentShow,
-	"dropdown-menu__item": "_dropdown-menu__item_fukxc_371",
-	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_fukxc_372",
-	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_fukxc_373",
-	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_fukxc_374",
-	"dropdown-menu__group-label": "_dropdown-menu__group-label_fukxc_404",
-	"dropdown-menu__separator": "_dropdown-menu__separator_fukxc_409",
-	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_fukxc_414",
-	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_fukxc_423"
+	"dropdown-menu__item": "_dropdown-menu__item_i1gwz_371",
+	current: current,
+	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_i1gwz_375",
+	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_i1gwz_376",
+	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_i1gwz_377",
+	"dropdown-menu__group-label": "_dropdown-menu__group-label_i1gwz_407",
+	"dropdown-menu__separator": "_dropdown-menu__separator_i1gwz_412",
+	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_i1gwz_417",
+	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_i1gwz_426"
 };
 
 // Properties of the document root object
@@ -26957,6 +26959,7 @@ const {
     initialValue: {
       notes: [],
       instrument: 24,
+      bpm: 140,
       get date() {
         return serializeDate();
       }
@@ -26969,7 +26972,7 @@ createRoot(() => {
     document.location.hash = url();
   });
   createEffect(() => {
-    if (doc().date) {
+    if (doc().date && doc().notes.length > 0) {
       setUrls((urls2) => ({
         ...urls2,
         [url()]: doc().date
@@ -26993,7 +26996,6 @@ const [playing, setPlaying] = createSignal(false);
 const [playingNotes, setPlayingNotes] = createStore([]);
 const [now, setNow] = createSignal(0);
 const [loop, setLoop] = createStore({ time: 0, duration: 4 });
-const [bpm, setBpm] = createSignal(140);
 const [volume, setVolume] = createSignal(10);
 const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
   createSelector(
@@ -27046,7 +27048,7 @@ function playNote(note, delay = 0) {
   if (!player) {
     player = new Instruments();
   }
-  if (note.volume === 0) {
+  if (note.velocity === 0) {
     return;
   }
   player.play(
@@ -27055,7 +27057,7 @@ function playNote(note, delay = 0) {
     note.pitch,
     // note: midi number or frequency in Hz (if > 127)
     // NOTE: later commit should use GainNode to change volume
-    note.volume * (volume() / 10),
+    note.velocity * (volume() / 10),
     // velocity
     delay,
     // delay
@@ -27091,7 +27093,7 @@ async function handleCreateNote(event) {
     duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
     time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale(),
-    volume: 1
+    velocity: 1
   };
   setDoc((doc2) => {
     doc2.notes.push(note);
@@ -27478,7 +27480,7 @@ function createMidiDataUri(notes) {
         length: note.duration
       }).fill(division),
       startTick: note.time * (512 / division),
-      velocity: 100
+      velocity: note.velocity / 100
     }));
   });
   const write = new MidiWriter.Writer(track);
@@ -27678,7 +27680,7 @@ function Note(props) {
             note.active = true;
           }
           if (note.id in initialNotes) {
-            note.volume = Math.min(1, Math.max(0, initialNotes[note.id].volume - delta.y / 100));
+            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100));
           }
         });
       });
@@ -27711,7 +27713,7 @@ function Note(props) {
     };
     setAttribute(_el$13, "height", HEIGHT - MARGIN * 2);
     createRenderEffect((_p$) => {
-      var _v$8 = clsx(styles.note, (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected), _v$9 = props.note.time * WIDTH + MARGIN, _v$10 = -props.note.pitch * HEIGHT + MARGIN, _v$11 = (props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2, _v$12 = !props.note._remove && props.note.active ? props.note.volume * 0.75 + 0.25 : 0.25;
+      var _v$8 = clsx(styles.note, (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected), _v$9 = props.note.time * WIDTH + MARGIN, _v$10 = -props.note.pitch * HEIGHT + MARGIN, _v$11 = (props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2, _v$12 = !props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25;
       _v$8 !== _p$.e && setAttribute(_el$13, "class", _p$.e = _v$8);
       _v$9 !== _p$.t && setAttribute(_el$13, "x", _p$.t = _v$9);
       _v$10 !== _p$.a && setAttribute(_el$13, "y", _p$.a = _v$10);
@@ -28203,7 +28205,7 @@ function TopRightHud() {
                 duration: note.duration - (cutLine - note.time),
                 pitch: note.pitch,
                 time: cutLine,
-                velocity: note.volume
+                velocity: note.velocity
               };
             });
             setDoc((doc2) => doc2.notes.push(...newNotes));
@@ -28328,12 +28330,12 @@ function BottomLeftHud() {
                               get each() {
                                 return Object.entries(urls()).sort(([, a], [, b]) => a - b > 0 ? -1 : 1);
                               },
-                              children: ([url, date]) => createComponent(DropdownMenu.Item, {
+                              children: ([_url, date]) => createComponent(DropdownMenu.Item, {
                                 as: Button,
                                 get ["class"]() {
-                                  return styles["dropdown-menu__item"];
+                                  return clsx(styles["dropdown-menu__item"], url() === _url && styles.current);
                                 },
-                                onClick: () => openUrl(url),
+                                onClick: () => openUrl(_url),
                                 get children() {
                                   return deserializeDate(date);
                                 }
@@ -28377,8 +28379,8 @@ function BottomRightHud() {
       get value() {
         return volume();
       },
-      decrement: () => setVolume((bpm2) => Math.max(0, bpm2 - 1)),
-      increment: () => setVolume((bpm2) => Math.min(10, bpm2 + 1)),
+      decrement: () => setVolume((bpm) => Math.max(0, bpm - 1)),
+      increment: () => setVolume((bpm) => Math.min(10, bpm + 1)),
       get canDecrement() {
         return volume() > 0;
       },
@@ -28389,15 +28391,15 @@ function BottomRightHud() {
     insert(_el$46, createComponent(NumberButton, {
       label: "tempo",
       get value() {
-        return bpm();
+        return doc().bpm;
       },
-      decrement: () => setBpm((bpm2) => Math.max(0, bpm2 - 1)),
-      increment: () => setBpm((bpm2) => Math.min(1e3, bpm2 + 1)),
+      decrement: () => setDoc((doc2) => doc2.bpm = Math.max(0, doc2.bpm - 1)),
+      increment: () => setDoc((doc2) => doc2.bpm = Math.min(1e3, doc2.bpm + 1)),
       get canDecrement() {
-        return bpm() > 0;
+        return doc().bpm > 0;
       },
       get canIncrement() {
-        return bpm() < 1e3;
+        return doc().bpm < 1e3;
       }
     }));
     insert(_el$47, createComponent(NumberButton, {
@@ -28486,18 +28488,18 @@ function App() {
       duration: Math.min(1, note.duration)
     })));
   }));
-  let lastVelocity = bpm() / 60;
+  let lastVelocity = doc().bpm / 60;
   createEffect(on(playing, (playing2) => {
     if (!playing2 || !audioContext) return;
     let shouldPlay = true;
-    const newVelocity = bpm() / 60;
+    const newVelocity = doc().bpm / 60;
     const currentTime = audioContext.currentTime;
     const elapsedTime = currentTime * lastVelocity - timeOffset();
     setTimeOffset(currentTime * newVelocity - elapsedTime);
     lastVelocity = newVelocity;
     function clock() {
       if (!shouldPlay) return;
-      const VELOCITY = bpm() / 60;
+      const VELOCITY = doc().bpm / 60;
       let time = audioContext.currentTime * VELOCITY - timeOffset();
       if (loop) {
         if (time < loop.time) {
