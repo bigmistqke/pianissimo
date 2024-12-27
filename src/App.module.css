@@ -32,7 +32,9 @@ body {
 
 button {
   all: unset;
-  transition: background 0.125s, color 0.125s;
+  transition:
+    background 0.125s,
+    color 0.125s;
   font-family: inherit;
 
   &:hover,
@@ -50,7 +52,6 @@ button {
 .numberButton {
   display: flex;
   justify-content: space-evenly;
-  width: 100px;
 
   & > span {
     white-space: nowrap;
@@ -132,9 +133,12 @@ button {
       display: flex;
       flex: 1;
       align-items: center;
+      min-width: var(--hud-height);
       height: var(--hud-height);
 
       & > button {
+        flex: 1;
+        min-width: var(--hud-height);
         height: var(--hud-height);
       }
     }
@@ -144,7 +148,8 @@ button {
     }
 
     & > button {
-      width: 60px;
+      flex: 1;
+      width: var(--hud-height);
       height: var(--hud-height);
     }
   }
@@ -153,9 +158,6 @@ button {
 @media screen and (max-aspect-ratio: 1 / 1) {
   .bottomRightHud {
     flex-direction: column;
-    & > div > button {
-      width: 50px !important;
-    }
   }
 }
 

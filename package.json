@@ -1,5 +1,5 @@
 {
-  "name": "piano",
+  "name": "pianissimo",
   "version": "0.1.0",
   "description": "",
   "type": "module",
@@ -9,7 +9,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "tauri": "tauri",
-    "types": "tsc --noEmit"
+    "types": "tsc --noEmit",
+    "format": "prettier -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""
   },
   "license": "MIT",
   "dependencies": {
@@ -30,11 +31,13 @@
     "@iconify-json/carbon": "^1.2.5",
     "@iconify-json/grommet-icons": "^1.2.1",
     "@tauri-apps/cli": "^2",
+    "prettier": "^3.4.2",
     "typescript": "~5.6.2",
-    "unplugin-icons": "^0.22.0",
     "unplugin-auto-import": "^0.19.0",
+    "unplugin-icons": "^0.22.0",
     "vite": "^6.0.3",
     "vite-plugin-solid": "^2.11.0",
     "vite-plugin-wasm": "^3.4.1"
-  }
+  },
+  "packageManager": "pnpm@9.1.1"
 }

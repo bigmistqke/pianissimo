@@ -20,7 +20,7 @@ export const VELOCITY = 4
 // Initialise automerge-state
 
 export const repo = new Repo({
-  network: [new BrowserWebSocketClientAdapter(import.meta.env.VITE_AUTOMERGE_URL)],
+  network: [new BrowserWebSocketClientAdapter('wss://sync.automerge.org')],
   storage: new IndexedDBStorageAdapter()
 })
 const rootDocUrl = `${document.location.hash.substring(1)}`
@@ -141,13 +141,16 @@ export function playNote(note: NoteData, delay = 0) {
 
   setTimeout(() => {
     setPlayingNotes(produce(pitches => pitches.push({ ...note })))
-    setTimeout(() => {
-      setPlayingNotes(
-        produce(pitches => {
-          pitches.splice(pitches.findIndex(filterNote(note)), 1)
-        })
-      )
-    }, (note.duration / VELOCITY) * 1000)
+    setTimeout(
+      () => {
+        setPlayingNotes(
+          produce(pitches => {
+            pitches.splice(pitches.findIndex(filterNote(note)), 1)
+          })
+        )
+      },
+      (note.duration / VELOCITY) * 1000
+    )
   }, delay * 1000)
 }
 
