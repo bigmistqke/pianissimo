@@ -17,6 +17,7 @@ body {
   --color-background: #191919;
   --color-now: #9d9d9d;
   --color-hud: #151515;
+  --color-hud-stroke: #3a3a3a;
   --color-text: #c6c6c6;
   --color-now: #c7c7c7;
 
@@ -37,19 +38,57 @@ body {
   font-family: geist;
 }
 
+* {
+  transition: border-color 1s;
+}
+
 .button {
   all: unset;
+  position: relative;
   transition:
     background 0.125s,
     color 0.125s;
+  cursor: pointer;
+  box-sizing: border-box;
   font-family: inherit;
+
+  &:focus-visible {
+    &.active::after {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      opacity: 0.25;
+      background-color: var(--color-note-selected);
+      width: 100%;
+      height: 100%;
+      content: '';
+    }
+    &::before {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      box-sizing: border-box;
+      border: 2px solid var(--color-note-selected) !important;
+      border-radius: 2px;
+      width: 100%;
+      height: 100%;
+      content: '';
+    }
+    &:not(.horizontal) + .button::before {
+      border-top: none;
+    }
+    &.horizontal + .button::before {
+      border-left: none;
+    }
+  }
 
   &:hover,
   &.active {
     background: var(--color-text) !important;
     color: var(--color-hud);
   }
-  &.inactive {
+
+  &[disabled] {
     opacity: 0.5;
     pointer-events: none;
   }
@@ -61,39 +100,101 @@ body {
 }
 
 .numberButton {
-  display: flex;
   position: relative;
   justify-content: space-evenly;
   align-items: center;
-  gap: calc(var(--hud-height) / 3);
+  cursor: pointer;
+  height: var(--hud-height);
+  user-select: none;
 
-  & > span {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    /* Optical padding */
-    margin-top: -3px;
-    pointer-events: none;
-    white-space: nowrap;
+  & > div {
+    display: flex;
+    align-content: center;
+    width: 100%;
+    height: 100%;
   }
-  & > button {
-    all: unset;
-    width: var(--hud-height);
-    height: var(--hud-height);
-    color: var(--color-stroke);
 
-    &:hover {
-      opacity: 1;
-      background: inherit;
-      color: var(--color-text);
+  & > .textContainer {
+    position: absolute;
+    flex-direction: column;
+
+    & > .numberButtonLabel {
+      /* Optical padding */
+      padding-top: 3px;
+      pointer-events: none;
+      font-size: 8pt;
     }
-    &:first-child {
-      margin-left: -5px;
-      padding-right: 10px;
+
+    & > .numberButtonValue {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      /* Optical padding */
+      padding-bottom: 1px;
     }
-    &:last-child {
-      margin-right: -5px;
-      padding-left: 10px;
+
+    & > .numberButtonLabel,
+    & > .numberButtonValue {
+      pointer-events: none;
+      white-space: nowrap;
+    }
+  }
+
+  & > .buttonContainer {
+    position: relative;
+
+    & > button {
+      all: unset;
+      display: flex;
+      border: 2px solid transparent;
+      /* Optical Padding */
+      padding-bottom: 2px;
+      width: var(--hud-height);
+      color: var(--color-stroke);
+
+      &:focus-visible {
+        border: 2px solid var(--color-note-selected);
+
+        &:first-child {
+          border-right: 2px solid transparent;
+        }
+
+        &:last-child {
+          border-left: 2px solid transparent;
+        }
+      }
+
+      &:first-child {
+        padding-left: 2px;
+      }
+
+      &:last-child {
+        padding-right: 2px;
+      }
+
+      & > div {
+        display: flex;
+        flex: 1;
+      }
+
+      &:first-child {
+        padding-left: 2px;
+      }
+
+      &:last-child {
+        padding-right: 2px;
+
+        & > div {
+          justify-content: flex-end;
+        }
+      }
+
+      &:hover {
+        opacity: 1;
+        background: inherit;
+        color: var(--color-text);
+      }
     }
   }
 }
@@ -116,7 +217,7 @@ body {
   & > div {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--color-stroke);
+    border: 1px solid var(--color-hud-stroke);
     border-radius: 3px;
     overflow: hidden;
     color: var(--color-text);
@@ -127,8 +228,17 @@ body {
       width: var(--hud-height);
       height: var(--hud-height);
 
-      &:not(:last-child) {
-        border-bottom: 1px solid var(--color-stroke);
+      &:not(:first-child) {
+        &::before {
+          position: absolute;
+          top: 0px;
+          left: 0px;
+          box-sizing: border-box;
+          border-top: 1px solid var(--color-hud-stroke);
+          width: 100%;
+          height: 100%;
+          content: '';
+        }
       }
     }
   }
@@ -160,19 +270,20 @@ body {
   & > div {
     display: flex;
 
-    border: 1px solid var(--color-stroke);
+    border: 1px solid var(--color-hud-stroke);
     border-radius: 3px;
     background: var(--color-hud);
     overflow: hidden;
     color: var(--color-text);
     text-align: center;
 
-    & > *:not(:last-child) {
-      border-right: 1px solid var(--color-stroke);
+    & > *:not(:first-child) {
+      border-left: 1px solid var(--color-hud-stroke);
     }
 
     & > button {
       flex: 1;
+      box-sizing: border-box;
       width: var(--hud-height);
       height: var(--hud-height);
     }
@@ -222,7 +333,7 @@ body {
   transform-origin: var(--kb-menu-content-transform-origin);
   animation: contentHide 250ms ease-in forwards;
   outline: none;
-  border: 1px solid var(--color-stroke);
+  border: 1px solid var(--color-hud-stroke);
   border-radius: 3px;
   background-color: var(--color-hud);
   min-width: 220px;

@@ -113,6 +113,7 @@ function ActionButton(
     ): void
     class?: string
     style?: JSX.CSSProperties
+    disabled?: boolean
   }>
 ) {
   const [trigger, setTrigger] = createSignal(false)
@@ -120,6 +121,7 @@ function ActionButton(
     <Button
       class={clsx(props.class, trigger() && styles.trigger)}
       style={props.style}
+      disabled={props.disabled}
       onClick={event => {
         setTrigger(true)
         props.onClick(event)
@@ -131,16 +133,33 @@ function ActionButton(
   )
 }
 
-function NumberButton(props: { increment(): void; decrement(): void; value: string | number }) {
+function NumberButton(props: {
+  increment(): void
+  decrement(): void
+  value: string | number
+  label: string
+}) {
   return (
-    <div class={styles.numberButton}>
-      <button onClick={props.decrement}>
-        <IconGrommetIconsFormPreviousLink />
-      </button>
-      <span>{props.value}</span>
-      <button onClick={props.increment}>
-        <IconGrommetIconsFormNextLink />
-      </button>
+    <div class={styles.numberButton} style={{ display: 'flex', 'flex-direction': 'column' }}>
+      <div class={styles.textContainer} style={{ 'flex-direction': 'column' }}>
+        <label class={styles.numberButtonLabel}>{props.label}</label>
+        <span class={styles.numberButtonValue}>{props.value}</span>
+      </div>
+      <div class={styles.buttonContainer}>
+        {/* style={{ position: 'relative' }}> */}
+        <button onClick={props.decrement} style={{ display: 'flex', 'flex-direction': 'column' }}>
+          <div />
+          <div>
+            <IconGrommetIconsFormPreviousLink />
+          </div>
+        </button>
+        <button onClick={props.increment} style={{ display: 'flex', 'flex-direction': 'column' }}>
+          <div />
+          <div>
+            <IconGrommetIconsFormNextLink />
+          </div>
+        </button>
+      </div>
     </div>
   )
 }
@@ -678,10 +697,8 @@ function TopLeftHud() {
         </ActionButton>
         <Show when={mode() === 'select'}>
           <ActionButton
-            class={clsx(
-              mode() === 'stretch' && styles.active,
-              selectionArea() === undefined && styles.inactive
-            )}
+            disabled={selectionArea() === undefined}
+            class={clsx(mode() === 'stretch' && styles.active)}
             onClick={() => {
               const area = selectionArea()
               if (!area) {
@@ -747,10 +764,8 @@ function TopRightHud() {
               }}
             >
               <ActionButton
-                class={clsx(
-                  mode() === 'stretch' && styles.active,
-                  !hasClipboardAndPresence() && styles.inactive
-                )}
+                disabled={!hasClipboardAndPresence()}
+                class={clsx(mode() === 'stretch' && styles.active)}
                 onClick={() => {
                   const _clipboardAndPresence = clipboardAndPresence()
                   if (!_clipboardAndPresence) return
@@ -760,10 +775,8 @@ function TopRightHud() {
                 <IconGrommetIconsCopy />
               </ActionButton>
               <ActionButton
-                class={clsx(
-                  mode() === 'stretch' && styles.active,
-                  selectedNotes().length === 0 && styles.inactive
-                )}
+                disabled={selectedNotes().length === 0}
+                class={clsx(mode() === 'stretch' && styles.active)}
                 onClick={copyNotes}
               >
                 <IconGrommetIconsClipboard />
@@ -775,7 +788,7 @@ function TopRightHud() {
       <Show when={mode() === 'select'}>
         <div>
           <ActionButton
-            class={selectedNotes().length === 0 ? styles.inactive : undefined}
+            disabled={selectedNotes().length === 0}
             onClick={() => {
               const cutLine = selectionArea()?.start.x
 
@@ -812,7 +825,7 @@ function TopRightHud() {
             <IconGrommetIconsCut />
           </ActionButton>
           <ActionButton
-            class={selectedNotes().length === 0 ? styles.inactive : undefined}
+            disabled={selectedNotes().length === 0}
             onClick={() => {
               setDoc(doc => {
                 for (let index = doc.notes.length - 1; index >= 0; index--) {
@@ -827,7 +840,7 @@ function TopRightHud() {
             <IconGrommetIconsErase />
           </ActionButton>
           <ActionButton
-            class={selectedNotes().length === 0 ? styles.inactive : undefined}
+            disabled={selectedNotes().length === 0}
             onClick={() => {
               let inactiveSelectedNotes = 0
               selectedNotes().forEach(note => {
@@ -909,6 +922,7 @@ function BottomRightHud() {
     <div class={styles.bottomRightHud}>
       <div>
         <NumberButton
+          label="measure"
           value={timeScale() < 1 ? `1:${1 / timeScale()}` : timeScale()}
           decrement={() => setTimeScale(duration => duration / 2)}
           increment={() => setTimeScale(duration => duration * 2)}
@@ -916,6 +930,7 @@ function BottomRightHud() {
       </div>
       <div>
         <NumberButton
+          label="instrument"
           value={doc().instrument.toString().padStart(3, '0')}
           decrement={() => {
             if (doc().instrument > 0) {
@@ -943,6 +958,7 @@ function BottomRightHud() {
       </div>
       <div>
         <Button
+          class={styles.horizontal}
           onClick={() => {
             setNow(loop.time)
             setPlaying(false)
@@ -951,7 +967,7 @@ function BottomRightHud() {
         >
           <IconGrommetIconsStop />
         </Button>
-        <Button onClick={togglePlaying}>
+        <Button class={styles.horizontal} onClick={togglePlaying}>
           {!playing() ? <IconGrommetIconsPlay /> : <IconGrommetIconsPause />}
         </Button>
       </div>
@@ -1068,8 +1084,8 @@ function App() {
     <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
       <TopLeftHud />
       <TopRightHud />
-      <BottomRightHud />
       <BottomLeftHud />
+      <BottomRightHud />
       <svg
         style={{ width: '100%', height: '100%', overflow: 'hidden' }}
         ref={element => {
