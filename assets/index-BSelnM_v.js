@@ -28218,7 +28218,7 @@ function BottomLeftHud() {
     insert(_el$33, createComponent(DropdownMenu, {
       get children() {
         return [createComponent(DropdownMenu.Trigger, {
-          as: "button",
+          as: Button,
           onClick: () => setTimeScale((duration) => duration / 2),
           get children() {
             return createComponent(IconGrommetIconsMenu, {});
@@ -28231,7 +28231,7 @@ function BottomLeftHud() {
               },
               get children() {
                 return [createComponent(DropdownMenu.Item, {
-                  as: "button",
+                  as: Button,
                   get ["class"]() {
                     return styles["dropdown-menu__item"];
                   },
@@ -28249,7 +28249,7 @@ function BottomLeftHud() {
                   shift: -8,
                   get children() {
                     return [createComponent(DropdownMenu.SubTrigger, {
-                      as: "button",
+                      as: Button,
                       get ["class"]() {
                         return styles["dropdown-menu__sub-trigger"];
                       },
@@ -28272,7 +28272,7 @@ function BottomLeftHud() {
                                 return Object.entries(urls()).sort(([, a], [, b]) => a - b > 0 ? -1 : 1);
                               },
                               children: ([url, date]) => createComponent(DropdownMenu.Item, {
-                                as: "button",
+                                as: Button,
                                 get ["class"]() {
                                   return styles["dropdown-menu__item"];
                                 },
@@ -28288,7 +28288,7 @@ function BottomLeftHud() {
                     })];
                   }
                 }), createComponent(DropdownMenu.Item, {
-                  as: "button",
+                  as: Button,
                   closeOnSelect: false,
                   get ["class"]() {
                     return styles["dropdown-menu__item"];
