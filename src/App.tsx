@@ -677,14 +677,12 @@ function TopLeftHud() {
         </ActionButton>
       </div>
       <Show when={mode() === 'select'}>
-        <div
-          style={{
-            opacity: isSelectionAreaCyclable() ? 0.5 : undefined,
-            'pointer-events': isSelectionAreaCyclable() ? 'none' : undefined
-          }}
-        >
+        <div>
           <ActionButton
-            class={mode() === 'stretch' ? styles.active : undefined}
+            class={clsx(
+              mode() === 'stretch' && styles.active,
+              isSelectionAreaCyclable() && styles.inactive
+            )}
             onClick={() => {
               const area = selectionArea()
               if (!area) {
@@ -721,10 +719,7 @@ function TopRightHud() {
         >
           <IconGrommetIconsSelect />
         </button>
-        <button
-          class={mode() === 'stretch' ? styles.active : undefined}
-          onClick={() => setMode('stretch')}
-        >
+        <button class={mode() === 'stretch' && styles.active} onClick={() => setMode('stretch')}>
           <IconGrommetIconsShift />
         </button>
         <button
@@ -737,44 +732,48 @@ function TopRightHud() {
           <IconGrommetIconsPan />
         </button>
       </div>
-      <Show
-        when={
-          mode() === 'select' &&
-          clipboard() &&
-          selectionPresence() &&
-          ([clipboard()!, selectionPresence()!] as const)
-        }
-      >
-        {clipboardAndPresence => (
-          <div
-            style={{
-              display: 'grid',
-              'grid-template-rows': `${HEIGHT * 2 - 2}px`
-            }}
-          >
-            <ActionButton
-              class={mode() === 'stretch' ? styles.active : undefined}
-              onClick={() => pasteNotes(...clipboardAndPresence())}
+      <Show when={mode() === 'select'}>
+        {_ => {
+          const hasClipboardAndPresence = () => clipboard() && selectionPresence()
+          const clipboardAndPresence = () =>
+            hasClipboardAndPresence() && ([clipboard()!, selectionPresence()!] as const)
+          return (
+            <div
+              style={{
+                display: 'grid',
+                'grid-template-rows': `${HEIGHT * 2 - 2}px`
+              }}
             >
-              <IconGrommetIconsCopy />
-            </ActionButton>
-          </div>
-        )}
+              <ActionButton
+                class={clsx(
+                  mode() === 'stretch' && styles.active,
+                  !hasClipboardAndPresence() && styles.inactive
+                )}
+                onClick={() => {
+                  const _clipboardAndPresence = clipboardAndPresence()
+                  if (!_clipboardAndPresence) return
+                  pasteNotes(..._clipboardAndPresence)
+                }}
+              >
+                <IconGrommetIconsCopy />
+              </ActionButton>
+              <ActionButton
+                class={clsx(
+                  mode() === 'stretch' && styles.active,
+                  selectedNotes().length === 0 && styles.inactive
+                )}
+                onClick={copyNotes}
+              >
+                <IconGrommetIconsClipboard />
+              </ActionButton>
+            </div>
+          )
+        }}
       </Show>
       <Show when={mode() === 'select'}>
-        <div
-          style={{
-            opacity: selectedNotes().length === 0 ? 0.5 : undefined,
-            'pointer-events': selectedNotes().length === 0 ? 'none' : undefined
-          }}
-        >
+        <div>
           <ActionButton
-            class={mode() === 'stretch' ? styles.active : undefined}
-            onClick={copyNotes}
-          >
-            <IconGrommetIconsClipboard />
-          </ActionButton>
-          <ActionButton
+            class={selectedNotes().length === 0 ? styles.inactive : undefined}
             onClick={() => {
               const cutLine = selectionArea()?.start.x
 
@@ -811,6 +810,7 @@ function TopRightHud() {
             <IconGrommetIconsCut />
           </ActionButton>
           <ActionButton
+            class={selectedNotes().length === 0 ? styles.inactive : undefined}
             onClick={() => {
               setDoc(doc => {
                 for (let index = doc.notes.length - 1; index >= 0; index--) {
@@ -825,6 +825,7 @@ function TopRightHud() {
             <IconGrommetIconsErase />
           </ActionButton>
           <ActionButton
+            class={selectedNotes().length === 0 ? styles.inactive : undefined}
             onClick={() => {
               let inactiveSelectedNotes = 0
               selectedNotes().forEach(note => {

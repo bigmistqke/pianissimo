@@ -26,6 +26,7 @@ A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/sol
 - [ ] change tempo/bpm
 - [ ] change measure
 - [ ] change volume
+- [ ] zoom (pinch on mobile?)
 - [ ] theming
   - [x] dark mode
   - [ ] light mode
