@@ -100,8 +100,7 @@ export function selectNotesFromSelectionArea(area: SelectionArea) {
     doc().notes.filter(note => {
       const noteStartTime = note.time
       const noteEndTime = note.time + note.duration
-      const isWithinXBounds =
-        noteStartTime < area.end.x + timeScale() && noteEndTime >= area.start.x
+      const isWithinXBounds = noteStartTime < area.end.x + timeScale() && noteEndTime > area.start.x
       const isWithinYBounds = -note.pitch >= area.start.y && -note.pitch <= area.end.y
       return isWithinXBounds && isWithinYBounds
     })
