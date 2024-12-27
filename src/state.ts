@@ -114,14 +114,12 @@ export const [selectionPresence, setSelectionPresence] = createSignal<Vector>()
 export const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
 
 // Play-related state
-export const [bpm, setBpm] = createSignal(140)
 export const [playing, setPlaying] = createSignal(false)
 export const [playingNotes, setPlayingNotes] = createStore<Array<NoteData>>([])
 export const [now, setNow] = createSignal(0)
-export const [loop, setLoop] = createStore<Loop>({
-  time: 0,
-  duration: 4
-})
+export const [loop, setLoop] = createStore<Loop>({ time: 0, duration: 4 })
+export const [bpm, setBpm] = createSignal(140)
+export const [volume, setVolume] = createSignal(10)
 
 // Selectors
 
@@ -190,7 +188,8 @@ export function playNote(note: NoteData, delay = 0) {
   player.play(
     doc().instrument, // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch, // note: midi number or frequency in Hz (if > 127)
-    note.volume, // velocity
+    // NOTE: later commit should use GainNode to change volume
+    note.volume * (volume() / 10), // velocity
     delay, // delay
     note.duration / VELOCITY, // duration
     0, // (optional - specify channel for tinysynth to use)

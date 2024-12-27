@@ -69,11 +69,13 @@ import {
   setSelectionPresence,
   setTimeOffset,
   setTimeScale,
+  setVolume,
   sortNotes,
   timeOffset,
   timeScale,
   togglePlaying,
   urls,
+  volume,
   WIDTH
 } from './state'
 import { Loop, NoteData } from './types'
@@ -137,6 +139,8 @@ function ActionButton(
 function NumberButton(props: {
   increment(): void
   decrement(): void
+  canIncrement?: boolean
+  canDecrement?: boolean
   value: string | number
   label: string
 }) {
@@ -158,6 +162,7 @@ function NumberButton(props: {
       </div>
       <div class={styles.buttonContainer}>
         <button
+          disabled={props.canDecrement === false}
           onPointerDown={event => handleLongPress(event, props.decrement)}
           onClick={props.decrement}
           style={{ display: 'flex', 'flex-direction': 'column' }}
@@ -168,6 +173,7 @@ function NumberButton(props: {
           </div>
         </button>
         <button
+          disabled={props.canIncrement === false}
           onPointerDown={event => handleLongPress(event, props.increment)}
           onClick={props.increment}
           style={{ display: 'flex', 'flex-direction': 'column' }}
@@ -922,18 +928,31 @@ function BottomRightHud() {
     <div class={styles.bottomRightHud}>
       <div>
         <NumberButton
-          label="tempo"
-          value={bpm()}
-          decrement={() => setBpm(bpm => Math.max(0, bpm - 1))}
-          increment={() => setBpm(bpm => Math.min(1000, bpm + 1))}
+          label="volume"
+          value={volume()}
+          decrement={() => setVolume(bpm => Math.max(0, bpm - 1))}
+          increment={() => setVolume(bpm => Math.min(10, bpm + 1))}
+          canDecrement={volume() > 0}
+          canIncrement={volume() < 10}
         />
       </div>
       <div>
         <NumberButton
-          label="measure"
+          label="tempo"
+          value={bpm()}
+          decrement={() => setBpm(bpm => Math.max(0, bpm - 1))}
+          increment={() => setBpm(bpm => Math.min(1000, bpm + 1))}
+          canDecrement={bpm() > 0}
+          canIncrement={bpm() < 1000}
+        />
+      </div>
+      <div>
+        <NumberButton
+          label="grid"
           value={timeScale() / 8 < 1 ? `1:${1 / (timeScale() / 8)}` : timeScale() / 8}
           decrement={() => setTimeScale(duration => Math.max(duration / 2, 8 / 128))}
           increment={() => setTimeScale(duration => duration * 2)}
+          canDecrement={timeScale() > 8 / 128}
         />
       </div>
       <div>

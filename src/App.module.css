@@ -161,6 +161,11 @@ body {
       width: var(--hud-height);
       color: var(--color-stroke);
 
+      &[disabled] {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
       & > div {
         display: flex;
         flex: 1;

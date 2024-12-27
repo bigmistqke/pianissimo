@@ -23,15 +23,13 @@ A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/sol
     - how to implement undo/redo with automerge?
     - research: https://www.youtube.com/watch?v=uP7AKExkMGU
     - tried https://github.com/onsetsoftware/automerge-repo-undo-redo but created `conflict` patches
-- [ ] change tempo/bpm
+- [x] change tempo/bpm
+- [x] change volume
 - [ ] change measure
-- [ ] change volume
 - [ ] zoom (pinch on mobile?)
 - [ ] theming
   - [x] dark mode
   - [ ] light mode
-- [ ] desktop mode/mobile mode
-  - we develop mobile-first since it's trickier to pull of right
 
 # 💡 Feature Ideas
 
@@ -40,6 +38,8 @@ A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/sol
 - [ ] load from midi
 - [ ] `WebMidi`
 - [ ] different color schemes
+- [ ] desktop mode/mobile mode
+  - we develop mobile-first since it's trickier to pull of right
 - [ ] record jam to a new sequence
   - it's fun to let a loop play and play around with it (mute parts, extend notes, ...)
   - it would be cool to be able to record all these jams into a new sequence
