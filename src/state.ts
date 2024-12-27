@@ -86,7 +86,7 @@ createRoot(() => {
     document.location.hash = url()
   })
   createEffect(() => {
-    if (doc().date) {
+    if (doc().date && doc().notes.length > 0) {
       setUrls(urls => ({
         ...urls,
         [url()]: doc().date

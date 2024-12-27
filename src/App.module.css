@@ -368,6 +368,9 @@ body {
 .dropdown-menu__sub-content[data-expanded] {
   animation: contentShow 250ms ease-out;
 }
+.dropdown-menu__item.current {
+  border-right: 2px solid var(--color-stroke);
+}
 .dropdown-menu__item,
 .dropdown-menu__checkbox-item,
 .dropdown-menu__radio-item,

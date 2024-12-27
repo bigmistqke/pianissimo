@@ -74,6 +74,7 @@ import {
   timeOffset,
   timeScale,
   togglePlaying,
+  url,
   urls,
   volume,
   WIDTH
@@ -894,11 +895,14 @@ function BottomLeftHud() {
                 <DropdownMenu.Portal>
                   <DropdownMenu.SubContent class={styles['dropdown-menu__sub-content']}>
                     <For each={Object.entries(urls()).sort(([, a], [, b]) => (a - b > 0 ? -1 : 1))}>
-                      {([url, date]) => (
+                      {([_url, date]) => (
                         <DropdownMenu.Item
                           as={Button}
-                          class={styles['dropdown-menu__item']}
-                          onClick={() => openUrl(url)}
+                          class={clsx(
+                            styles['dropdown-menu__item'],
+                            url() === _url && styles.current
+                          )}
+                          onClick={() => openUrl(_url)}
                         >
                           {deserializeDate(date)}
                         </DropdownMenu.Item>
