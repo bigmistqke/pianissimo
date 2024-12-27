@@ -1066,8 +1066,8 @@ function App() {
                   <rect
                     x={area().start.x * WIDTH + origin().x}
                     y={area().start.y * HEIGHT + origin().y}
-                    width={(area().end.x - area().start.x) * WIDTH + timeScale() * WIDTH}
-                    height={(area().end.y - area().start.y + 1) * HEIGHT}
+                    width={(area().end.x - area().start.x) * WIDTH}
+                    height={(area().end.y - area().start.y) * HEIGHT}
                     opacity={0.3}
                     fill="var(--color-selection-area)"
                   />

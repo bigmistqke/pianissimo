@@ -100,8 +100,8 @@ export function selectNotesFromSelectionArea(area: SelectionArea) {
     doc().notes.filter(note => {
       const noteStartTime = note.time
       const noteEndTime = note.time + note.duration
-      const isWithinXBounds = noteStartTime < area.end.x + timeScale() && noteEndTime > area.start.x
-      const isWithinYBounds = -note.pitch >= area.start.y && -note.pitch <= area.end.y
+      const isWithinXBounds = noteStartTime < area.end.x && noteEndTime > area.start.x
+      const isWithinYBounds = -note.pitch >= area.start.y && -note.pitch < area.end.y
       return isWithinXBounds && isWithinYBounds
     })
   )
@@ -215,13 +215,16 @@ export async function handleSelectionBox(event: PointerEvent) {
   const normalizedPosition = normalizeVector(position)
   setSelectionArea({
     start: normalizedPosition,
-    end: normalizedPosition
+    end: {
+      x: normalizedPosition.x + timeScale(),
+      y: normalizedPosition.y
+    }
   })
   setSelectionPresence(normalizedPosition)
   await pointerHelper(event, ({ delta }) => {
     const newPosition = normalizeVector({
       x: position.x + delta.x,
-      y: position.y + delta.y
+      y: position.y + delta.y + 1
     })
     const area = {
       start: {
@@ -229,8 +232,8 @@ export async function handleSelectionBox(event: PointerEvent) {
         y: delta.y < 0 ? newPosition.y : normalizedPosition.y
       },
       end: {
-        x: delta.x > 0 ? newPosition.x : normalizedPosition.x,
-        y: delta.y > 0 ? newPosition.y : normalizedPosition.y
+        x: (delta.x > 0 ? newPosition.x : normalizedPosition.x) + timeScale(),
+        y: (delta.y > 0 ? newPosition.y : normalizedPosition.y) + 1
       }
     }
     selectNotesFromSelectionArea(area)
