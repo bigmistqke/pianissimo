@@ -1,6 +1,6 @@
 # 🎹 Pianissimo
 
-A pianoroll web app build with `solid-js`.
+A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/solid) and [automerge](https://github.com/automerge/automerge).
 
 # 📝 TODO
 

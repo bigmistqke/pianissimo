@@ -1,3 +1,8 @@
+@font-face {
+  src: url(assets/GeistMono-Regular.otf);
+  font-family: geist;
+}
+
 body {
   --color-stroke: #6c6c6c;
   --color-stroke-secondary: #303030;
@@ -27,7 +32,7 @@ body {
   height: 100vh;
   overscroll-behavior-x: none;
   overscroll-behavior-y: none;
-  font-family: Helvetica;
+  font-family: geist;
 }
 
 button {
@@ -51,13 +56,38 @@ button {
 
 .numberButton {
   display: flex;
+  position: relative;
   justify-content: space-evenly;
+  align-items: center;
+  gap: calc(var(--hud-height) / 3);
 
   & > span {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    /* Optical padding */
+    margin-top: -3px;
+    pointer-events: none;
     white-space: nowrap;
   }
-  & > * {
-    flex: 1;
+  & > button {
+    width: var(--hud-height);
+    height: var(--hud-height);
+    color: var(--color-stroke);
+
+    &:hover {
+      opacity: 1;
+      background: inherit;
+      color: var(--color-text);
+    }
+    &:first-child {
+      margin-left: -5px;
+      padding-right: 10px;
+    }
+    &:last-child {
+      margin-right: -5px;
+      padding-left: 10px;
+    }
   }
 }
 
@@ -129,19 +159,6 @@ button {
     overflow: hidden;
     color: var(--color-text);
     text-align: center;
-    & > div {
-      display: flex;
-      flex: 1;
-      align-items: center;
-      min-width: var(--hud-height);
-      height: var(--hud-height);
-
-      & > button {
-        flex: 1;
-        min-width: var(--hud-height);
-        height: var(--hud-height);
-      }
-    }
 
     & > *:not(:last-child) {
       border-right: 1px solid var(--color-stroke);

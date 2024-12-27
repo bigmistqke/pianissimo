@@ -870,7 +870,7 @@ function BottomRightHud() {
       </div>
       <div>
         <NumberButton
-          value={doc().instrument}
+          value={doc().instrument.toString().padStart(3, '0')}
           decrement={() => {
             if (doc().instrument > 0) {
               setDoc(doc => {
