@@ -19,6 +19,7 @@ body {
 
   --width: 60px;
   --height: 20px;
+  --hud-height: 40px;
 
   margin: 0px;
   background: var(--color-background);
@@ -49,15 +50,13 @@ button {
 .numberButton {
   display: flex;
   justify-content: space-evenly;
-  width: 90px;
+  width: 100px;
 
   & > span {
     white-space: nowrap;
   }
   & > * {
     flex: 1;
-    padding-top: 5px;
-    padding-bottom: 5px;
   }
 }
 
@@ -87,8 +86,8 @@ button {
     text-align: center;
 
     & > button {
-      width: calc(var(--height) * 2 - 2px);
-      height: calc(var(--height) * 2 - 2px);
+      width: var(--hud-height);
+      height: var(--hud-height);
 
       &:not(:last-child) {
         border-bottom: 1px solid var(--color-stroke);
@@ -122,20 +121,40 @@ button {
 
   & > div {
     display: flex;
+
     border: 1px solid var(--color-stroke);
     border-radius: 3px;
     background: var(--color-hud);
     overflow: hidden;
     color: var(--color-text);
     text-align: center;
+    & > div {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      height: var(--hud-height);
+
+      & > button {
+        height: var(--hud-height);
+      }
+    }
 
     & > *:not(:last-child) {
       border-right: 1px solid var(--color-stroke);
     }
 
     & > button {
-      padding: 5px 0px;
       width: 60px;
+      height: var(--hud-height);
+    }
+  }
+}
+
+@media screen and (max-aspect-ratio: 1 / 1) {
+  .bottomRightHud {
+    flex-direction: column;
+    & > div > button {
+      width: 50px !important;
     }
   }
 }
