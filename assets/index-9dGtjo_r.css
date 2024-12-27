@@ -45,18 +45,22 @@ button {
   font-family: inherit;
 
   &:hover,
-  &._active_16seo_48 {
-    background: var(--color-text);
+  &._active_13s0n_48 {
+    background: var(--color-text) !important;
     color: var(--color-hud);
   }
+  &._inactive_13s0n_52 {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 
-  &._trigger_16seo_53 {
+  &._trigger_13s0n_57 {
     background: var(--color-note-selected);
     color: var(--color-hud);
   }
 }
 
-._numberButton_16seo_59 {
+._numberButton_13s0n_63 {
   display: flex;
   position: relative;
   justify-content: space-evenly;
@@ -99,9 +103,9 @@ button {
   overflow: hidden;
 }
 
-._topRightHud_16seo_102,
-._topLeftHud_16seo_103,
-._bottomLeftHud_16seo_104 {
+._topRightHud_13s0n_106,
+._topLeftHud_13s0n_107,
+._bottomLeftHud_13s0n_108 {
   display: flex;
   position: fixed;
   flex-direction: column;
@@ -113,12 +117,12 @@ button {
     flex-direction: column;
     border: 1px solid var(--color-stroke);
     border-radius: 3px;
-    background: var(--color-hud);
     overflow: hidden;
     color: var(--color-text);
     text-align: center;
 
     & > button {
+      background: var(--color-hud);
       width: var(--hud-height);
       height: var(--hud-height);
 
@@ -129,22 +133,22 @@ button {
   }
 }
 
-._topLeftHud_16seo_103 {
+._topLeftHud_13s0n_107 {
   top: 0px;
   left: var(--width);
 }
 
-._topRightHud_16seo_102 {
+._topRightHud_13s0n_106 {
   top: var(--height);
   right: 0px;
 }
 
-._bottomLeftHud_16seo_104 {
+._bottomLeftHud_13s0n_108 {
   bottom: 0px;
   left: var(--width);
 }
 
-._bottomRightHud_16seo_147 {
+._bottomRightHud_13s0n_151 {
   display: flex;
   position: fixed;
   right: 0px;
@@ -175,24 +179,24 @@ button {
 }
 
 @media screen and (max-aspect-ratio: 1 / 1) {
-  ._bottomRightHud_16seo_147 {
+  ._bottomRightHud_13s0n_151 {
     flex-direction: column;
   }
 }
 
-._note_16seo_183 {
+._note_13s0n_187 {
   fill: var(--color-note);
-  &._selected_16seo_185 {
+  &._selected_13s0n_189 {
     fill: var(--color-note-selected);
   }
 }
 
-._now_16seo_190 {
+._now_13s0n_194 {
   fill: var(--color-now);
   pointer-events: none;
 }
 
-._dropdown-menu__trigger_16seo_195 {
+._dropdown-menu__trigger_13s0n_199 {
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -207,15 +211,15 @@ button {
   overflow: hidden;
   line-height: 0;
 }
-._dropdown-menu__content_16seo_210 {
+._dropdown-menu__content_13s0n_214 {
   margin-bottom: 10px;
 }
-._dropdown-menu__content_16seo_210,
-._dropdown-menu__sub-content_16seo_214 {
+._dropdown-menu__content_13s0n_214,
+._dropdown-menu__sub-content_13s0n_218 {
   display: flex;
   flex-direction: column;
   transform-origin: var(--kb-menu-content-transform-origin);
-  animation: _contentHide_16seo_1 250ms ease-in forwards;
+  animation: _contentHide_13s0n_1 250ms ease-in forwards;
   outline: none;
   border: 1px solid var(--color-stroke);
   border-radius: 3px;
@@ -224,14 +228,14 @@ button {
   overflow: hidden;
   color: var(--color-text);
 }
-._dropdown-menu__content_16seo_210[data-expanded],
-._dropdown-menu__sub-content_16seo_214[data-expanded] {
-  animation: _contentShow_16seo_1 250ms ease-out;
+._dropdown-menu__content_13s0n_214[data-expanded],
+._dropdown-menu__sub-content_13s0n_218[data-expanded] {
+  animation: _contentShow_13s0n_1 250ms ease-out;
 }
-._dropdown-menu__item_16seo_231,
-._dropdown-menu__checkbox-item_16seo_232,
-._dropdown-menu__radio-item_16seo_233,
-._dropdown-menu__sub-trigger_16seo_234 {
+._dropdown-menu__item_13s0n_235,
+._dropdown-menu__checkbox-item_13s0n_236,
+._dropdown-menu__radio-item_13s0n_237,
+._dropdown-menu__sub-trigger_13s0n_238 {
   display: flex;
   position: relative;
   align-items: center;
@@ -241,37 +245,37 @@ button {
   line-height: 1;
   user-select: none;
 }
-._dropdown-menu__sub-trigger_16seo_234[data-expanded] {
+._dropdown-menu__sub-trigger_13s0n_238[data-expanded] {
   background-color: var(--color-text);
   color: var(--color-hud);
   /* background-color: hsl(204 94% 94%); */
   /* color: hsl(201 96% 32%); */
 }
-._dropdown-menu__item_16seo_231[data-disabled],
-._dropdown-menu__checkbox-item_16seo_232[data-disabled],
-._dropdown-menu__radio-item_16seo_233[data-disabled],
-._dropdown-menu__sub-trigger_16seo_234[data-disabled] {
+._dropdown-menu__item_13s0n_235[data-disabled],
+._dropdown-menu__checkbox-item_13s0n_236[data-disabled],
+._dropdown-menu__radio-item_13s0n_237[data-disabled],
+._dropdown-menu__sub-trigger_13s0n_238[data-disabled] {
   opacity: 0.5;
   pointer-events: none;
 }
-._dropdown-menu__item_16seo_231[data-highlighted],
-._dropdown-menu__checkbox-item_16seo_232[data-highlighted],
-._dropdown-menu__radio-item_16seo_233[data-highlighted],
-._dropdown-menu__sub-trigger_16seo_234[data-highlighted] {
+._dropdown-menu__item_13s0n_235[data-highlighted],
+._dropdown-menu__checkbox-item_13s0n_236[data-highlighted],
+._dropdown-menu__radio-item_13s0n_237[data-highlighted],
+._dropdown-menu__sub-trigger_13s0n_238[data-highlighted] {
   outline: none;
   /* background-color: hsl(200 98% 39%); */
 }
-._dropdown-menu__group-label_16seo_264 {
+._dropdown-menu__group-label_13s0n_268 {
   padding: 0 24px;
   /* color: hsl(240 4% 46%); */
   line-height: 32px;
 }
-._dropdown-menu__separator_16seo_269 {
+._dropdown-menu__separator_13s0n_273 {
   margin: 6px;
   border-top: 1px solid hsl(240 6% 90%);
   height: 1px;
 }
-._dropdown-menu__item-indicator_16seo_274 {
+._dropdown-menu__item-indicator_13s0n_278 {
   display: inline-flex;
   position: absolute;
   left: 0;
@@ -280,19 +284,19 @@ button {
   width: 20px;
   height: 20px;
 }
-._dropdown-menu__item-right-slot_16seo_283 {
+._dropdown-menu__item-right-slot_13s0n_287 {
   margin-left: auto;
   padding-left: 20px;
   /* color: hsl(240 4% 46%); */
 }
-[data-highlighted] > ._dropdown-menu__item-right-slot_16seo_283 {
+[data-highlighted] > ._dropdown-menu__item-right-slot_13s0n_287 {
   /* color: white; */
 }
-[data-disabled] ._dropdown-menu__item-right-slot_16seo_283 {
+[data-disabled] ._dropdown-menu__item-right-slot_13s0n_287 {
   opacity: 0.5;
   color: hsl(240 5% 65%);
 }
-@keyframes _contentShow_16seo_1 {
+@keyframes _contentShow_13s0n_1 {
   from {
     transform: scale(0.96);
     opacity: 0;
@@ -302,7 +306,7 @@ button {
     opacity: 1;
   }
 }
-@keyframes _contentHide_16seo_1 {
+@keyframes _contentHide_13s0n_1 {
   from {
     transform: scale(1);
     opacity: 1;
