@@ -19616,7 +19616,7 @@ const WIDTH = 60;
 const MARGIN = 2;
 const VELOCITY = 4;
 const repo = new Repo({
-  network: [new BrowserWebSocketClientAdapter(undefined                                  )],
+  network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
   storage: new IndexedDBStorageAdapter()
 });
 const rootDocUrl = `${document.location.hash.substring(1)}`;
