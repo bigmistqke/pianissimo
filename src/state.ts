@@ -5,6 +5,7 @@ import { makePersisted } from '@solid-primitives/storage'
 import { batch, createEffect, createMemo, createRoot, createSelector, createSignal } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
+import { OutputChannel, WebMidi } from 'webmidi'
 import zeptoid from 'zeptoid'
 import { Loop, Mode, NoteData, SelectionArea, SharedState, Vector } from './types'
 import { createDocumentStore } from './utils/create-document-store'
@@ -95,6 +96,22 @@ createRoot(() => {
     }
   })
 })
+
+// WebMidi
+
+const [midiOutputChannel, setMidiOutputChannel] = createSignal<OutputChannel>()
+
+WebMidi.enable()
+  .then(function () {
+    console.log('enabled!', WebMidi.inputs, WebMidi.outputs)
+    // Inputs
+    WebMidi.inputs.forEach(input => console.log(input.manufacturer, input.name))
+
+    // Outputs
+    WebMidi.outputs.forEach(output => console.log(output.manufacturer, output.name))
+    setMidiOutputChannel(WebMidi.outputs[0].channels[1])
+  })
+  .catch(err => alert(err))
 
 // Initialise local state
 
@@ -210,6 +227,14 @@ export function playNote(note: NoteData, delay = 0) {
     0.05 // (optional - override envelope "attack" parameter)
   )
 
+  const _midiOutputChannel = midiOutputChannel()
+  if (_midiOutputChannel) {
+    _midiOutputChannel.playNote(note.pitch, {
+      duration: (note.duration / VELOCITY) * 1000,
+      time: WebMidi.time + delay * 1000
+    })
+  }
+
   setTimeout(() => {
     setPlayingNotes(produce(pitches => pitches.push({ ...note })))
     setTimeout(
@@ -227,7 +252,7 @@ export function playNote(note: NoteData, delay = 0) {
 
 export async function handleCreateNote(event: PointerEvent) {
   const absolutePosition = {
-    x: event.layerX - origin().x,
+    x: event.layerX - origin().x - WIDTH,
     y: event.layerY - origin().y
   }
 
@@ -283,7 +308,7 @@ export async function handleCreateNote(event: PointerEvent) {
 
 export async function handleSelectionBox(event: PointerEvent) {
   const position = {
-    x: event.clientX - origin().x,
+    x: event.clientX - origin().x - WIDTH,
     y: event.clientY - origin().y
   }
   const normalizedPosition = normalizeVector(position)
