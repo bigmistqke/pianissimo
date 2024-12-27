@@ -2743,16 +2743,16 @@ const get = () => {
     return id;
 };
 
-const active = "_active_17tkj_41";
-const trigger = "_trigger_17tkj_46";
-const numberButton = "_numberButton_17tkj_52";
-const topRightHud = "_topRightHud_17tkj_86";
-const topLeftHud = "_topLeftHud_17tkj_87";
-const bottomLeftHud = "_bottomLeftHud_17tkj_88";
-const bottomRightHud = "_bottomRightHud_17tkj_131";
-const note = "_note_17tkj_167";
-const selected = "_selected_17tkj_169";
-const now$1 = "_now_17tkj_174";
+const active = "_active_lyydo_46";
+const trigger = "_trigger_lyydo_51";
+const numberButton = "_numberButton_lyydo_57";
+const topRightHud = "_topRightHud_lyydo_100";
+const topLeftHud = "_topLeftHud_lyydo_101";
+const bottomLeftHud = "_bottomLeftHud_lyydo_102";
+const bottomRightHud = "_bottomRightHud_lyydo_145";
+const note = "_note_lyydo_181";
+const selected = "_selected_lyydo_183";
+const now$1 = "_now_lyydo_188";
 const styles = {
 	active: active,
 	trigger: trigger,
@@ -20859,7 +20859,7 @@ function BottomRightHud() {
     }));
     insert(_el$41, createComponent(NumberButton, {
       get value() {
-        return doc().instrument;
+        return doc().instrument.toString().padStart(3, "0");
       },
       decrement: () => {
         if (doc().instrument > 0) {
