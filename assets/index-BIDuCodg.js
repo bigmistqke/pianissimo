@@ -2743,16 +2743,16 @@ const get = () => {
     return id;
 };
 
-const active = "_active_ozla5_41";
-const trigger = "_trigger_ozla5_46";
-const numberButton = "_numberButton_ozla5_52";
-const topRightHud = "_topRightHud_ozla5_70";
-const topLeftHud = "_topLeftHud_ozla5_71";
-const bottomLeftHud = "_bottomLeftHud_ozla5_72";
-const bottomRightHud = "_bottomRightHud_ozla5_115";
-const note = "_note_ozla5_164";
-const selected = "_selected_ozla5_166";
-const now$1 = "_now_ozla5_171";
+const active = "_active_17tkj_41";
+const trigger = "_trigger_17tkj_46";
+const numberButton = "_numberButton_17tkj_52";
+const topRightHud = "_topRightHud_17tkj_86";
+const topLeftHud = "_topLeftHud_17tkj_87";
+const bottomLeftHud = "_bottomLeftHud_17tkj_88";
+const bottomRightHud = "_bottomRightHud_17tkj_131";
+const note = "_note_17tkj_167";
+const selected = "_selected_17tkj_169";
+const now$1 = "_now_17tkj_174";
 const styles = {
 	active: active,
 	trigger: trigger,
