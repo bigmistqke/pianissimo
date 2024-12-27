@@ -9731,26 +9731,34 @@ const get = () => {
     return id;
 };
 
-const button = "_button_bcbch_40";
-const active = "_active_bcbch_48";
-const inactive = "_inactive_bcbch_52";
-const trigger = "_trigger_bcbch_57";
-const numberButton = "_numberButton_bcbch_63";
-const topRightHud = "_topRightHud_bcbch_107";
-const topLeftHud = "_topLeftHud_bcbch_108";
-const bottomLeftHud = "_bottomLeftHud_bcbch_109";
-const bottomRightHud = "_bottomRightHud_bcbch_152";
-const note = "_note_bcbch_188";
-const selected = "_selected_bcbch_190";
-const now$1 = "_now_bcbch_195";
-const contentHide = "_contentHide_bcbch_1";
-const contentShow = "_contentShow_bcbch_1";
+const button = "_button_fukxc_48";
+const active = "_active_fukxc_61";
+const horizontal = "_horizontal_fukxc_83";
+const trigger = "_trigger_fukxc_102";
+const numberButton = "_numberButton_fukxc_108";
+const textContainer = "_textContainer_fukxc_123";
+const numberButtonLabel = "_numberButtonLabel_fukxc_127";
+const numberButtonValue = "_numberButtonValue_fukxc_134";
+const buttonContainer = "_buttonContainer_fukxc_150";
+const topRightHud = "_topRightHud_fukxc_232";
+const topLeftHud = "_topLeftHud_fukxc_233";
+const bottomLeftHud = "_bottomLeftHud_fukxc_234";
+const bottomRightHud = "_bottomRightHud_fukxc_286";
+const note = "_note_fukxc_323";
+const selected = "_selected_fukxc_325";
+const now$1 = "_now_fukxc_330";
+const contentHide = "_contentHide_fukxc_1";
+const contentShow = "_contentShow_fukxc_1";
 const styles = {
 	button: button,
 	active: active,
-	inactive: inactive,
+	horizontal: horizontal,
 	trigger: trigger,
 	numberButton: numberButton,
+	textContainer: textContainer,
+	numberButtonLabel: numberButtonLabel,
+	numberButtonValue: numberButtonValue,
+	buttonContainer: buttonContainer,
 	topRightHud: topRightHud,
 	topLeftHud: topLeftHud,
 	bottomLeftHud: bottomLeftHud,
@@ -9758,19 +9766,19 @@ const styles = {
 	note: note,
 	selected: selected,
 	now: now$1,
-	"dropdown-menu__trigger": "_dropdown-menu__trigger_bcbch_200",
-	"dropdown-menu__content": "_dropdown-menu__content_bcbch_215",
-	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_bcbch_219",
+	"dropdown-menu__trigger": "_dropdown-menu__trigger_fukxc_335",
+	"dropdown-menu__content": "_dropdown-menu__content_fukxc_350",
+	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_fukxc_354",
 	contentHide: contentHide,
 	contentShow: contentShow,
-	"dropdown-menu__item": "_dropdown-menu__item_bcbch_236",
-	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_bcbch_237",
-	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_bcbch_238",
-	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_bcbch_239",
-	"dropdown-menu__group-label": "_dropdown-menu__group-label_bcbch_269",
-	"dropdown-menu__separator": "_dropdown-menu__separator_bcbch_274",
-	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_bcbch_279",
-	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_bcbch_288"
+	"dropdown-menu__item": "_dropdown-menu__item_fukxc_371",
+	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_fukxc_372",
+	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_fukxc_373",
+	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_fukxc_374",
+	"dropdown-menu__group-label": "_dropdown-menu__group-label_fukxc_404",
+	"dropdown-menu__separator": "_dropdown-menu__separator_fukxc_409",
+	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_fukxc_414",
+	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_fukxc_423"
 };
 
 // Properties of the document root object
@@ -26984,10 +26992,9 @@ const [clipboard, setClipboard] = createSignal();
 const [playing, setPlaying] = createSignal(false);
 const [playingNotes, setPlayingNotes] = createStore([]);
 const [now, setNow] = createSignal(0);
-const [loop, setLoop] = createStore({
-  time: 0,
-  duration: 4
-});
+const [loop, setLoop] = createStore({ time: 0, duration: 4 });
+const [bpm, setBpm] = createSignal(140);
+const [volume, setVolume] = createSignal(10);
 const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
   createSelector(
     selectedNotes,
@@ -27039,7 +27046,7 @@ function playNote(note, delay = 0) {
   if (!player) {
     player = new Instruments();
   }
-  if (note.velocity === 0) {
+  if (note.volume === 0) {
     return;
   }
   player.play(
@@ -27047,7 +27054,8 @@ function playNote(note, delay = 0) {
     // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch,
     // note: midi number or frequency in Hz (if > 127)
-    note.velocity,
+    // NOTE: later commit should use GainNode to change volume
+    note.volume * (volume() / 10),
     // velocity
     delay,
     // delay
@@ -27083,7 +27091,7 @@ async function handleCreateNote(event) {
     duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
     time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale(),
-    velocity: 1
+    volume: 1
   };
   setDoc((doc2) => {
     doc2.notes.push(note);
@@ -27448,7 +27456,7 @@ const IconGrommetIconsPause = (props = {}) => (() => {
   return _el$;
 })();
 
-var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><button></button><span></span><button>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg><rect fill=var(--color-piano-white)></svg>`, false, true), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div>`), _tmpl$16 = /* @__PURE__ */ template(`<div>⌘+N`), _tmpl$17 = /* @__PURE__ */ template(`<div>⌘+O`), _tmpl$18 = /* @__PURE__ */ template(`<div>⇧+⌘+E`), _tmpl$19 = /* @__PURE__ */ template(`<div><div></div><div></div><div>`), _tmpl$20 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$21 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$22 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
+var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg><rect fill=var(--color-piano-white)></svg>`, false, true), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div>`), _tmpl$16 = /* @__PURE__ */ template(`<div>⌘+N`), _tmpl$17 = /* @__PURE__ */ template(`<div>⌘+O`), _tmpl$18 = /* @__PURE__ */ template(`<div>⇧+⌘+E`), _tmpl$19 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div>`), _tmpl$20 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$21 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$22 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
 function Button(props) {
   return (() => {
     var _el$ = _tmpl$();
@@ -27485,6 +27493,9 @@ function ActionButton(props) {
     get style() {
       return props.style;
     },
+    get disabled() {
+      return props.disabled;
+    },
     onClick: (event) => {
       setTrigger(true);
       props.onClick(event);
@@ -27496,14 +27507,51 @@ function ActionButton(props) {
   });
 }
 function NumberButton(props) {
+  async function handleLongPress(event, callback) {
+    function loop2() {
+      timeout = setTimeout(loop2, 100);
+      callback();
+    }
+    let timeout = setTimeout(loop2, 500);
+    await pointerHelper(event);
+    clearTimeout(timeout);
+  }
   return (() => {
-    var _el$2 = _tmpl$2(), _el$3 = _el$2.firstChild, _el$4 = _el$3.nextSibling, _el$5 = _el$4.nextSibling;
-    addEventListener(_el$3, "click", props.decrement, true);
-    insert(_el$3, createComponent(IconGrommetIconsFormPreviousLink, {}));
-    insert(_el$4, () => props.value);
-    addEventListener(_el$5, "click", props.increment, true);
-    insert(_el$5, createComponent(IconGrommetIconsFormNextLink, {}));
-    createRenderEffect(() => className(_el$2, styles.numberButton));
+    var _el$2 = _tmpl$2(), _el$3 = _el$2.firstChild, _el$4 = _el$3.firstChild, _el$5 = _el$4.nextSibling, _el$6 = _el$3.nextSibling, _el$7 = _el$6.firstChild, _el$8 = _el$7.firstChild, _el$9 = _el$8.nextSibling, _el$10 = _el$7.nextSibling, _el$11 = _el$10.firstChild, _el$12 = _el$11.nextSibling;
+    _el$2.style.setProperty("display", "flex");
+    _el$2.style.setProperty("flex-direction", "column");
+    _el$3.style.setProperty("flex-direction", "column");
+    insert(_el$4, () => props.label);
+    insert(_el$5, () => props.value);
+    addEventListener(_el$7, "click", props.decrement, true);
+    _el$7.$$pointerdown = (event) => handleLongPress(event, props.decrement);
+    _el$7.style.setProperty("display", "flex");
+    _el$7.style.setProperty("flex-direction", "column");
+    insert(_el$9, createComponent(IconGrommetIconsFormPreviousLink, {}));
+    addEventListener(_el$10, "click", props.increment, true);
+    _el$10.$$pointerdown = (event) => handleLongPress(event, props.increment);
+    _el$10.style.setProperty("display", "flex");
+    _el$10.style.setProperty("flex-direction", "column");
+    insert(_el$12, createComponent(IconGrommetIconsFormNextLink, {}));
+    createRenderEffect((_p$) => {
+      var _v$ = styles.numberButton, _v$2 = styles.textContainer, _v$3 = styles.numberButtonLabel, _v$4 = styles.numberButtonValue, _v$5 = styles.buttonContainer, _v$6 = props.canDecrement === false, _v$7 = props.canIncrement === false;
+      _v$ !== _p$.e && className(_el$2, _p$.e = _v$);
+      _v$2 !== _p$.t && className(_el$3, _p$.t = _v$2);
+      _v$3 !== _p$.a && className(_el$4, _p$.a = _v$3);
+      _v$4 !== _p$.o && className(_el$5, _p$.o = _v$4);
+      _v$5 !== _p$.i && className(_el$6, _p$.i = _v$5);
+      _v$6 !== _p$.n && (_el$7.disabled = _p$.n = _v$6);
+      _v$7 !== _p$.s && (_el$10.disabled = _p$.s = _v$7);
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0,
+      a: void 0,
+      o: void 0,
+      i: void 0,
+      n: void 0,
+      s: void 0
+    });
     return _el$2;
   })();
 }
@@ -27630,7 +27678,7 @@ function Note(props) {
             note.active = true;
           }
           if (note.id in initialNotes) {
-            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100));
+            note.volume = Math.min(1, Math.max(0, initialNotes[note.id].volume - delta.y / 100));
           }
         });
       });
@@ -27640,8 +27688,8 @@ function Note(props) {
     }
   }
   return (() => {
-    var _el$6 = _tmpl$3();
-    _el$6.$$pointerdown = async (event) => {
+    var _el$13 = _tmpl$3();
+    _el$13.$$pointerdown = async (event) => {
       switch (mode()) {
         case "select":
           return await handleSelect(event);
@@ -27653,7 +27701,7 @@ function Note(props) {
           return handleVelocity(event);
       }
     };
-    _el$6.$$dblclick = () => {
+    _el$13.$$dblclick = () => {
       if (mode() === "note") {
         setDoc((doc2) => {
           const index = doc2.notes.findIndex(filterNote(props.note));
@@ -27661,14 +27709,14 @@ function Note(props) {
         });
       }
     };
-    setAttribute(_el$6, "height", HEIGHT - MARGIN * 2);
+    setAttribute(_el$13, "height", HEIGHT - MARGIN * 2);
     createRenderEffect((_p$) => {
-      var _v$ = clsx(styles.note, (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected), _v$2 = props.note.time * WIDTH + MARGIN, _v$3 = -props.note.pitch * HEIGHT + MARGIN, _v$4 = (props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2, _v$5 = !props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25;
-      _v$ !== _p$.e && setAttribute(_el$6, "class", _p$.e = _v$);
-      _v$2 !== _p$.t && setAttribute(_el$6, "x", _p$.t = _v$2);
-      _v$3 !== _p$.a && setAttribute(_el$6, "y", _p$.a = _v$3);
-      _v$4 !== _p$.o && setAttribute(_el$6, "width", _p$.o = _v$4);
-      _v$5 !== _p$.i && setAttribute(_el$6, "opacity", _p$.i = _v$5);
+      var _v$8 = clsx(styles.note, (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected), _v$9 = props.note.time * WIDTH + MARGIN, _v$10 = -props.note.pitch * HEIGHT + MARGIN, _v$11 = (props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2, _v$12 = !props.note._remove && props.note.active ? props.note.volume * 0.75 + 0.25 : 0.25;
+      _v$8 !== _p$.e && setAttribute(_el$13, "class", _p$.e = _v$8);
+      _v$9 !== _p$.t && setAttribute(_el$13, "x", _p$.t = _v$9);
+      _v$10 !== _p$.a && setAttribute(_el$13, "y", _p$.a = _v$10);
+      _v$11 !== _p$.o && setAttribute(_el$13, "width", _p$.o = _v$11);
+      _v$12 !== _p$.i && setAttribute(_el$13, "opacity", _p$.i = _v$12);
       return _p$;
     }, {
       e: void 0,
@@ -27677,56 +27725,56 @@ function Note(props) {
       o: void 0,
       i: void 0
     });
-    return _el$6;
+    return _el$13;
   })();
 }
 function Piano() {
   const dimensions2 = useDimensions();
   return [(() => {
-    var _el$7 = _tmpl$4();
-    setAttribute(_el$7, "width", WIDTH);
-    createRenderEffect(() => setAttribute(_el$7, "height", dimensions2().height));
-    return _el$7;
+    var _el$14 = _tmpl$4();
+    setAttribute(_el$14, "width", WIDTH);
+    createRenderEffect(() => setAttribute(_el$14, "height", dimensions2().height));
+    return _el$14;
   })(), (() => {
-    var _el$8 = _tmpl$5();
-    insert(_el$8, createComponent(Index, {
+    var _el$15 = _tmpl$5();
+    insert(_el$15, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().height / HEIGHT) + 2);
       },
       children: (_, index) => (() => {
-        var _el$9 = _tmpl$6();
-        setAttribute(_el$9, "y", index * HEIGHT);
-        setAttribute(_el$9, "width", WIDTH);
-        setAttribute(_el$9, "height", HEIGHT);
-        createRenderEffect((_$p) => (_$p = KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)") != null ? _el$9.style.setProperty("fill", _$p) : _el$9.style.removeProperty("fill"));
-        return _el$9;
+        var _el$16 = _tmpl$6();
+        setAttribute(_el$16, "y", index * HEIGHT);
+        setAttribute(_el$16, "width", WIDTH);
+        setAttribute(_el$16, "height", HEIGHT);
+        createRenderEffect((_$p) => (_$p = KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)") != null ? _el$16.style.setProperty("fill", _$p) : _el$16.style.removeProperty("fill"));
+        return _el$16;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${mod(-origin().y, HEIGHT) * -1}px)`) != null ? _el$8.style.setProperty("transform", _$p) : _el$8.style.removeProperty("transform"));
-    return _el$8;
+    createRenderEffect((_$p) => (_$p = `translateY(${mod(-origin().y, HEIGHT) * -1}px)`) != null ? _el$15.style.setProperty("transform", _$p) : _el$15.style.removeProperty("transform"));
+    return _el$15;
   })()];
 }
 function PlayingNotes() {
   const dimensions2 = useDimensions();
   return (() => {
-    var _el$10 = _tmpl$5();
-    insert(_el$10, createComponent(Index, {
+    var _el$17 = _tmpl$5();
+    insert(_el$17, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().height / HEIGHT) + 2);
       },
       children: (_, index) => {
         return (() => {
-          var _el$11 = _tmpl$7();
-          setAttribute(_el$11, "y", index * HEIGHT);
-          setAttribute(_el$11, "width", WIDTH);
-          setAttribute(_el$11, "height", HEIGHT);
-          createRenderEffect((_$p) => (_$p = isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT))) ? "var(--color-note-selected)" : "none") != null ? _el$11.style.setProperty("fill", _$p) : _el$11.style.removeProperty("fill"));
-          return _el$11;
+          var _el$18 = _tmpl$7();
+          setAttribute(_el$18, "y", index * HEIGHT);
+          setAttribute(_el$18, "width", WIDTH);
+          setAttribute(_el$18, "height", HEIGHT);
+          createRenderEffect((_$p) => (_$p = isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT))) ? "var(--color-note-selected)" : "none") != null ? _el$18.style.setProperty("fill", _$p) : _el$18.style.removeProperty("fill"));
+          return _el$18;
         })();
       }
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${mod(-origin().y, HEIGHT) * -1}px)`) != null ? _el$10.style.setProperty("transform", _$p) : _el$10.style.removeProperty("transform"));
-    return _el$10;
+    createRenderEffect((_$p) => (_$p = `translateY(${mod(-origin().y, HEIGHT) * -1}px)`) != null ? _el$17.style.setProperty("transform", _$p) : _el$17.style.removeProperty("transform"));
+    return _el$17;
   })();
 }
 function Ruler(props) {
@@ -27824,26 +27872,26 @@ function Ruler(props) {
     }, 250);
   }));
   return [(() => {
-    var _el$12 = _tmpl$8();
-    _el$12.$$pointerdown = handleCreateLoop;
-    setAttribute(_el$12, "height", HEIGHT);
-    createRenderEffect(() => setAttribute(_el$12, "width", dimensions2().width));
-    return _el$12;
+    var _el$19 = _tmpl$8();
+    _el$19.$$pointerdown = handleCreateLoop;
+    setAttribute(_el$19, "height", HEIGHT);
+    createRenderEffect(() => setAttribute(_el$19, "width", dimensions2().width));
+    return _el$19;
   })(), createComponent(Show, {
     get when() {
       return props.loop;
     },
     children: (loop2) => (() => {
-      var _el$17 = _tmpl$10();
-      _el$17.$$pointerdown = (event) => handleAdjustLoop(event, loop2());
-      setAttribute(_el$17, "height", HEIGHT);
-      _el$17.style.setProperty("transition", "fill 0.25s");
+      var _el$24 = _tmpl$10();
+      _el$24.$$pointerdown = (event) => handleAdjustLoop(event, loop2());
+      setAttribute(_el$24, "height", HEIGHT);
+      _el$24.style.setProperty("transition", "fill 0.25s");
       createRenderEffect((_p$) => {
-        var _v$9 = loop2().time * WIDTH, _v$10 = loop2().duration * WIDTH, _v$11 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$12 = `translateX(${origin().x}px)`;
-        _v$9 !== _p$.e && setAttribute(_el$17, "x", _p$.e = _v$9);
-        _v$10 !== _p$.t && setAttribute(_el$17, "width", _p$.t = _v$10);
-        _v$11 !== _p$.a && setAttribute(_el$17, "fill", _p$.a = _v$11);
-        _v$12 !== _p$.o && ((_p$.o = _v$12) != null ? _el$17.style.setProperty("transform", _v$12) : _el$17.style.removeProperty("transform"));
+        var _v$16 = loop2().time * WIDTH, _v$17 = loop2().duration * WIDTH, _v$18 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$19 = `translateX(${origin().x}px)`;
+        _v$16 !== _p$.e && setAttribute(_el$24, "x", _p$.e = _v$16);
+        _v$17 !== _p$.t && setAttribute(_el$24, "width", _p$.t = _v$17);
+        _v$18 !== _p$.a && setAttribute(_el$24, "fill", _p$.a = _v$18);
+        _v$19 !== _p$.o && ((_p$.o = _v$19) != null ? _el$24.style.setProperty("transform", _v$19) : _el$24.style.removeProperty("transform"));
         return _p$;
       }, {
         e: void 0,
@@ -27851,143 +27899,143 @@ function Ruler(props) {
         a: void 0,
         o: void 0
       });
-      return _el$17;
+      return _el$24;
     })()
   }), (() => {
-    var _el$13 = _tmpl$3();
-    setAttribute(_el$13, "height", HEIGHT);
-    _el$13.style.setProperty("opacity", "0.5");
+    var _el$20 = _tmpl$3();
+    setAttribute(_el$20, "height", HEIGHT);
+    _el$20.style.setProperty("opacity", "0.5");
     createRenderEffect((_p$) => {
-      var _v$6 = styles.now, _v$7 = WIDTH * timeScale(), _v$8 = `translateX(${origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()}px)`;
-      _v$6 !== _p$.e && setAttribute(_el$13, "class", _p$.e = _v$6);
-      _v$7 !== _p$.t && setAttribute(_el$13, "width", _p$.t = _v$7);
-      _v$8 !== _p$.a && ((_p$.a = _v$8) != null ? _el$13.style.setProperty("transform", _v$8) : _el$13.style.removeProperty("transform"));
+      var _v$13 = styles.now, _v$14 = WIDTH * timeScale(), _v$15 = `translateX(${origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()}px)`;
+      _v$13 !== _p$.e && setAttribute(_el$20, "class", _p$.e = _v$13);
+      _v$14 !== _p$.t && setAttribute(_el$20, "width", _p$.t = _v$14);
+      _v$15 !== _p$.a && ((_p$.a = _v$15) != null ? _el$20.style.setProperty("transform", _v$15) : _el$20.style.removeProperty("transform"));
       return _p$;
     }, {
       e: void 0,
       t: void 0,
       a: void 0
     });
-    return _el$13;
+    return _el$20;
   })(), (() => {
-    var _el$14 = _tmpl$9();
-    setAttribute(_el$14, "y1", HEIGHT);
-    setAttribute(_el$14, "y2", HEIGHT);
-    createRenderEffect(() => setAttribute(_el$14, "x2", dimensions2().width));
-    return _el$14;
+    var _el$21 = _tmpl$9();
+    setAttribute(_el$21, "y1", HEIGHT);
+    setAttribute(_el$21, "y2", HEIGHT);
+    createRenderEffect(() => setAttribute(_el$21, "x2", dimensions2().width));
+    return _el$21;
   })(), (() => {
-    var _el$15 = _tmpl$5();
-    insert(_el$15, createComponent(Index, {
+    var _el$22 = _tmpl$5();
+    insert(_el$22, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / WIDTH / 8) + 2);
       },
       children: (_, index) => (() => {
-        var _el$18 = _tmpl$11();
-        setAttribute(_el$18, "y2", HEIGHT);
-        setAttribute(_el$18, "x1", index * WIDTH * 8);
-        setAttribute(_el$18, "x2", index * WIDTH * 8);
-        return _el$18;
+        var _el$25 = _tmpl$11();
+        setAttribute(_el$25, "y2", HEIGHT);
+        setAttribute(_el$25, "x1", index * WIDTH * 8);
+        setAttribute(_el$25, "x2", index * WIDTH * 8);
+        return _el$25;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * 8)}px)`) != null ? _el$15.style.setProperty("transform", _$p) : _el$15.style.removeProperty("transform"));
-    return _el$15;
+    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * 8)}px)`) != null ? _el$22.style.setProperty("transform", _$p) : _el$22.style.removeProperty("transform"));
+    return _el$22;
   })(), (() => {
-    var _el$16 = _tmpl$5();
-    insert(_el$16, createComponent(Index, {
+    var _el$23 = _tmpl$5();
+    insert(_el$23, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / WIDTH) + 2);
       },
       children: (_, index) => (() => {
-        var _el$19 = _tmpl$12();
-        setAttribute(_el$19, "y2", HEIGHT);
-        setAttribute(_el$19, "x1", index * WIDTH);
-        setAttribute(_el$19, "x2", index * WIDTH);
-        return _el$19;
+        var _el$26 = _tmpl$12();
+        setAttribute(_el$26, "y2", HEIGHT);
+        setAttribute(_el$26, "x1", index * WIDTH);
+        setAttribute(_el$26, "x2", index * WIDTH);
+        return _el$26;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % WIDTH}px)`) != null ? _el$16.style.setProperty("transform", _$p) : _el$16.style.removeProperty("transform"));
-    return _el$16;
+    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % WIDTH}px)`) != null ? _el$23.style.setProperty("transform", _$p) : _el$23.style.removeProperty("transform"));
+    return _el$23;
   })()];
 }
 function Grid() {
   const dimensions2 = useDimensions();
   return [(() => {
-    var _el$20 = _tmpl$5();
-    insert(_el$20, createComponent(Index, {
+    var _el$27 = _tmpl$5();
+    insert(_el$27, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / WIDTH / timeScale()) + 2);
       },
       children: (_, index) => (() => {
-        var _el$22 = _tmpl$13();
+        var _el$29 = _tmpl$13();
         createRenderEffect((_p$) => {
-          var _v$13 = dimensions2().height, _v$14 = index * timeScale() * WIDTH, _v$15 = index * timeScale() * WIDTH;
-          _v$13 !== _p$.e && setAttribute(_el$22, "y2", _p$.e = _v$13);
-          _v$14 !== _p$.t && setAttribute(_el$22, "x1", _p$.t = _v$14);
-          _v$15 !== _p$.a && setAttribute(_el$22, "x2", _p$.a = _v$15);
+          var _v$20 = dimensions2().height, _v$21 = index * timeScale() * WIDTH, _v$22 = index * timeScale() * WIDTH;
+          _v$20 !== _p$.e && setAttribute(_el$29, "y2", _p$.e = _v$20);
+          _v$21 !== _p$.t && setAttribute(_el$29, "x1", _p$.t = _v$21);
+          _v$22 !== _p$.a && setAttribute(_el$29, "x2", _p$.a = _v$22);
           return _p$;
         }, {
           e: void 0,
           t: void 0,
           a: void 0
         });
-        return _el$22;
+        return _el$29;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * timeScale())}px)`) != null ? _el$20.style.setProperty("transform", _$p) : _el$20.style.removeProperty("transform"));
-    return _el$20;
+    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * timeScale())}px)`) != null ? _el$27.style.setProperty("transform", _$p) : _el$27.style.removeProperty("transform"));
+    return _el$27;
   })(), (() => {
-    var _el$21 = _tmpl$5();
-    insert(_el$21, createComponent(Index, {
+    var _el$28 = _tmpl$5();
+    insert(_el$28, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / WIDTH / 8) + 2);
       },
       children: (_, index) => (() => {
-        var _el$23 = _tmpl$11();
-        setAttribute(_el$23, "x1", index * WIDTH * 8);
-        setAttribute(_el$23, "x2", index * WIDTH * 8);
-        createRenderEffect(() => setAttribute(_el$23, "y2", dimensions2().height));
-        return _el$23;
+        var _el$30 = _tmpl$11();
+        setAttribute(_el$30, "x1", index * WIDTH * 8);
+        setAttribute(_el$30, "x2", index * WIDTH * 8);
+        createRenderEffect(() => setAttribute(_el$30, "y2", dimensions2().height));
+        return _el$30;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * 8)}px)`) != null ? _el$21.style.setProperty("transform", _$p) : _el$21.style.removeProperty("transform"));
-    return _el$21;
+    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * 8)}px)`) != null ? _el$28.style.setProperty("transform", _$p) : _el$28.style.removeProperty("transform"));
+    return _el$28;
   })()];
 }
 function PianoUnderlay() {
   const dimensions2 = useDimensions();
   return (() => {
-    var _el$24 = _tmpl$5();
-    insert(_el$24, createComponent(Index, {
+    var _el$31 = _tmpl$5();
+    insert(_el$31, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().height / HEIGHT) + 2);
       },
       children: (_, index) => (() => {
-        var _el$25 = _tmpl$3();
-        setAttribute(_el$25, "y", index * HEIGHT);
-        setAttribute(_el$25, "height", HEIGHT);
-        _el$25.style.setProperty("pointer-events", "none");
+        var _el$32 = _tmpl$3();
+        setAttribute(_el$32, "y", index * HEIGHT);
+        setAttribute(_el$32, "height", HEIGHT);
+        _el$32.style.setProperty("pointer-events", "none");
         createRenderEffect((_p$) => {
-          var _v$16 = dimensions2().width, _v$17 = KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
-          _v$16 !== _p$.e && setAttribute(_el$25, "width", _p$.e = _v$16);
-          _v$17 !== _p$.t && ((_p$.t = _v$17) != null ? _el$25.style.setProperty("fill", _v$17) : _el$25.style.removeProperty("fill"));
+          var _v$23 = dimensions2().width, _v$24 = KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
+          _v$23 !== _p$.e && setAttribute(_el$32, "width", _p$.e = _v$23);
+          _v$24 !== _p$.t && ((_p$.t = _v$24) != null ? _el$32.style.setProperty("fill", _v$24) : _el$32.style.removeProperty("fill"));
           return _p$;
         }, {
           e: void 0,
           t: void 0
         });
-        return _el$25;
+        return _el$32;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-origin().y, HEIGHT)}px)`) != null ? _el$24.style.setProperty("transform", _$p) : _el$24.style.removeProperty("transform"));
-    return _el$24;
+    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-origin().y, HEIGHT)}px)`) != null ? _el$31.style.setProperty("transform", _$p) : _el$31.style.removeProperty("transform"));
+    return _el$31;
   })();
 }
 function TopLeftHud() {
   return (() => {
-    var _el$26 = _tmpl$14(), _el$27 = _el$26.firstChild;
-    `${HEIGHT}px` != null ? _el$26.style.setProperty("top", `${HEIGHT}px`) : _el$26.style.removeProperty("top");
-    _el$26.style.setProperty("gap", "5px");
-    insert(_el$27, createComponent(ActionButton, {
+    var _el$33 = _tmpl$14(), _el$34 = _el$33.firstChild;
+    `${HEIGHT}px` != null ? _el$33.style.setProperty("top", `${HEIGHT}px`) : _el$33.style.removeProperty("top");
+    _el$33.style.setProperty("gap", "5px");
+    insert(_el$34, createComponent(ActionButton, {
       onClick: () => {
         const selection = doc().notes?.filter((note) => note.time >= loop.time && note.time < loop.time + loop.duration);
         if (!selection) return;
@@ -28004,14 +28052,17 @@ function TopLeftHud() {
         return createComponent(IconGrommetIconsDuplicate, {});
       }
     }), null);
-    insert(_el$27, createComponent(Show, {
+    insert(_el$34, createComponent(Show, {
       get when() {
         return mode() === "select";
       },
       get children() {
         return createComponent(ActionButton, {
+          get disabled() {
+            return selectionArea() === void 0;
+          },
           get ["class"]() {
-            return clsx(mode() === "stretch" && styles.active, selectionArea() === void 0 && styles.inactive);
+            return clsx(mode() === "stretch" && styles.active);
           },
           onClick: () => {
             const area = selectionArea();
@@ -28034,14 +28085,14 @@ function TopLeftHud() {
         });
       }
     }), null);
-    createRenderEffect(() => className(_el$26, styles.topLeftHud));
-    return _el$26;
+    createRenderEffect(() => className(_el$33, styles.topLeftHud));
+    return _el$33;
   })();
 }
 function TopRightHud() {
   return (() => {
-    var _el$28 = _tmpl$14(), _el$29 = _el$28.firstChild;
-    insert(_el$29, createComponent(Button, {
+    var _el$35 = _tmpl$14(), _el$36 = _el$35.firstChild;
+    insert(_el$36, createComponent(Button, {
       get ["class"]() {
         return mode() === "note" ? styles.active : void 0;
       },
@@ -28050,7 +28101,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsMusic, {});
       }
     }), null);
-    insert(_el$29, createComponent(Button, {
+    insert(_el$36, createComponent(Button, {
       get ["class"]() {
         return mode() === "select" ? styles.active : void 0;
       },
@@ -28059,7 +28110,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsSelect, {});
       }
     }), null);
-    insert(_el$29, createComponent(Button, {
+    insert(_el$36, createComponent(Button, {
       get ["class"]() {
         return mode() === "stretch" ? styles.active : void 0;
       },
@@ -28068,7 +28119,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsShift, {});
       }
     }), null);
-    insert(_el$29, createComponent(Button, {
+    insert(_el$36, createComponent(Button, {
       get ["class"]() {
         return mode() === "velocity" ? styles.active : void 0;
       },
@@ -28077,7 +28128,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsVolumeControl, {});
       }
     }), null);
-    insert(_el$29, createComponent(Button, {
+    insert(_el$36, createComponent(Button, {
       get ["class"]() {
         return mode() === "pan" ? styles.active : void 0;
       },
@@ -28086,7 +28137,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsPan, {});
       }
     }), null);
-    insert(_el$28, createComponent(Show, {
+    insert(_el$35, createComponent(Show, {
       get when() {
         return mode() === "select";
       },
@@ -28094,12 +28145,15 @@ function TopRightHud() {
         const hasClipboardAndPresence = () => clipboard() && selectionPresence();
         const clipboardAndPresence = () => hasClipboardAndPresence() && [clipboard(), selectionPresence()];
         return (() => {
-          var _el$31 = _tmpl$15();
-          _el$31.style.setProperty("display", "grid");
-          `${HEIGHT * 2 - 2}px` != null ? _el$31.style.setProperty("grid-template-rows", `${HEIGHT * 2 - 2}px`) : _el$31.style.removeProperty("grid-template-rows");
-          insert(_el$31, createComponent(ActionButton, {
+          var _el$38 = _tmpl$15();
+          _el$38.style.setProperty("display", "grid");
+          `${HEIGHT * 2 - 2}px` != null ? _el$38.style.setProperty("grid-template-rows", `${HEIGHT * 2 - 2}px`) : _el$38.style.removeProperty("grid-template-rows");
+          insert(_el$38, createComponent(ActionButton, {
+            get disabled() {
+              return !hasClipboardAndPresence();
+            },
             get ["class"]() {
-              return clsx(mode() === "stretch" && styles.active, !hasClipboardAndPresence() && styles.inactive);
+              return clsx(mode() === "stretch" && styles.active);
             },
             onClick: () => {
               const _clipboardAndPresence = clipboardAndPresence();
@@ -28110,28 +28164,31 @@ function TopRightHud() {
               return createComponent(IconGrommetIconsCopy, {});
             }
           }), null);
-          insert(_el$31, createComponent(ActionButton, {
+          insert(_el$38, createComponent(ActionButton, {
+            get disabled() {
+              return selectedNotes().length === 0;
+            },
             get ["class"]() {
-              return clsx(mode() === "stretch" && styles.active, selectedNotes().length === 0 && styles.inactive);
+              return clsx(mode() === "stretch" && styles.active);
             },
             onClick: copyNotes,
             get children() {
               return createComponent(IconGrommetIconsClipboard, {});
             }
           }), null);
-          return _el$31;
+          return _el$38;
         })();
       }
     }), null);
-    insert(_el$28, createComponent(Show, {
+    insert(_el$35, createComponent(Show, {
       get when() {
         return mode() === "select";
       },
       get children() {
-        var _el$30 = _tmpl$15();
-        insert(_el$30, createComponent(ActionButton, {
-          get ["class"]() {
-            return selectedNotes().length === 0 ? styles.inactive : void 0;
+        var _el$37 = _tmpl$15();
+        insert(_el$37, createComponent(ActionButton, {
+          get disabled() {
+            return selectedNotes().length === 0;
           },
           onClick: () => {
             const cutLine = selectionArea()?.start.x;
@@ -28146,7 +28203,7 @@ function TopRightHud() {
                 duration: note.duration - (cutLine - note.time),
                 pitch: note.pitch,
                 time: cutLine,
-                velocity: note.velocity
+                velocity: note.volume
               };
             });
             setDoc((doc2) => doc2.notes.push(...newNotes));
@@ -28163,9 +28220,9 @@ function TopRightHud() {
             return createComponent(IconGrommetIconsCut, {});
           }
         }), null);
-        insert(_el$30, createComponent(ActionButton, {
-          get ["class"]() {
-            return selectedNotes().length === 0 ? styles.inactive : void 0;
+        insert(_el$37, createComponent(ActionButton, {
+          get disabled() {
+            return selectedNotes().length === 0;
           },
           onClick: () => {
             setDoc((doc2) => {
@@ -28181,9 +28238,9 @@ function TopRightHud() {
             return createComponent(IconGrommetIconsErase, {});
           }
         }), null);
-        insert(_el$30, createComponent(ActionButton, {
-          get ["class"]() {
-            return selectedNotes().length === 0 ? styles.inactive : void 0;
+        insert(_el$37, createComponent(ActionButton, {
+          get disabled() {
+            return selectedNotes().length === 0;
           },
           onClick: () => {
             let inactiveSelectedNotes = 0;
@@ -28205,17 +28262,17 @@ function TopRightHud() {
             return createComponent(IconGrommetIconsDisabledOutline, {});
           }
         }), null);
-        return _el$30;
+        return _el$37;
       }
     }), null);
-    createRenderEffect(() => className(_el$28, styles.topRightHud));
-    return _el$28;
+    createRenderEffect(() => className(_el$35, styles.topRightHud));
+    return _el$35;
   })();
 }
 function BottomLeftHud() {
   return (() => {
-    var _el$32 = _tmpl$14(), _el$33 = _el$32.firstChild;
-    insert(_el$33, createComponent(DropdownMenu, {
+    var _el$39 = _tmpl$14(), _el$40 = _el$39.firstChild;
+    insert(_el$40, createComponent(DropdownMenu, {
       get children() {
         return [createComponent(DropdownMenu.Trigger, {
           as: Button,
@@ -28238,9 +28295,9 @@ function BottomLeftHud() {
                   onClick: newDoc,
                   get children() {
                     return ["New File ", (() => {
-                      var _el$34 = _tmpl$16();
-                      createRenderEffect(() => className(_el$34, styles["dropdown-menu__item-right-slot"]));
-                      return _el$34;
+                      var _el$41 = _tmpl$16();
+                      createRenderEffect(() => className(_el$41, styles["dropdown-menu__item-right-slot"]));
+                      return _el$41;
                     })()];
                   }
                 }), createComponent(DropdownMenu.Sub, {
@@ -28255,9 +28312,9 @@ function BottomLeftHud() {
                       },
                       get children() {
                         return ["Open File ", (() => {
-                          var _el$35 = _tmpl$17();
-                          createRenderEffect(() => className(_el$35, styles["dropdown-menu__item-right-slot"]));
-                          return _el$35;
+                          var _el$42 = _tmpl$17();
+                          createRenderEffect(() => className(_el$42, styles["dropdown-menu__item-right-slot"]));
+                          return _el$42;
                         })()];
                       }
                     }), createComponent(DropdownMenu.Portal, {
@@ -28296,9 +28353,9 @@ function BottomLeftHud() {
                   onClick: () => downloadDataUri(createMidiDataUri(doc().notes), "pianissimo.mid"),
                   get children() {
                     return ["Export to Midi ", (() => {
-                      var _el$36 = _tmpl$18();
-                      createRenderEffect(() => className(_el$36, styles["dropdown-menu__item-right-slot"]));
-                      return _el$36;
+                      var _el$43 = _tmpl$18();
+                      createRenderEffect(() => className(_el$43, styles["dropdown-menu__item-right-slot"]));
+                      return _el$43;
                     })()];
                   }
                 })];
@@ -28308,21 +28365,54 @@ function BottomLeftHud() {
         })];
       }
     }));
-    createRenderEffect(() => className(_el$32, styles.bottomLeftHud));
-    return _el$32;
+    createRenderEffect(() => className(_el$39, styles.bottomLeftHud));
+    return _el$39;
   })();
 }
 function BottomRightHud() {
   return (() => {
-    var _el$37 = _tmpl$19(), _el$38 = _el$37.firstChild, _el$39 = _el$38.nextSibling, _el$40 = _el$39.nextSibling;
-    insert(_el$38, createComponent(NumberButton, {
+    var _el$44 = _tmpl$19(), _el$45 = _el$44.firstChild, _el$46 = _el$45.nextSibling, _el$47 = _el$46.nextSibling, _el$48 = _el$47.nextSibling, _el$49 = _el$48.nextSibling;
+    insert(_el$45, createComponent(NumberButton, {
+      label: "volume",
       get value() {
-        return createMemo(() => timeScale() < 1)() ? `1:${1 / timeScale()}` : timeScale();
+        return volume();
       },
-      decrement: () => setTimeScale((duration) => duration / 2),
-      increment: () => setTimeScale((duration) => duration * 2)
+      decrement: () => setVolume((bpm2) => Math.max(0, bpm2 - 1)),
+      increment: () => setVolume((bpm2) => Math.min(10, bpm2 + 1)),
+      get canDecrement() {
+        return volume() > 0;
+      },
+      get canIncrement() {
+        return volume() < 10;
+      }
     }));
-    insert(_el$39, createComponent(NumberButton, {
+    insert(_el$46, createComponent(NumberButton, {
+      label: "tempo",
+      get value() {
+        return bpm();
+      },
+      decrement: () => setBpm((bpm2) => Math.max(0, bpm2 - 1)),
+      increment: () => setBpm((bpm2) => Math.min(1e3, bpm2 + 1)),
+      get canDecrement() {
+        return bpm() > 0;
+      },
+      get canIncrement() {
+        return bpm() < 1e3;
+      }
+    }));
+    insert(_el$47, createComponent(NumberButton, {
+      label: "grid",
+      get value() {
+        return createMemo(() => timeScale() / 8 < 1)() ? `1:${1 / (timeScale() / 8)}` : timeScale() / 8;
+      },
+      decrement: () => setTimeScale((duration) => Math.max(duration / 2, 8 / 128)),
+      increment: () => setTimeScale((duration) => duration * 2),
+      get canDecrement() {
+        return timeScale() > 8 / 128;
+      }
+    }));
+    insert(_el$48, createComponent(NumberButton, {
+      label: "instrument",
       get value() {
         return doc().instrument.toString().padStart(3, "0");
       },
@@ -28349,7 +28439,10 @@ function BottomRightHud() {
         }
       }
     }));
-    insert(_el$40, createComponent(Button, {
+    insert(_el$49, createComponent(Button, {
+      get ["class"]() {
+        return styles.horizontal;
+      },
       onClick: () => {
         setNow(loop.time);
         setPlaying(false);
@@ -28359,14 +28452,17 @@ function BottomRightHud() {
         return createComponent(IconGrommetIconsStop, {});
       }
     }), null);
-    insert(_el$40, createComponent(Button, {
+    insert(_el$49, createComponent(Button, {
+      get ["class"]() {
+        return styles.horizontal;
+      },
       onClick: togglePlaying,
       get children() {
         return createMemo(() => !!!playing())() ? createComponent(IconGrommetIconsPlay, {}) : createComponent(IconGrommetIconsPause, {});
       }
     }), null);
-    createRenderEffect(() => className(_el$37, styles.bottomRightHud));
-    return _el$37;
+    createRenderEffect(() => className(_el$44, styles.bottomRightHud));
+    return _el$44;
   })();
 }
 const dimensionsContext = createContext();
@@ -28390,11 +28486,18 @@ function App() {
       duration: Math.min(1, note.duration)
     })));
   }));
+  let lastVelocity = bpm() / 60;
   createEffect(on(playing, (playing2) => {
     if (!playing2 || !audioContext) return;
     let shouldPlay = true;
+    const newVelocity = bpm() / 60;
+    const currentTime = audioContext.currentTime;
+    const elapsedTime = currentTime * lastVelocity - timeOffset();
+    setTimeOffset(currentTime * newVelocity - elapsedTime);
+    lastVelocity = newVelocity;
     function clock() {
       if (!shouldPlay) return;
+      const VELOCITY = bpm() / 60;
       let time = audioContext.currentTime * VELOCITY - timeOffset();
       if (loop) {
         if (time < loop.time) {
@@ -28450,15 +28553,15 @@ function App() {
     });
   });
   return (() => {
-    var _el$41 = _tmpl$20(), _el$42 = _el$41.firstChild;
-    _el$41.style.setProperty("width", "100%");
-    _el$41.style.setProperty("height", "100%");
-    _el$41.style.setProperty("overflow", "hidden");
-    insert(_el$41, createComponent(TopLeftHud, {}), _el$42);
-    insert(_el$41, createComponent(TopRightHud, {}), _el$42);
-    insert(_el$41, createComponent(BottomRightHud, {}), _el$42);
-    insert(_el$41, createComponent(BottomLeftHud, {}), _el$42);
-    _el$42.$$pointerdown = async (event) => {
+    var _el$50 = _tmpl$20(), _el$51 = _el$50.firstChild;
+    _el$50.style.setProperty("width", "100%");
+    _el$50.style.setProperty("height", "100%");
+    _el$50.style.setProperty("overflow", "hidden");
+    insert(_el$50, createComponent(TopLeftHud, {}), _el$51);
+    insert(_el$50, createComponent(TopRightHud, {}), _el$51);
+    insert(_el$50, createComponent(BottomLeftHud, {}), _el$51);
+    insert(_el$50, createComponent(BottomRightHud, {}), _el$51);
+    _el$51.$$pointerdown = async (event) => {
       switch (mode()) {
         case "note":
           handleCreateNote(event);
@@ -28470,11 +28573,11 @@ function App() {
           handlePan(event);
       }
     };
-    _el$42.addEventListener("wheel", (event) => setOrigin((origin2) => ({
+    _el$51.addEventListener("wheel", (event) => setOrigin((origin2) => ({
       x: origin2.x - event.deltaX,
       y: origin2.y - event.deltaY * 2 / 3
     })));
-    _el$42.$$dblclick = () => setSelectedNotes([]);
+    _el$51.$$dblclick = () => setSelectedNotes([]);
     use((element) => {
       onMount(() => {
         const observer = new ResizeObserver(() => {
@@ -28483,11 +28586,11 @@ function App() {
         observer.observe(element);
         onCleanup(() => observer.disconnect());
       });
-    }, _el$42);
-    _el$42.style.setProperty("width", "100%");
-    _el$42.style.setProperty("height", "100%");
-    _el$42.style.setProperty("overflow", "hidden");
-    insert(_el$42, createComponent(Show, {
+    }, _el$51);
+    _el$51.style.setProperty("width", "100%");
+    _el$51.style.setProperty("height", "100%");
+    _el$51.style.setProperty("overflow", "hidden");
+    insert(_el$51, createComponent(Show, {
       get when() {
         return dimensions();
       },
@@ -28499,13 +28602,13 @@ function App() {
               return createMemo(() => mode() === "select")() && selectionArea();
             },
             children: (area) => (() => {
-              var _el$45 = _tmpl$21();
+              var _el$54 = _tmpl$21();
               createRenderEffect((_p$) => {
-                var _v$22 = area().start.x * WIDTH + origin().x, _v$23 = area().start.y * HEIGHT + origin().y, _v$24 = (area().end.x - area().start.x) * WIDTH, _v$25 = (area().end.y - area().start.y) * HEIGHT;
-                _v$22 !== _p$.e && setAttribute(_el$45, "x", _p$.e = _v$22);
-                _v$23 !== _p$.t && setAttribute(_el$45, "y", _p$.t = _v$23);
-                _v$24 !== _p$.a && setAttribute(_el$45, "width", _p$.a = _v$24);
-                _v$25 !== _p$.o && setAttribute(_el$45, "height", _p$.o = _v$25);
+                var _v$29 = area().start.x * WIDTH + origin().x, _v$30 = area().start.y * HEIGHT + origin().y, _v$31 = (area().end.x - area().start.x) * WIDTH, _v$32 = (area().end.y - area().start.y) * HEIGHT;
+                _v$29 !== _p$.e && setAttribute(_el$54, "x", _p$.e = _v$29);
+                _v$30 !== _p$.t && setAttribute(_el$54, "y", _p$.t = _v$30);
+                _v$31 !== _p$.a && setAttribute(_el$54, "width", _p$.a = _v$31);
+                _v$32 !== _p$.o && setAttribute(_el$54, "height", _p$.o = _v$32);
                 return _p$;
               }, {
                 e: void 0,
@@ -28513,35 +28616,35 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$45;
+              return _el$54;
             })()
           }), createComponent(Show, {
             get when() {
               return createMemo(() => mode() === "select")() && selectionPresence();
             },
             children: (presence) => (() => {
-              var _el$46 = _tmpl$22();
-              setAttribute(_el$46, "height", HEIGHT);
+              var _el$55 = _tmpl$22();
+              setAttribute(_el$55, "height", HEIGHT);
               createRenderEffect((_p$) => {
-                var _v$26 = presence().x * WIDTH + origin().x, _v$27 = presence().y * HEIGHT + origin().y, _v$28 = WIDTH * timeScale();
-                _v$26 !== _p$.e && setAttribute(_el$46, "x", _p$.e = _v$26);
-                _v$27 !== _p$.t && setAttribute(_el$46, "y", _p$.t = _v$27);
-                _v$28 !== _p$.a && setAttribute(_el$46, "width", _p$.a = _v$28);
+                var _v$33 = presence().x * WIDTH + origin().x, _v$34 = presence().y * HEIGHT + origin().y, _v$35 = WIDTH * timeScale();
+                _v$33 !== _p$.e && setAttribute(_el$55, "x", _p$.e = _v$33);
+                _v$34 !== _p$.t && setAttribute(_el$55, "y", _p$.t = _v$34);
+                _v$35 !== _p$.a && setAttribute(_el$55, "width", _p$.a = _v$35);
                 return _p$;
               }, {
                 e: void 0,
                 t: void 0,
                 a: void 0
               });
-              return _el$46;
+              return _el$55;
             })()
           }), createComponent(Show, {
             get when() {
               return doc().notes.length > 0;
             },
             get children() {
-              var _el$43 = _tmpl$5();
-              insert(_el$43, createComponent(For, {
+              var _el$52 = _tmpl$5();
+              insert(_el$52, createComponent(For, {
                 get each() {
                   return doc().notes;
                 },
@@ -28549,18 +28652,18 @@ function App() {
                   note
                 })
               }));
-              createRenderEffect((_$p) => (_$p = `translate(${origin().x}px, ${origin().y}px)`) != null ? _el$43.style.setProperty("transform", _$p) : _el$43.style.removeProperty("transform"));
-              return _el$43;
+              createRenderEffect((_$p) => (_$p = `translate(${origin().x}px, ${origin().y}px)`) != null ? _el$52.style.setProperty("transform", _$p) : _el$52.style.removeProperty("transform"));
+              return _el$52;
             }
           }), (() => {
-            var _el$44 = _tmpl$3();
-            _el$44.style.setProperty("opacity", "0.075");
+            var _el$53 = _tmpl$3();
+            _el$53.style.setProperty("opacity", "0.075");
             createRenderEffect((_p$) => {
-              var _v$18 = styles.now, _v$19 = WIDTH * timeScale(), _v$20 = dimensions2().height, _v$21 = `translateX(${origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()}px)`;
-              _v$18 !== _p$.e && setAttribute(_el$44, "class", _p$.e = _v$18);
-              _v$19 !== _p$.t && setAttribute(_el$44, "width", _p$.t = _v$19);
-              _v$20 !== _p$.a && setAttribute(_el$44, "height", _p$.a = _v$20);
-              _v$21 !== _p$.o && ((_p$.o = _v$21) != null ? _el$44.style.setProperty("transform", _v$21) : _el$44.style.removeProperty("transform"));
+              var _v$25 = styles.now, _v$26 = WIDTH * timeScale(), _v$27 = dimensions2().height, _v$28 = `translateX(${origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()}px)`;
+              _v$25 !== _p$.e && setAttribute(_el$53, "class", _p$.e = _v$25);
+              _v$26 !== _p$.t && setAttribute(_el$53, "width", _p$.t = _v$26);
+              _v$27 !== _p$.a && setAttribute(_el$53, "height", _p$.a = _v$27);
+              _v$28 !== _p$.o && ((_p$.o = _v$28) != null ? _el$53.style.setProperty("transform", _v$28) : _el$53.style.removeProperty("transform"));
               return _p$;
             }, {
               e: void 0,
@@ -28568,7 +28671,7 @@ function App() {
               a: void 0,
               o: void 0
             });
-            return _el$44;
+            return _el$53;
           })(), createComponent(Ruler, {
             loop,
             setLoop
@@ -28576,9 +28679,9 @@ function App() {
         }
       })
     }));
-    return _el$41;
+    return _el$50;
   })();
 }
-delegateEvents(["click", "dblclick", "pointerdown"]);
+delegateEvents(["pointerdown", "click", "dblclick"]);
 
 render(() => createComponent(App, {}), document.getElementById("root"));
