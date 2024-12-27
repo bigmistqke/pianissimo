@@ -26984,19 +26984,28 @@ let audioContext;
 let player;
 let playedNotes = /* @__PURE__ */ new Set();
 const [mode, setMode] = createSignal("note");
-const [timeOffset, setTimeOffset] = createSignal(0);
 const [dimensions, setDimensions] = createSignal();
-const [origin, setOrigin] = createSignal({ x: WIDTH, y: 6 * HEIGHT * 12 });
 const [timeScale, setTimeScale] = createSignal(1);
 const [selectedNotes, setSelectedNotes] = createSignal([]);
 const [selectionArea, setSelectionArea] = createSignal();
 const [selectionPresence, setSelectionPresence] = createSignal();
 const [clipboard, setClipboard] = createSignal();
 const [playing, setPlaying] = createSignal(false);
+const [internalTimeOffset, setInternalTimeOffset] = createSignal(0);
 const [playingNotes, setPlayingNotes] = createStore([]);
 const [now, setNow] = createSignal(0);
 const [loop, setLoop] = createStore({ time: 0, duration: 4 });
 const [volume, setVolume] = createSignal(10);
+const [origin, setOrigin] = createSignal({ x: 0, y: 6 * HEIGHT * 12 });
+const [zoom, setZoom] = createSignal({ x: 100, y: 100 });
+const projectedWidth = () => WIDTH * (zoom().x / 100);
+const projectedHeight = () => HEIGHT * (zoom().y / 100);
+const projectedOrigin = createMemo(() => {
+  return {
+    x: WIDTH + origin().x * (zoom().x / 100),
+    y: origin().y * (zoom().y / 100)
+  };
+});
 const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
   createSelector(
     selectedNotes,
@@ -27034,7 +27043,7 @@ function selectNotesFromSelectionArea(area) {
 function play() {
   if (!audioContext) {
     audioContext = new AudioContext();
-  } else setTimeOffset(audioContext.currentTime * VELOCITY - now());
+  } else setInternalTimeOffset(audioContext.currentTime * VELOCITY - now());
   setPlaying(true);
 }
 function togglePlaying() {
@@ -27458,7 +27467,7 @@ const IconGrommetIconsPause = (props = {}) => (() => {
   return _el$;
 })();
 
-var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg><rect fill=var(--color-piano-white)></svg>`, false, true), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div>`), _tmpl$16 = /* @__PURE__ */ template(`<div>⌘+N`), _tmpl$17 = /* @__PURE__ */ template(`<div>⌘+O`), _tmpl$18 = /* @__PURE__ */ template(`<div>⇧+⌘+E`), _tmpl$19 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div>`), _tmpl$20 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$21 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$22 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
+var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg><rect fill=var(--color-piano-white)></svg>`, false, true), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div>`), _tmpl$16 = /* @__PURE__ */ template(`<div>⌘+N`), _tmpl$17 = /* @__PURE__ */ template(`<div>⌘+O`), _tmpl$18 = /* @__PURE__ */ template(`<div>⇧+⌘+E`), _tmpl$19 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$20 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$21 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$22 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
 function Button(props) {
   return (() => {
     var _el$ = _tmpl$();
@@ -27575,7 +27584,7 @@ function Note(props) {
         } = await pointerHelper(event, ({
           delta: delta2
         }) => {
-          let time = Math.floor(delta2.x / WIDTH / timeScale()) * timeScale();
+          let time = Math.floor(delta2.x / projectedWidth() / timeScale()) * timeScale();
           if (time === timeScale() * -1) {
             time = 0;
           } else if (time < timeScale() * -1) {
@@ -27587,7 +27596,7 @@ function Note(props) {
             doc2.notes.forEach((note) => {
               if (isNoteSelected(note)) {
                 note.time = initialNotes[note.id].time + time - offset;
-                note.pitch = initialNotes[note.id].pitch - Math.floor((delta2.y + HEIGHT / 2) / HEIGHT);
+                note.pitch = initialNotes[note.id].pitch - Math.floor((delta2.y + projectedHeight() / 2) / projectedHeight());
                 if (hasChanged) {
                   playNote(note);
                 }
@@ -27596,7 +27605,7 @@ function Note(props) {
           });
           markOverlappingNotes(...selectedNotes());
         });
-        if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) ;
+        if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) ;
         clipOverlappingNotes(...selectedNotes());
       }
     }
@@ -27615,7 +27624,7 @@ function Note(props) {
       delta
     }) => {
       batch(() => {
-        const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale();
+        const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale();
         setDoc((doc2) => {
           doc2.notes.forEach((note) => {
             if (!isNoteSelected(note)) return;
@@ -27646,8 +27655,8 @@ function Note(props) {
     await pointerHelper(event, ({
       delta
     }) => {
-      const time = Math.floor((initialTime + delta.x / WIDTH) / timeScale()) * timeScale();
-      const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT);
+      const time = Math.floor((initialTime + delta.x / projectedWidth()) / timeScale()) * timeScale();
+      const pitch = initialPitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight());
       setDoc((doc2) => {
         const note = doc2.notes.find((note2) => note2.id === props.note.id);
         if (!note) return;
@@ -27711,21 +27720,22 @@ function Note(props) {
         });
       }
     };
-    setAttribute(_el$13, "height", HEIGHT - MARGIN * 2);
     createRenderEffect((_p$) => {
-      var _v$8 = clsx(styles.note, (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected), _v$9 = props.note.time * WIDTH + MARGIN, _v$10 = -props.note.pitch * HEIGHT + MARGIN, _v$11 = (props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2, _v$12 = !props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25;
+      var _v$8 = clsx(styles.note, (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected), _v$9 = props.note.time * projectedWidth() + MARGIN, _v$10 = -props.note.pitch * projectedHeight() + MARGIN, _v$11 = (props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2, _v$12 = projectedHeight() - MARGIN * 2, _v$13 = !props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25;
       _v$8 !== _p$.e && setAttribute(_el$13, "class", _p$.e = _v$8);
       _v$9 !== _p$.t && setAttribute(_el$13, "x", _p$.t = _v$9);
       _v$10 !== _p$.a && setAttribute(_el$13, "y", _p$.a = _v$10);
       _v$11 !== _p$.o && setAttribute(_el$13, "width", _p$.o = _v$11);
-      _v$12 !== _p$.i && setAttribute(_el$13, "opacity", _p$.i = _v$12);
+      _v$12 !== _p$.i && setAttribute(_el$13, "height", _p$.i = _v$12);
+      _v$13 !== _p$.n && setAttribute(_el$13, "opacity", _p$.n = _v$13);
       return _p$;
     }, {
       e: void 0,
       t: void 0,
       a: void 0,
       o: void 0,
-      i: void 0
+      i: void 0,
+      n: void 0
     });
     return _el$13;
   })();
@@ -27741,18 +27751,26 @@ function Piano() {
     var _el$15 = _tmpl$5();
     insert(_el$15, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().height / HEIGHT) + 2);
+        return new Array(Math.floor(dimensions2().height / projectedHeight()) + 2);
       },
       children: (_, index) => (() => {
         var _el$16 = _tmpl$6();
-        setAttribute(_el$16, "y", index * HEIGHT);
         setAttribute(_el$16, "width", WIDTH);
-        setAttribute(_el$16, "height", HEIGHT);
-        createRenderEffect((_$p) => (_$p = KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)") != null ? _el$16.style.setProperty("fill", _$p) : _el$16.style.removeProperty("fill"));
+        createRenderEffect((_p$) => {
+          var _v$14 = index * projectedHeight(), _v$15 = projectedHeight(), _v$16 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)";
+          _v$14 !== _p$.e && setAttribute(_el$16, "y", _p$.e = _v$14);
+          _v$15 !== _p$.t && setAttribute(_el$16, "height", _p$.t = _v$15);
+          _v$16 !== _p$.a && ((_p$.a = _v$16) != null ? _el$16.style.setProperty("fill", _v$16) : _el$16.style.removeProperty("fill"));
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0,
+          a: void 0
+        });
         return _el$16;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${mod(-origin().y, HEIGHT) * -1}px)`) != null ? _el$15.style.setProperty("transform", _$p) : _el$15.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$15.style.setProperty("transform", _$p) : _el$15.style.removeProperty("transform"));
     return _el$15;
   })()];
 }
@@ -27762,20 +27780,29 @@ function PlayingNotes() {
     var _el$17 = _tmpl$5();
     insert(_el$17, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().height / HEIGHT) + 2);
+        return new Array(Math.floor(dimensions2().height / projectedHeight()) + 2);
       },
       children: (_, index) => {
         return (() => {
           var _el$18 = _tmpl$7();
-          setAttribute(_el$18, "y", index * HEIGHT);
-          setAttribute(_el$18, "width", WIDTH);
-          setAttribute(_el$18, "height", HEIGHT);
-          createRenderEffect((_$p) => (_$p = isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT))) ? "var(--color-note-selected)" : "none") != null ? _el$18.style.setProperty("fill", _$p) : _el$18.style.removeProperty("fill"));
+          createRenderEffect((_p$) => {
+            var _v$17 = index * projectedHeight(), _v$18 = projectedWidth(), _v$19 = projectedHeight(), _v$20 = isPitchPlaying(-(index + Math.floor(-projectedOrigin().y / projectedHeight()))) ? "var(--color-note-selected)" : "none";
+            _v$17 !== _p$.e && setAttribute(_el$18, "y", _p$.e = _v$17);
+            _v$18 !== _p$.t && setAttribute(_el$18, "width", _p$.t = _v$18);
+            _v$19 !== _p$.a && setAttribute(_el$18, "height", _p$.a = _v$19);
+            _v$20 !== _p$.o && ((_p$.o = _v$20) != null ? _el$18.style.setProperty("fill", _v$20) : _el$18.style.removeProperty("fill"));
+            return _p$;
+          }, {
+            e: void 0,
+            t: void 0,
+            a: void 0,
+            o: void 0
+          });
           return _el$18;
         })();
       }
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${mod(-origin().y, HEIGHT) * -1}px)`) != null ? _el$17.style.setProperty("transform", _$p) : _el$17.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$17.style.setProperty("transform", _$p) : _el$17.style.removeProperty("transform"));
     return _el$17;
   })();
 }
@@ -27786,21 +27813,21 @@ function Ruler(props) {
   function handleCreateLoop(event) {
     event.stopPropagation();
     const absolutePosition = {
-      x: event.layerX - origin().x,
-      y: event.layerY - origin().y
+      x: event.layerX - projectedOrigin().x,
+      y: event.layerY - projectedOrigin().y
     };
     const loop2 = {
-      time: Math.floor(absolutePosition.x / WIDTH),
+      time: Math.floor(absolutePosition.x / projectedWidth()),
       duration: 1
     };
     props.setLoop(loop2);
     const initialTime = loop2.time;
     const initialDuration = loop2.duration;
-    const offset = absolutePosition.x - initialTime * WIDTH;
+    const offset = absolutePosition.x - initialTime * projectedWidth();
     pointerHelper(event, ({
       delta
     }) => {
-      const deltaX = Math.floor((offset + delta.x) / WIDTH);
+      const deltaX = Math.floor((offset + delta.x) / projectedWidth());
       if (deltaX < 0) {
         props.setLoop("time", initialTime + deltaX);
         props.setLoop("duration", 1 - deltaX);
@@ -27822,12 +27849,12 @@ function Ruler(props) {
     } = event.target.getBoundingClientRect();
     const initialTime = loop2.time;
     const initialDuration = loop2.duration;
-    if (event.clientX < left + WIDTH / 3) {
-      const offset = event.layerX - initialTime * WIDTH - origin().x;
+    if (event.clientX < left + projectedWidth() / 3) {
+      const offset = event.layerX - initialTime * projectedWidth() - projectedOrigin().x;
       await pointerHelper(event, ({
         delta
       }) => {
-        const deltaX = Math.floor((delta.x + offset) / WIDTH);
+        const deltaX = Math.floor((delta.x + offset) / projectedWidth());
         if (deltaX >= initialDuration) {
           props.setLoop("duration", deltaX - initialDuration + 2);
         } else {
@@ -27836,11 +27863,11 @@ function Ruler(props) {
           props.setLoop("duration", initialDuration - deltaX);
         }
       });
-    } else if (event.layerX > left + width - WIDTH / 3) {
+    } else if (event.layerX > left + width - projectedWidth() / 3) {
       await pointerHelper(event, ({
         delta
       }) => {
-        const duration = Math.floor((event.layerX - origin().x + delta.x) / WIDTH) - initialTime;
+        const duration = Math.floor((event.layerX - projectedOrigin().x + delta.x) / projectedWidth()) - initialTime;
         if (duration > 0) {
           props.setLoop("duration", 1 + duration);
         } else if (duration < 0) {
@@ -27855,7 +27882,7 @@ function Ruler(props) {
       await pointerHelper(event, ({
         delta
       }) => {
-        const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH);
+        const deltaX = Math.floor((delta.x + projectedWidth() / 2) / projectedWidth());
         const time = initialTime + deltaX;
         props.setLoop("time", time);
       });
@@ -27876,8 +27903,15 @@ function Ruler(props) {
   return [(() => {
     var _el$19 = _tmpl$8();
     _el$19.$$pointerdown = handleCreateLoop;
-    setAttribute(_el$19, "height", HEIGHT);
-    createRenderEffect(() => setAttribute(_el$19, "width", dimensions2().width));
+    createRenderEffect((_p$) => {
+      var _v$21 = dimensions2().width, _v$22 = projectedHeight();
+      _v$21 !== _p$.e && setAttribute(_el$19, "width", _p$.e = _v$21);
+      _v$22 !== _p$.t && setAttribute(_el$19, "height", _p$.t = _v$22);
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0
+    });
     return _el$19;
   })(), createComponent(Show, {
     get when() {
@@ -27886,76 +27920,102 @@ function Ruler(props) {
     children: (loop2) => (() => {
       var _el$24 = _tmpl$10();
       _el$24.$$pointerdown = (event) => handleAdjustLoop(event, loop2());
-      setAttribute(_el$24, "height", HEIGHT);
       _el$24.style.setProperty("transition", "fill 0.25s");
       createRenderEffect((_p$) => {
-        var _v$16 = loop2().time * WIDTH, _v$17 = loop2().duration * WIDTH, _v$18 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$19 = `translateX(${origin().x}px)`;
-        _v$16 !== _p$.e && setAttribute(_el$24, "x", _p$.e = _v$16);
-        _v$17 !== _p$.t && setAttribute(_el$24, "width", _p$.t = _v$17);
-        _v$18 !== _p$.a && setAttribute(_el$24, "fill", _p$.a = _v$18);
-        _v$19 !== _p$.o && ((_p$.o = _v$19) != null ? _el$24.style.setProperty("transform", _v$19) : _el$24.style.removeProperty("transform"));
+        var _v$30 = loop2().time * projectedWidth(), _v$31 = loop2().duration * projectedWidth(), _v$32 = projectedHeight(), _v$33 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$34 = `translateX(${projectedOrigin().x}px)`;
+        _v$30 !== _p$.e && setAttribute(_el$24, "x", _p$.e = _v$30);
+        _v$31 !== _p$.t && setAttribute(_el$24, "width", _p$.t = _v$31);
+        _v$32 !== _p$.a && setAttribute(_el$24, "height", _p$.a = _v$32);
+        _v$33 !== _p$.o && setAttribute(_el$24, "fill", _p$.o = _v$33);
+        _v$34 !== _p$.i && ((_p$.i = _v$34) != null ? _el$24.style.setProperty("transform", _v$34) : _el$24.style.removeProperty("transform"));
         return _p$;
       }, {
         e: void 0,
         t: void 0,
         a: void 0,
-        o: void 0
+        o: void 0,
+        i: void 0
       });
       return _el$24;
     })()
   }), (() => {
     var _el$20 = _tmpl$3();
-    setAttribute(_el$20, "height", HEIGHT);
     _el$20.style.setProperty("opacity", "0.5");
     createRenderEffect((_p$) => {
-      var _v$13 = styles.now, _v$14 = WIDTH * timeScale(), _v$15 = `translateX(${origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()}px)`;
-      _v$13 !== _p$.e && setAttribute(_el$20, "class", _p$.e = _v$13);
-      _v$14 !== _p$.t && setAttribute(_el$20, "width", _p$.t = _v$14);
-      _v$15 !== _p$.a && ((_p$.a = _v$15) != null ? _el$20.style.setProperty("transform", _v$15) : _el$20.style.removeProperty("transform"));
+      var _v$23 = styles.now, _v$24 = projectedWidth() * timeScale(), _v$25 = projectedHeight(), _v$26 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
+      _v$23 !== _p$.e && setAttribute(_el$20, "class", _p$.e = _v$23);
+      _v$24 !== _p$.t && setAttribute(_el$20, "width", _p$.t = _v$24);
+      _v$25 !== _p$.a && setAttribute(_el$20, "height", _p$.a = _v$25);
+      _v$26 !== _p$.o && ((_p$.o = _v$26) != null ? _el$20.style.setProperty("transform", _v$26) : _el$20.style.removeProperty("transform"));
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0,
+      a: void 0,
+      o: void 0
+    });
+    return _el$20;
+  })(), (() => {
+    var _el$21 = _tmpl$9();
+    createRenderEffect((_p$) => {
+      var _v$27 = dimensions2().width, _v$28 = projectedHeight(), _v$29 = projectedHeight();
+      _v$27 !== _p$.e && setAttribute(_el$21, "x2", _p$.e = _v$27);
+      _v$28 !== _p$.t && setAttribute(_el$21, "y1", _p$.t = _v$28);
+      _v$29 !== _p$.a && setAttribute(_el$21, "y2", _p$.a = _v$29);
       return _p$;
     }, {
       e: void 0,
       t: void 0,
       a: void 0
     });
-    return _el$20;
-  })(), (() => {
-    var _el$21 = _tmpl$9();
-    setAttribute(_el$21, "y1", HEIGHT);
-    setAttribute(_el$21, "y2", HEIGHT);
-    createRenderEffect(() => setAttribute(_el$21, "x2", dimensions2().width));
     return _el$21;
   })(), (() => {
     var _el$22 = _tmpl$5();
     insert(_el$22, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().width / WIDTH / 8) + 2);
+        return new Array(Math.floor(dimensions2().width / projectedWidth() / 8) + 2);
       },
       children: (_, index) => (() => {
         var _el$25 = _tmpl$11();
-        setAttribute(_el$25, "y2", HEIGHT);
-        setAttribute(_el$25, "x1", index * WIDTH * 8);
-        setAttribute(_el$25, "x2", index * WIDTH * 8);
+        createRenderEffect((_p$) => {
+          var _v$35 = projectedHeight(), _v$36 = index * projectedWidth() * 8, _v$37 = index * projectedWidth() * 8;
+          _v$35 !== _p$.e && setAttribute(_el$25, "y2", _p$.e = _v$35);
+          _v$36 !== _p$.t && setAttribute(_el$25, "x1", _p$.t = _v$36);
+          _v$37 !== _p$.a && setAttribute(_el$25, "x2", _p$.a = _v$37);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0,
+          a: void 0
+        });
         return _el$25;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * 8)}px)`) != null ? _el$22.style.setProperty("transform", _$p) : _el$22.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$22.style.setProperty("transform", _$p) : _el$22.style.removeProperty("transform"));
     return _el$22;
   })(), (() => {
     var _el$23 = _tmpl$5();
     insert(_el$23, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().width / WIDTH) + 2);
+        return new Array(Math.floor(dimensions2().width / projectedWidth()) + 2);
       },
       children: (_, index) => (() => {
         var _el$26 = _tmpl$12();
-        setAttribute(_el$26, "y2", HEIGHT);
-        setAttribute(_el$26, "x1", index * WIDTH);
-        setAttribute(_el$26, "x2", index * WIDTH);
+        createRenderEffect((_p$) => {
+          var _v$38 = projectedHeight(), _v$39 = index * projectedWidth(), _v$40 = index * projectedWidth();
+          _v$38 !== _p$.e && setAttribute(_el$26, "y2", _p$.e = _v$38);
+          _v$39 !== _p$.t && setAttribute(_el$26, "x1", _p$.t = _v$39);
+          _v$40 !== _p$.a && setAttribute(_el$26, "x2", _p$.a = _v$40);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0,
+          a: void 0
+        });
         return _el$26;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % WIDTH}px)`) != null ? _el$23.style.setProperty("transform", _$p) : _el$23.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % projectedWidth()}px)`) != null ? _el$23.style.setProperty("transform", _$p) : _el$23.style.removeProperty("transform"));
     return _el$23;
   })()];
 }
@@ -27965,15 +28025,15 @@ function Grid() {
     var _el$27 = _tmpl$5();
     insert(_el$27, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().width / WIDTH / timeScale()) + 2);
+        return new Array(Math.floor(dimensions2().width / projectedWidth() / timeScale()) + 2);
       },
       children: (_, index) => (() => {
         var _el$29 = _tmpl$13();
         createRenderEffect((_p$) => {
-          var _v$20 = dimensions2().height, _v$21 = index * timeScale() * WIDTH, _v$22 = index * timeScale() * WIDTH;
-          _v$20 !== _p$.e && setAttribute(_el$29, "y2", _p$.e = _v$20);
-          _v$21 !== _p$.t && setAttribute(_el$29, "x1", _p$.t = _v$21);
-          _v$22 !== _p$.a && setAttribute(_el$29, "x2", _p$.a = _v$22);
+          var _v$41 = dimensions2().height, _v$42 = index * timeScale() * projectedWidth(), _v$43 = index * timeScale() * projectedWidth();
+          _v$41 !== _p$.e && setAttribute(_el$29, "y2", _p$.e = _v$41);
+          _v$42 !== _p$.t && setAttribute(_el$29, "x1", _p$.t = _v$42);
+          _v$43 !== _p$.a && setAttribute(_el$29, "x2", _p$.a = _v$43);
           return _p$;
         }, {
           e: void 0,
@@ -27983,23 +28043,31 @@ function Grid() {
         return _el$29;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * timeScale())}px)`) != null ? _el$27.style.setProperty("transform", _$p) : _el$27.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * timeScale())}px)`) != null ? _el$27.style.setProperty("transform", _$p) : _el$27.style.removeProperty("transform"));
     return _el$27;
   })(), (() => {
     var _el$28 = _tmpl$5();
     insert(_el$28, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().width / WIDTH / 8) + 2);
+        return new Array(Math.floor(dimensions2().width / projectedWidth() / 8) + 2);
       },
       children: (_, index) => (() => {
         var _el$30 = _tmpl$11();
-        setAttribute(_el$30, "x1", index * WIDTH * 8);
-        setAttribute(_el$30, "x2", index * WIDTH * 8);
-        createRenderEffect(() => setAttribute(_el$30, "y2", dimensions2().height));
+        createRenderEffect((_p$) => {
+          var _v$44 = dimensions2().height, _v$45 = index * projectedWidth() * 8, _v$46 = index * projectedWidth() * 8;
+          _v$44 !== _p$.e && setAttribute(_el$30, "y2", _p$.e = _v$44);
+          _v$45 !== _p$.t && setAttribute(_el$30, "x1", _p$.t = _v$45);
+          _v$46 !== _p$.a && setAttribute(_el$30, "x2", _p$.a = _v$46);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0,
+          a: void 0
+        });
         return _el$30;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${origin().x % (WIDTH * 8)}px)`) != null ? _el$28.style.setProperty("transform", _$p) : _el$28.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$28.style.setProperty("transform", _$p) : _el$28.style.removeProperty("transform"));
     return _el$28;
   })()];
 }
@@ -28009,33 +28077,34 @@ function PianoUnderlay() {
     var _el$31 = _tmpl$5();
     insert(_el$31, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().height / HEIGHT) + 2);
+        return new Array(Math.floor(dimensions2().height / projectedHeight()) + 2);
       },
       children: (_, index) => (() => {
         var _el$32 = _tmpl$3();
-        setAttribute(_el$32, "y", index * HEIGHT);
-        setAttribute(_el$32, "height", HEIGHT);
         _el$32.style.setProperty("pointer-events", "none");
         createRenderEffect((_p$) => {
-          var _v$23 = dimensions2().width, _v$24 = KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
-          _v$23 !== _p$.e && setAttribute(_el$32, "width", _p$.e = _v$23);
-          _v$24 !== _p$.t && ((_p$.t = _v$24) != null ? _el$32.style.setProperty("fill", _v$24) : _el$32.style.removeProperty("fill"));
+          var _v$47 = index * projectedHeight(), _v$48 = dimensions2().width, _v$49 = projectedHeight(), _v$50 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
+          _v$47 !== _p$.e && setAttribute(_el$32, "y", _p$.e = _v$47);
+          _v$48 !== _p$.t && setAttribute(_el$32, "width", _p$.t = _v$48);
+          _v$49 !== _p$.a && setAttribute(_el$32, "height", _p$.a = _v$49);
+          _v$50 !== _p$.o && ((_p$.o = _v$50) != null ? _el$32.style.setProperty("fill", _v$50) : _el$32.style.removeProperty("fill"));
           return _p$;
         }, {
           e: void 0,
-          t: void 0
+          t: void 0,
+          a: void 0,
+          o: void 0
         });
         return _el$32;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-origin().y, HEIGHT)}px)`) != null ? _el$31.style.setProperty("transform", _$p) : _el$31.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-projectedOrigin().y, projectedHeight())}px)`) != null ? _el$31.style.setProperty("transform", _$p) : _el$31.style.removeProperty("transform"));
     return _el$31;
   })();
 }
 function TopLeftHud() {
   return (() => {
     var _el$33 = _tmpl$14(), _el$34 = _el$33.firstChild;
-    `${HEIGHT}px` != null ? _el$33.style.setProperty("top", `${HEIGHT}px`) : _el$33.style.removeProperty("top");
     _el$33.style.setProperty("gap", "5px");
     insert(_el$34, createComponent(ActionButton, {
       onClick: () => {
@@ -28087,7 +28156,15 @@ function TopLeftHud() {
         });
       }
     }), null);
-    createRenderEffect(() => className(_el$33, styles.topLeftHud));
+    createRenderEffect((_p$) => {
+      var _v$51 = styles.topLeftHud, _v$52 = `${projectedHeight()}px`;
+      _v$51 !== _p$.e && className(_el$33, _p$.e = _v$51);
+      _v$52 !== _p$.t && ((_p$.t = _v$52) != null ? _el$33.style.setProperty("top", _v$52) : _el$33.style.removeProperty("top"));
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0
+    });
     return _el$33;
   })();
 }
@@ -28149,7 +28226,6 @@ function TopRightHud() {
         return (() => {
           var _el$38 = _tmpl$15();
           _el$38.style.setProperty("display", "grid");
-          `${HEIGHT * 2 - 2}px` != null ? _el$38.style.setProperty("grid-template-rows", `${HEIGHT * 2 - 2}px`) : _el$38.style.removeProperty("grid-template-rows");
           insert(_el$38, createComponent(ActionButton, {
             get disabled() {
               return !hasClipboardAndPresence();
@@ -28178,6 +28254,7 @@ function TopRightHud() {
               return createComponent(IconGrommetIconsClipboard, {});
             }
           }), null);
+          createRenderEffect((_$p) => (_$p = `${projectedHeight() * 2 - 2}px`) != null ? _el$38.style.setProperty("grid-template-rows", _$p) : _el$38.style.removeProperty("grid-template-rows"));
           return _el$38;
         })();
       }
@@ -28373,8 +28450,48 @@ function BottomLeftHud() {
 }
 function BottomRightHud() {
   return (() => {
-    var _el$44 = _tmpl$19(), _el$45 = _el$44.firstChild, _el$46 = _el$45.nextSibling, _el$47 = _el$46.nextSibling, _el$48 = _el$47.nextSibling, _el$49 = _el$48.nextSibling;
+    var _el$44 = _tmpl$19(), _el$45 = _el$44.firstChild, _el$46 = _el$45.nextSibling, _el$47 = _el$46.nextSibling, _el$48 = _el$47.nextSibling, _el$49 = _el$48.nextSibling, _el$50 = _el$49.nextSibling, _el$51 = _el$50.nextSibling;
     insert(_el$45, createComponent(NumberButton, {
+      label: "zoom time",
+      get value() {
+        return zoom().x / 100;
+      },
+      decrement: () => setZoom((zoom2) => ({
+        ...zoom2,
+        x: zoom2.x + 10
+      })),
+      increment: () => setZoom((zoom2) => ({
+        ...zoom2,
+        x: zoom2.x - 10
+      })),
+      get canDecrement() {
+        return zoom().x > 0;
+      },
+      get canIncrement() {
+        return zoom().x < 1e3;
+      }
+    }));
+    insert(_el$46, createComponent(NumberButton, {
+      label: "zoom pitch",
+      get value() {
+        return zoom().y / 100;
+      },
+      decrement: () => setZoom((zoom2) => ({
+        ...zoom2,
+        y: zoom2.y + 10
+      })),
+      increment: () => setZoom((zoom2) => ({
+        ...zoom2,
+        y: zoom2.y - 10
+      })),
+      get canDecrement() {
+        return zoom().y > 0;
+      },
+      get canIncrement() {
+        return zoom().y < 1e3;
+      }
+    }));
+    insert(_el$47, createComponent(NumberButton, {
       label: "volume",
       get value() {
         return volume();
@@ -28388,7 +28505,7 @@ function BottomRightHud() {
         return volume() < 10;
       }
     }));
-    insert(_el$46, createComponent(NumberButton, {
+    insert(_el$48, createComponent(NumberButton, {
       label: "tempo",
       get value() {
         return doc().bpm;
@@ -28402,7 +28519,7 @@ function BottomRightHud() {
         return doc().bpm < 1e3;
       }
     }));
-    insert(_el$47, createComponent(NumberButton, {
+    insert(_el$49, createComponent(NumberButton, {
       label: "grid",
       get value() {
         return createMemo(() => timeScale() / 8 < 1)() ? `1:${1 / (timeScale() / 8)}` : timeScale() / 8;
@@ -28413,7 +28530,7 @@ function BottomRightHud() {
         return timeScale() > 8 / 128;
       }
     }));
-    insert(_el$48, createComponent(NumberButton, {
+    insert(_el$50, createComponent(NumberButton, {
       label: "instrument",
       get value() {
         return doc().instrument.toString().padStart(3, "0");
@@ -28441,7 +28558,7 @@ function BottomRightHud() {
         }
       }
     }));
-    insert(_el$49, createComponent(Button, {
+    insert(_el$51, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -28454,7 +28571,7 @@ function BottomRightHud() {
         return createComponent(IconGrommetIconsStop, {});
       }
     }), null);
-    insert(_el$49, createComponent(Button, {
+    insert(_el$51, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -28494,21 +28611,21 @@ function App() {
     let shouldPlay = true;
     const newVelocity = doc().bpm / 60;
     const currentTime = audioContext.currentTime;
-    const elapsedTime = currentTime * lastVelocity - timeOffset();
-    setTimeOffset(currentTime * newVelocity - elapsedTime);
+    const elapsedTime = currentTime * lastVelocity - internalTimeOffset();
+    setInternalTimeOffset(currentTime * newVelocity - elapsedTime);
     lastVelocity = newVelocity;
     function clock() {
       if (!shouldPlay) return;
       const VELOCITY = doc().bpm / 60;
-      let time = audioContext.currentTime * VELOCITY - timeOffset();
+      let time = audioContext.currentTime * VELOCITY - internalTimeOffset();
       if (loop) {
         if (time < loop.time) {
           playedNotes.clear();
           time = loop.time;
-          setTimeOffset(audioContext.currentTime * VELOCITY - loop.time);
+          setInternalTimeOffset(audioContext.currentTime * VELOCITY - loop.time);
         } else if (time > loop.time + loop.duration) {
           playedNotes.clear();
-          setTimeOffset(audioContext.currentTime * VELOCITY - loop.time);
+          setInternalTimeOffset(audioContext.currentTime * VELOCITY - loop.time);
           clock();
           return;
         }
@@ -28555,15 +28672,15 @@ function App() {
     });
   });
   return (() => {
-    var _el$50 = _tmpl$20(), _el$51 = _el$50.firstChild;
-    _el$50.style.setProperty("width", "100%");
-    _el$50.style.setProperty("height", "100%");
-    _el$50.style.setProperty("overflow", "hidden");
-    insert(_el$50, createComponent(TopLeftHud, {}), _el$51);
-    insert(_el$50, createComponent(TopRightHud, {}), _el$51);
-    insert(_el$50, createComponent(BottomLeftHud, {}), _el$51);
-    insert(_el$50, createComponent(BottomRightHud, {}), _el$51);
-    _el$51.$$pointerdown = async (event) => {
+    var _el$52 = _tmpl$20(), _el$53 = _el$52.firstChild;
+    _el$52.style.setProperty("width", "100%");
+    _el$52.style.setProperty("height", "100%");
+    _el$52.style.setProperty("overflow", "hidden");
+    insert(_el$52, createComponent(TopLeftHud, {}), _el$53);
+    insert(_el$52, createComponent(TopRightHud, {}), _el$53);
+    insert(_el$52, createComponent(BottomLeftHud, {}), _el$53);
+    insert(_el$52, createComponent(BottomRightHud, {}), _el$53);
+    _el$53.$$pointerdown = async (event) => {
       switch (mode()) {
         case "note":
           handleCreateNote(event);
@@ -28575,11 +28692,11 @@ function App() {
           handlePan(event);
       }
     };
-    _el$51.addEventListener("wheel", (event) => setOrigin((origin2) => ({
-      x: origin2.x - event.deltaX,
-      y: origin2.y - event.deltaY * 2 / 3
+    _el$53.addEventListener("wheel", (event) => setOrigin((origin) => ({
+      x: origin.x - event.deltaX,
+      y: origin.y - event.deltaY * 2 / 3
     })));
-    _el$51.$$dblclick = () => setSelectedNotes([]);
+    _el$53.$$dblclick = () => setSelectedNotes([]);
     use((element) => {
       onMount(() => {
         const observer = new ResizeObserver(() => {
@@ -28588,11 +28705,11 @@ function App() {
         observer.observe(element);
         onCleanup(() => observer.disconnect());
       });
-    }, _el$51);
-    _el$51.style.setProperty("width", "100%");
-    _el$51.style.setProperty("height", "100%");
-    _el$51.style.setProperty("overflow", "hidden");
-    insert(_el$51, createComponent(Show, {
+    }, _el$53);
+    _el$53.style.setProperty("width", "100%");
+    _el$53.style.setProperty("height", "100%");
+    _el$53.style.setProperty("overflow", "hidden");
+    insert(_el$53, createComponent(Show, {
       get when() {
         return dimensions();
       },
@@ -28604,13 +28721,13 @@ function App() {
               return createMemo(() => mode() === "select")() && selectionArea();
             },
             children: (area) => (() => {
-              var _el$54 = _tmpl$21();
+              var _el$56 = _tmpl$21();
               createRenderEffect((_p$) => {
-                var _v$29 = area().start.x * WIDTH + origin().x, _v$30 = area().start.y * HEIGHT + origin().y, _v$31 = (area().end.x - area().start.x) * WIDTH, _v$32 = (area().end.y - area().start.y) * HEIGHT;
-                _v$29 !== _p$.e && setAttribute(_el$54, "x", _p$.e = _v$29);
-                _v$30 !== _p$.t && setAttribute(_el$54, "y", _p$.t = _v$30);
-                _v$31 !== _p$.a && setAttribute(_el$54, "width", _p$.a = _v$31);
-                _v$32 !== _p$.o && setAttribute(_el$54, "height", _p$.o = _v$32);
+                var _v$57 = area().start.x * projectedWidth() + projectedOrigin().x, _v$58 = area().start.y * projectedHeight() + projectedOrigin().y, _v$59 = (area().end.x - area().start.x) * projectedWidth(), _v$60 = (area().end.y - area().start.y) * projectedHeight();
+                _v$57 !== _p$.e && setAttribute(_el$56, "x", _p$.e = _v$57);
+                _v$58 !== _p$.t && setAttribute(_el$56, "y", _p$.t = _v$58);
+                _v$59 !== _p$.a && setAttribute(_el$56, "width", _p$.a = _v$59);
+                _v$60 !== _p$.o && setAttribute(_el$56, "height", _p$.o = _v$60);
                 return _p$;
               }, {
                 e: void 0,
@@ -28618,35 +28735,36 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$54;
+              return _el$56;
             })()
           }), createComponent(Show, {
             get when() {
               return createMemo(() => mode() === "select")() && selectionPresence();
             },
             children: (presence) => (() => {
-              var _el$55 = _tmpl$22();
-              setAttribute(_el$55, "height", HEIGHT);
+              var _el$57 = _tmpl$22();
               createRenderEffect((_p$) => {
-                var _v$33 = presence().x * WIDTH + origin().x, _v$34 = presence().y * HEIGHT + origin().y, _v$35 = WIDTH * timeScale();
-                _v$33 !== _p$.e && setAttribute(_el$55, "x", _p$.e = _v$33);
-                _v$34 !== _p$.t && setAttribute(_el$55, "y", _p$.t = _v$34);
-                _v$35 !== _p$.a && setAttribute(_el$55, "width", _p$.a = _v$35);
+                var _v$61 = presence().x * projectedWidth() + projectedOrigin().x, _v$62 = presence().y * projectedHeight() + projectedOrigin().y, _v$63 = projectedWidth() * timeScale(), _v$64 = projectedHeight();
+                _v$61 !== _p$.e && setAttribute(_el$57, "x", _p$.e = _v$61);
+                _v$62 !== _p$.t && setAttribute(_el$57, "y", _p$.t = _v$62);
+                _v$63 !== _p$.a && setAttribute(_el$57, "width", _p$.a = _v$63);
+                _v$64 !== _p$.o && setAttribute(_el$57, "height", _p$.o = _v$64);
                 return _p$;
               }, {
                 e: void 0,
                 t: void 0,
-                a: void 0
+                a: void 0,
+                o: void 0
               });
-              return _el$55;
+              return _el$57;
             })()
           }), createComponent(Show, {
             get when() {
               return doc().notes.length > 0;
             },
             get children() {
-              var _el$52 = _tmpl$5();
-              insert(_el$52, createComponent(For, {
+              var _el$54 = _tmpl$5();
+              insert(_el$54, createComponent(For, {
                 get each() {
                   return doc().notes;
                 },
@@ -28654,18 +28772,18 @@ function App() {
                   note
                 })
               }));
-              createRenderEffect((_$p) => (_$p = `translate(${origin().x}px, ${origin().y}px)`) != null ? _el$52.style.setProperty("transform", _$p) : _el$52.style.removeProperty("transform"));
-              return _el$52;
+              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$54.style.setProperty("transform", _$p) : _el$54.style.removeProperty("transform"));
+              return _el$54;
             }
           }), (() => {
-            var _el$53 = _tmpl$3();
-            _el$53.style.setProperty("opacity", "0.075");
+            var _el$55 = _tmpl$3();
+            _el$55.style.setProperty("opacity", "0.075");
             createRenderEffect((_p$) => {
-              var _v$25 = styles.now, _v$26 = WIDTH * timeScale(), _v$27 = dimensions2().height, _v$28 = `translateX(${origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()}px)`;
-              _v$25 !== _p$.e && setAttribute(_el$53, "class", _p$.e = _v$25);
-              _v$26 !== _p$.t && setAttribute(_el$53, "width", _p$.t = _v$26);
-              _v$27 !== _p$.a && setAttribute(_el$53, "height", _p$.a = _v$27);
-              _v$28 !== _p$.o && ((_p$.o = _v$28) != null ? _el$53.style.setProperty("transform", _v$28) : _el$53.style.removeProperty("transform"));
+              var _v$53 = styles.now, _v$54 = projectedWidth() * timeScale(), _v$55 = dimensions2().height, _v$56 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
+              _v$53 !== _p$.e && setAttribute(_el$55, "class", _p$.e = _v$53);
+              _v$54 !== _p$.t && setAttribute(_el$55, "width", _p$.t = _v$54);
+              _v$55 !== _p$.a && setAttribute(_el$55, "height", _p$.a = _v$55);
+              _v$56 !== _p$.o && ((_p$.o = _v$56) != null ? _el$55.style.setProperty("transform", _v$56) : _el$55.style.removeProperty("transform"));
               return _p$;
             }, {
               e: void 0,
@@ -28673,7 +28791,7 @@ function App() {
               a: void 0,
               o: void 0
             });
-            return _el$53;
+            return _el$55;
           })(), createComponent(Ruler, {
             loop,
             setLoop
@@ -28681,7 +28799,7 @@ function App() {
         }
       })
     }));
-    return _el$50;
+    return _el$52;
   })();
 }
 delegateEvents(["pointerdown", "click", "dblclick"]);
