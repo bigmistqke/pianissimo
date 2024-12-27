@@ -17,6 +17,7 @@ A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/sol
 - [x] stretch notes
   - [x] multi-note stretch
   - [x] handle overlapping notes
+  - [ ] needs fix: when reducing a note it reduces 1 timescale too early
 - [x] velocity mode
 - [x] collaborative feature: add automerge/chee's lib
   - [ ] history: ctrl+z/ctrl+y
@@ -24,6 +25,7 @@ A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/sol
     - research: https://www.youtube.com/watch?v=uP7AKExkMGU
     - tried https://github.com/onsetsoftware/automerge-repo-undo-redo but created `conflict` patches
 - [x] change tempo/bpm
+  - [ ] needs fix: bpm is not correct and creates glitches when changing tempo
 - [x] change volume
 - [ ] change measure
 - [ ] zoom (pinch on mobile?)
@@ -40,6 +42,10 @@ A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/sol
 - [ ] different color schemes
 - [ ] desktop mode/mobile mode
   - we develop mobile-first since it's trickier to pull of right
+- [ ] arpeggiator / arpeggio-pattern designer
+  - select area/notes
+  - select pattern
+  - arpeggio made within selection-area using the selected notes and according to current grid-size
 - [ ] record jam to a new sequence
   - it's fun to let a loop play and play around with it (mute parts, extend notes, ...)
   - it would be cool to be able to record all these jams into a new sequence

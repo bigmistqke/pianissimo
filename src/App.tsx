@@ -25,7 +25,6 @@ import zeptoid from 'zeptoid'
 import styles from './App.module.css'
 import {
   audioContext,
-  bpm,
   clipboard,
   clipOverlappingNotes,
   copyNotes,
@@ -56,7 +55,6 @@ import {
   selectedNotes,
   selectionArea,
   selectionPresence,
-  setBpm,
   setDimensions,
   setDoc,
   setLoop,
@@ -98,7 +96,7 @@ function createMidiDataUri(notes: Array<NoteData>) {
         pitch: [MidiWriter.Utils.getPitch(note.pitch)],
         duration: Array.from({ length: note.duration }).fill(division),
         startTick: note.time * (512 / division),
-        velocity: 100
+        velocity: note.velocity / 100
       })
     )
   })
@@ -336,7 +334,7 @@ function Note(props: { note: NoteData }) {
             note.active = true
           }
           if (note.id in initialNotes) {
-            note.volume = Math.min(1, Math.max(0, initialNotes[note.id].volume - delta.y / 100))
+            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100))
           }
         })
       })
@@ -356,7 +354,7 @@ function Note(props: { note: NoteData }) {
       y={-props.note.pitch * HEIGHT + MARGIN}
       width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
       height={HEIGHT - MARGIN * 2}
-      opacity={!props.note._remove && props.note.active ? props.note.volume * 0.75 + 0.25 : 0.25}
+      opacity={!props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25}
       onDblClick={() => {
         if (mode() === 'note') {
           setDoc(doc => {
@@ -813,8 +811,8 @@ function TopRightHud() {
                     duration: note.duration - (cutLine - note.time),
                     pitch: note.pitch,
                     time: cutLine,
-                    velocity: note.volume
-                  }
+                    velocity: note.velocity
+                  } satisfies NoteData
                 })
 
               setDoc(doc => doc.notes.push(...newNotes))
@@ -943,11 +941,11 @@ function BottomRightHud() {
       <div>
         <NumberButton
           label="tempo"
-          value={bpm()}
-          decrement={() => setBpm(bpm => Math.max(0, bpm - 1))}
-          increment={() => setBpm(bpm => Math.min(1000, bpm + 1))}
-          canDecrement={bpm() > 0}
-          canIncrement={bpm() < 1000}
+          value={doc().bpm}
+          decrement={() => setDoc(doc => (doc.bpm = Math.max(0, doc.bpm - 1)))}
+          increment={() => setDoc(doc => (doc.bpm = Math.min(1000, doc.bpm + 1)))}
+          canDecrement={doc().bpm > 0}
+          canIncrement={doc().bpm < 1000}
         />
       </div>
       <div>
@@ -1040,7 +1038,7 @@ function App() {
   )
 
   // Audio Loop
-  let lastVelocity = bpm() / 60 // Track the last velocity to adjust time offset
+  let lastVelocity = doc().bpm / 60 // Track the last velocity to adjust time offset
 
   createEffect(
     on(playing, playing => {
@@ -1049,7 +1047,7 @@ function App() {
       let shouldPlay = true
 
       // Adjust timeOffset when BPM changes to prevent abrupt shifts
-      const newVelocity = bpm() / 60
+      const newVelocity = doc().bpm / 60
       const currentTime = audioContext!.currentTime
       const elapsedTime = currentTime * lastVelocity - timeOffset()
       setTimeOffset(currentTime * newVelocity - elapsedTime)
@@ -1058,7 +1056,7 @@ function App() {
       function clock() {
         if (!shouldPlay) return
 
-        const VELOCITY = bpm() / 60 // Calculate velocity dynamically from BPM
+        const VELOCITY = doc().bpm / 60 // Calculate velocity dynamically from BPM
         let time = audioContext!.currentTime * VELOCITY - timeOffset()
 
         if (loop) {

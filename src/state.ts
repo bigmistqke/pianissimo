@@ -70,6 +70,7 @@ export const {
     initialValue: {
       notes: [],
       instrument: 24,
+      bpm: 140,
       get date() {
         return serializeDate()
       }
@@ -118,7 +119,6 @@ export const [playing, setPlaying] = createSignal(false)
 export const [playingNotes, setPlayingNotes] = createStore<Array<NoteData>>([])
 export const [now, setNow] = createSignal(0)
 export const [loop, setLoop] = createStore<Loop>({ time: 0, duration: 4 })
-export const [bpm, setBpm] = createSignal(140)
 export const [volume, setVolume] = createSignal(10)
 
 // Selectors
@@ -182,14 +182,14 @@ export function playNote(note: NoteData, delay = 0) {
   if (!player) {
     player = new Instruments()
   }
-  if (note.volume === 0) {
+  if (note.velocity === 0) {
     return
   }
   player.play(
     doc().instrument, // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch, // note: midi number or frequency in Hz (if > 127)
     // NOTE: later commit should use GainNode to change volume
-    note.volume * (volume() / 10), // velocity
+    note.velocity * (volume() / 10), // velocity
     delay, // delay
     note.duration / VELOCITY, // duration
     0, // (optional - specify channel for tinysynth to use)
@@ -223,7 +223,7 @@ export async function handleCreateNote(event: PointerEvent) {
     duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
     time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale(),
-    volume: 1
+    velocity: 1
   }
 
   setDoc(doc => {

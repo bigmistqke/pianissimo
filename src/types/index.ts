@@ -8,7 +8,7 @@ export interface NoteData {
   duration: number
   active: boolean
   id: string
-  volume: number
+  velocity: number
   _remove?: boolean // Temporary data: do not serialise
   _duration?: number // Temporary data: do not serialise
 }
@@ -26,4 +26,5 @@ export interface SharedState {
   notes: Array<NoteData>
   instrument: number
   date: number
+  bpm: number
 }
