@@ -35,7 +35,7 @@ import {
   handleCreateNote,
   handlePan,
   handleSelectionBox,
-  HEIGHT,
+  internalTimeOffset,
   isNotePlaying,
   isNoteSelected,
   isPitchPlaying,
@@ -47,16 +47,19 @@ import {
   newDoc,
   now,
   openUrl,
-  origin,
   pasteNotes,
   playedNotes,
   playing,
   playNote,
+  projectedHeight,
+  projectedOrigin,
+  projectedWidth,
   selectedNotes,
   selectionArea,
   selectionPresence,
   setDimensions,
   setDoc,
+  setInternalTimeOffset,
   setLoop,
   setMode,
   setNow,
@@ -65,17 +68,17 @@ import {
   setSelectedNotes,
   setSelectionArea,
   setSelectionPresence,
-  setTimeOffset,
   setTimeScale,
   setVolume,
+  setZoom,
   sortNotes,
-  timeOffset,
   timeScale,
   togglePlaying,
   url,
   urls,
   volume,
-  WIDTH
+  WIDTH,
+  zoom
 } from './state'
 import { Loop, NoteData } from './types'
 import { downloadDataUri } from './utils/download-data-uri'
@@ -209,7 +212,7 @@ function Note(props: { note: NoteData }) {
 
         let previous = 0
         const { delta } = await pointerHelper(event, ({ delta }) => {
-          let time = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
+          let time = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
 
           if (time === timeScale() * -1) {
             time = 0
@@ -225,7 +228,8 @@ function Note(props: { note: NoteData }) {
               if (isNoteSelected(note)) {
                 note.time = initialNotes[note.id].time + time - offset
                 note.pitch =
-                  initialNotes[note.id].pitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+                  initialNotes[note.id].pitch -
+                  Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
                 if (hasChanged) {
                   playNote(note)
                 }
@@ -234,7 +238,7 @@ function Note(props: { note: NoteData }) {
           })
           markOverlappingNotes(...selectedNotes())
         })
-        if (Math.floor((delta.x + WIDTH / 2) / WIDTH) !== 0) {
+        if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) {
           sortNotes()
         }
         clipOverlappingNotes(...selectedNotes())
@@ -263,7 +267,7 @@ function Note(props: { note: NoteData }) {
 
     await pointerHelper(event, ({ delta }) => {
       batch(() => {
-        const deltaX = Math.floor(delta.x / WIDTH / timeScale()) * timeScale()
+        const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
         setDoc(doc => {
           doc.notes.forEach(note => {
             if (!isNoteSelected(note)) return
@@ -295,8 +299,9 @@ function Note(props: { note: NoteData }) {
     let previousPitch = initialPitch
     setSelectedNotes([props.note])
     await pointerHelper(event, ({ delta }) => {
-      const time = Math.floor((initialTime + delta.x / WIDTH) / timeScale()) * timeScale()
-      const pitch = initialPitch - Math.floor((delta.y + HEIGHT / 2) / HEIGHT)
+      const time =
+        Math.floor((initialTime + delta.x / projectedWidth()) / timeScale()) * timeScale()
+      const pitch = initialPitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
 
       setDoc(doc => {
         const note = doc.notes.find(note => note.id === props.note.id)
@@ -350,10 +355,10 @@ function Note(props: { note: NoteData }) {
         styles.note,
         (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected
       )}
-      x={props.note.time * WIDTH + MARGIN}
-      y={-props.note.pitch * HEIGHT + MARGIN}
-      width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
-      height={HEIGHT - MARGIN * 2}
+      x={props.note.time * projectedWidth() + MARGIN}
+      y={-props.note.pitch * projectedHeight() + MARGIN}
+      width={(props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2}
+      height={projectedHeight() - MARGIN * 2}
       opacity={!props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25}
       onDblClick={() => {
         if (mode() === 'note') {
@@ -384,16 +389,23 @@ function Piano() {
   return (
     <>
       <rect width={WIDTH} height={dimensions().height} fill="var(--color-piano-white)" />
-      <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
-        <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
+      <g
+        style={{ transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)` }}
+      >
+        <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
           {(_, index) => (
             <rect
-              y={index * HEIGHT}
+              y={index * projectedHeight()}
               x={0}
               width={WIDTH}
-              height={HEIGHT}
+              height={projectedHeight()}
               style={{
-                fill: KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)]
+                fill: KEY_COLORS[
+                  mod(
+                    index + Math.floor(-projectedOrigin().y / projectedHeight()),
+                    KEY_COLORS.length
+                  )
+                ]
                   ? 'none'
                   : 'var(--color-piano-black)'
               }}
@@ -408,18 +420,20 @@ function Piano() {
 function PlayingNotes() {
   const dimensions = useDimensions()
   return (
-    <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
-      <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
+    <g style={{ transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)` }}>
+      <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
         {(_, index) => {
           return (
             <rect
-              y={index * HEIGHT}
+              y={index * projectedHeight()}
               x={0}
-              width={WIDTH}
-              height={HEIGHT}
+              width={projectedWidth()}
+              height={projectedHeight()}
               opacity={0.8}
               style={{
-                fill: isPitchPlaying(-(index + Math.floor(-origin().y / HEIGHT)))
+                fill: isPitchPlaying(
+                  -(index + Math.floor(-projectedOrigin().y / projectedHeight()))
+                )
                   ? 'var(--color-note-selected)'
                   : 'none'
               }}
@@ -441,12 +455,12 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     event.stopPropagation()
 
     const absolutePosition = {
-      x: event.layerX - origin().x,
-      y: event.layerY - origin().y
+      x: event.layerX - projectedOrigin().x,
+      y: event.layerY - projectedOrigin().y
     }
 
     const loop = {
-      time: Math.floor(absolutePosition.x / WIDTH),
+      time: Math.floor(absolutePosition.x / projectedWidth()),
       duration: 1
     }
 
@@ -454,10 +468,10 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
 
     const initialTime = loop.time
     const initialDuration = loop.duration
-    const offset = absolutePosition.x - initialTime * WIDTH
+    const offset = absolutePosition.x - initialTime * projectedWidth()
 
     pointerHelper(event, ({ delta }) => {
-      const deltaX = Math.floor((offset + delta.x) / WIDTH)
+      const deltaX = Math.floor((offset + delta.x) / projectedWidth())
       if (deltaX < 0) {
         props.setLoop('time', initialTime + deltaX)
         props.setLoop('duration', 1 - deltaX)
@@ -487,11 +501,11 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     const initialTime = loop.time
     const initialDuration = loop.duration
 
-    if (event.clientX < left + WIDTH / 3) {
-      const offset = event.layerX - initialTime * WIDTH - origin().x
+    if (event.clientX < left + projectedWidth() / 3) {
+      const offset = event.layerX - initialTime * projectedWidth() - projectedOrigin().x
 
       await pointerHelper(event, ({ delta }) => {
-        const deltaX = Math.floor((delta.x + offset) / WIDTH)
+        const deltaX = Math.floor((delta.x + offset) / projectedWidth())
         if (deltaX >= initialDuration) {
           props.setLoop('duration', deltaX - initialDuration + 2)
         } else {
@@ -500,9 +514,11 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           props.setLoop('duration', initialDuration - deltaX)
         }
       })
-    } else if (event.layerX > left + width - WIDTH / 3) {
+    } else if (event.layerX > left + width - projectedWidth() / 3) {
       await pointerHelper(event, ({ delta }) => {
-        const duration = Math.floor((event.layerX - origin().x + delta.x) / WIDTH) - initialTime
+        const duration =
+          Math.floor((event.layerX - projectedOrigin().x + delta.x) / projectedWidth()) -
+          initialTime
 
         if (duration > 0) {
           props.setLoop('duration', 1 + duration)
@@ -516,7 +532,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
       })
     } else {
       await pointerHelper(event, ({ delta }) => {
-        const deltaX = Math.floor((delta.x + WIDTH / 2) / WIDTH)
+        const deltaX = Math.floor((delta.x + projectedWidth() / 2) / projectedWidth())
         const time = initialTime + deltaX
         props.setLoop('time', time)
       })
@@ -548,19 +564,19 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         x={0}
         y={0}
         width={dimensions().width}
-        height={HEIGHT}
+        height={projectedHeight()}
         fill="var(--color-piano-black)"
         onPointerDown={handleCreateLoop}
       />
       <Show when={props.loop}>
         {loop => (
           <rect
-            x={loop().time * WIDTH}
+            x={loop().time * projectedWidth()}
             y={0}
-            width={loop().duration * WIDTH}
-            height={HEIGHT}
+            width={loop().duration * projectedWidth()}
+            height={projectedHeight()}
             fill={selected() || trigger() ? 'var(--color-loop-selected)' : 'var(--color-loop)'}
-            style={{ transform: `translateX(${origin().x}px)`, transition: 'fill 0.25s' }}
+            style={{ transform: `translateX(${projectedOrigin().x}px)`, transition: 'fill 0.25s' }}
             onPointerDown={event => handleAdjustLoop(event, loop())}
           />
         )}
@@ -568,38 +584,44 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
       {/* Now Indicator */}
       <rect
         class={styles.now}
-        width={WIDTH * timeScale()}
-        height={HEIGHT}
+        width={projectedWidth() * timeScale()}
+        height={projectedHeight()}
         style={{
           opacity: 0.5,
           transform: `translateX(${
-            origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()
+            projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()
           }px)`
         }}
       />
-      <line x1={0} x2={dimensions().width} y1={HEIGHT} y2={HEIGHT} stroke="var(--color-stroke)" />
-      <g style={{ transform: `translateX(${origin().x % (WIDTH * 8)}px)` }}>
-        <Index each={new Array(Math.floor(dimensions().width / WIDTH / 8) + 2)}>
+      <line
+        x1={0}
+        x2={dimensions().width}
+        y1={projectedHeight()}
+        y2={projectedHeight()}
+        stroke="var(--color-stroke)"
+      />
+      <g style={{ transform: `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().width / projectedWidth() / 8) + 2)}>
           {(_, index) => (
             <line
               y1={0}
-              y2={HEIGHT}
-              x1={index * WIDTH * 8}
-              x2={index * WIDTH * 8}
+              y2={projectedHeight()}
+              x1={index * projectedWidth() * 8}
+              x2={index * projectedWidth() * 8}
               stroke="var(--color-stroke)"
               stroke-width="2px"
             />
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${origin().x % WIDTH}px)` }}>
-        <Index each={new Array(Math.floor(dimensions().width / WIDTH) + 2)}>
+      <g style={{ transform: `translateX(${projectedOrigin().x % projectedWidth()}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().width / projectedWidth()) + 2)}>
           {(_, index) => (
             <line
               y1={0}
-              y2={HEIGHT}
-              x1={index * WIDTH}
-              x2={index * WIDTH}
+              y2={projectedHeight()}
+              x1={index * projectedWidth()}
+              x2={index * projectedWidth()}
               stroke="var(--color-stroke)"
               stroke-width="1px"
             />
@@ -614,27 +636,33 @@ function Grid() {
   const dimensions = useDimensions()
   return (
     <>
-      <g style={{ transform: `translateX(${origin().x % (WIDTH * timeScale())}px)` }}>
-        <Index each={new Array(Math.floor(dimensions().width / WIDTH / timeScale()) + 2)}>
+      <g
+        style={{
+          transform: `translateX(${projectedOrigin().x % (projectedWidth() * timeScale())}px)`
+        }}
+      >
+        <Index
+          each={new Array(Math.floor(dimensions().width / projectedWidth() / timeScale()) + 2)}
+        >
           {(_, index) => (
             <line
               y1={0}
               y2={dimensions().height}
-              x1={index * timeScale() * WIDTH}
-              x2={index * timeScale() * WIDTH}
+              x1={index * timeScale() * projectedWidth()}
+              x2={index * timeScale() * projectedWidth()}
               stroke="var(--color-stroke-secondary)"
             />
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${origin().x % (WIDTH * 8)}px)` }}>
-        <Index each={new Array(Math.floor(dimensions().width / WIDTH / 8) + 2)}>
+      <g style={{ transform: `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)` }}>
+        <Index each={new Array(Math.floor(dimensions().width / projectedWidth() / 8) + 2)}>
           {(_, index) => (
             <line
               y1={0}
               y2={dimensions().height}
-              x1={index * WIDTH * 8}
-              x2={index * WIDTH * 8}
+              x1={index * projectedWidth() * 8}
+              x2={index * projectedWidth() * 8}
               stroke="var(--color-stroke)"
               stroke-width="2px"
             />
@@ -648,16 +676,18 @@ function Grid() {
 function PianoUnderlay() {
   const dimensions = useDimensions()
   return (
-    <g style={{ transform: `translateY(${-mod(-origin().y, HEIGHT)}px)` }}>
-      <Index each={new Array(Math.floor(dimensions().height / HEIGHT) + 2)}>
+    <g style={{ transform: `translateY(${-mod(-projectedOrigin().y, projectedHeight())}px)` }}>
+      <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
         {(_, index) => (
           <rect
-            y={index * HEIGHT}
+            y={index * projectedHeight()}
             width={dimensions().width}
-            height={HEIGHT}
+            height={projectedHeight()}
             style={{
               'pointer-events': 'none',
-              fill: KEY_COLORS[mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length)]
+              fill: KEY_COLORS[
+                mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)
+              ]
                 ? 'none'
                 : 'var(--color-piano-underlay)'
             }}
@@ -673,7 +703,7 @@ function TopLeftHud() {
     <div
       class={styles.topLeftHud}
       style={{
-        top: `${HEIGHT}px`,
+        top: `${projectedHeight()}px`,
         gap: '5px'
       }}
     >
@@ -765,7 +795,7 @@ function TopRightHud() {
             <div
               style={{
                 display: 'grid',
-                'grid-template-rows': `${HEIGHT * 2 - 2}px`
+                'grid-template-rows': `${projectedHeight() * 2 - 2}px`
               }}
             >
               <ActionButton
@@ -930,6 +960,26 @@ function BottomRightHud() {
     <div class={styles.bottomRightHud}>
       <div>
         <NumberButton
+          label="zoom time"
+          value={zoom().x / 100}
+          decrement={() => setZoom(zoom => ({ ...zoom, x: zoom.x + 10 }))}
+          increment={() => setZoom(zoom => ({ ...zoom, x: zoom.x - 10 }))}
+          canDecrement={zoom().x > 0}
+          canIncrement={zoom().x < 1000}
+        />
+      </div>
+      <div>
+        <NumberButton
+          label="zoom pitch"
+          value={zoom().y / 100}
+          decrement={() => setZoom(zoom => ({ ...zoom, y: zoom.y + 10 }))}
+          increment={() => setZoom(zoom => ({ ...zoom, y: zoom.y - 10 }))}
+          canDecrement={zoom().y > 0}
+          canIncrement={zoom().y < 1000}
+        />
+      </div>
+      <div>
+        <NumberButton
           label="volume"
           value={volume()}
           decrement={() => setVolume(bpm => Math.max(0, bpm - 1))}
@@ -1049,24 +1099,24 @@ function App() {
       // Adjust timeOffset when BPM changes to prevent abrupt shifts
       const newVelocity = doc().bpm / 60
       const currentTime = audioContext!.currentTime
-      const elapsedTime = currentTime * lastVelocity - timeOffset()
-      setTimeOffset(currentTime * newVelocity - elapsedTime)
+      const elapsedTime = currentTime * lastVelocity - internalTimeOffset()
+      setInternalTimeOffset(currentTime * newVelocity - elapsedTime)
       lastVelocity = newVelocity
 
       function clock() {
         if (!shouldPlay) return
 
         const VELOCITY = doc().bpm / 60 // Calculate velocity dynamically from BPM
-        let time = audioContext!.currentTime * VELOCITY - timeOffset()
+        let time = audioContext!.currentTime * VELOCITY - internalTimeOffset()
 
         if (loop) {
           if (time < loop.time) {
             playedNotes.clear()
             time = loop.time
-            setTimeOffset(audioContext!.currentTime * VELOCITY - loop.time)
+            setInternalTimeOffset(audioContext!.currentTime * VELOCITY - loop.time)
           } else if (time > loop.time + loop.duration) {
             playedNotes.clear()
-            setTimeOffset(audioContext!.currentTime * VELOCITY - loop.time)
+            setInternalTimeOffset(audioContext!.currentTime * VELOCITY - loop.time)
             clock()
             return
           }
@@ -1166,10 +1216,10 @@ function App() {
               <Show when={mode() === 'select' && selectionArea()}>
                 {area => (
                   <rect
-                    x={area().start.x * WIDTH + origin().x}
-                    y={area().start.y * HEIGHT + origin().y}
-                    width={(area().end.x - area().start.x) * WIDTH}
-                    height={(area().end.y - area().start.y) * HEIGHT}
+                    x={area().start.x * projectedWidth() + projectedOrigin().x}
+                    y={area().start.y * projectedHeight() + projectedOrigin().y}
+                    width={(area().end.x - area().start.x) * projectedWidth()}
+                    height={(area().end.y - area().start.y) * projectedHeight()}
                     opacity={0.3}
                     fill="var(--color-selection-area)"
                   />
@@ -1179,10 +1229,10 @@ function App() {
               <Show when={mode() === 'select' && selectionPresence()}>
                 {presence => (
                   <rect
-                    x={presence().x * WIDTH + origin().x}
-                    y={presence().y * HEIGHT + origin().y}
-                    width={WIDTH * timeScale()}
-                    height={HEIGHT}
+                    x={presence().x * projectedWidth() + projectedOrigin().x}
+                    y={presence().y * projectedHeight() + projectedOrigin().y}
+                    width={projectedWidth() * timeScale()}
+                    height={projectedHeight()}
                     opacity={0.8}
                     fill="var(--color-selection-area)"
                   />
@@ -1190,19 +1240,24 @@ function App() {
               </Show>
               {/* Notes */}
               <Show when={doc().notes.length > 0}>
-                <g style={{ transform: `translate(${origin().x}px, ${origin().y}px)` }}>
+                <g
+                  style={{
+                    transform: `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`
+                  }}
+                >
                   <For each={doc().notes}>{note => <Note note={note} />}</For>
                 </g>
               </Show>
               {/* Now Underlay */}
               <rect
                 class={styles.now}
-                width={WIDTH * timeScale()}
+                width={projectedWidth() * timeScale()}
                 height={dimensions().height}
                 style={{
                   opacity: 0.075,
                   transform: `translateX(${
-                    origin().x + Math.floor(now() / timeScale()) * WIDTH * timeScale()
+                    projectedOrigin().x +
+                    Math.floor(now() / timeScale()) * projectedWidth() * timeScale()
                   }px)`
                 }}
               />

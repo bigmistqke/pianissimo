@@ -2,7 +2,7 @@ import { Repo } from '@automerge/automerge-repo'
 import { BrowserWebSocketClientAdapter } from '@automerge/automerge-repo-network-websocket'
 import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-indexeddb'
 import { makePersisted } from '@solid-primitives/storage'
-import { batch, createEffect, createRoot, createSelector, createSignal } from 'solid-js'
+import { batch, createEffect, createMemo, createRoot, createSelector, createSignal } from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import zeptoid from 'zeptoid'
@@ -103,9 +103,9 @@ export let player: Instruments | undefined
 export let playedNotes = new Set<NoteData>()
 
 export const [mode, setMode] = createSignal<Mode>('note')
-export const [timeOffset, setTimeOffset] = createSignal(0)
 export const [dimensions, setDimensions] = createSignal<DOMRect>()
-export const [origin, setOrigin] = createSignal<Vector>({ x: WIDTH, y: 6 * HEIGHT * 12 })
+
+// Grid size
 export const [timeScale, setTimeScale] = createSignal(1)
 
 // Select-related state
@@ -116,10 +116,24 @@ export const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
 
 // Play-related state
 export const [playing, setPlaying] = createSignal(false)
+export const [internalTimeOffset, setInternalTimeOffset] = createSignal(0)
 export const [playingNotes, setPlayingNotes] = createStore<Array<NoteData>>([])
 export const [now, setNow] = createSignal(0)
 export const [loop, setLoop] = createStore<Loop>({ time: 0, duration: 4 })
 export const [volume, setVolume] = createSignal(10)
+
+// Projection
+export const [origin, setOrigin] = createSignal<Vector>({ x: 0, y: 6 * HEIGHT * 12 })
+export const [zoom, setZoom] = createSignal({ x: 100, y: 100 })
+
+export const projectedWidth = () => WIDTH * (zoom().x / 100)
+export const projectedHeight = () => HEIGHT * (zoom().y / 100)
+export const projectedOrigin = createMemo(() => {
+  return {
+    x: WIDTH + origin().x * (zoom().x / 100),
+    y: origin().y * (zoom().y / 100)
+  }
+})
 
 // Selectors
 
@@ -166,7 +180,7 @@ export function selectNotesFromSelectionArea(area: SelectionArea) {
 export function play() {
   if (!audioContext) {
     audioContext = new AudioContext()
-  } else setTimeOffset(audioContext.currentTime * VELOCITY - now())
+  } else setInternalTimeOffset(audioContext.currentTime * VELOCITY - now())
   setPlaying(true)
 }
 
