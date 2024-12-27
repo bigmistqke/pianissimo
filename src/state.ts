@@ -114,6 +114,7 @@ export const [selectionPresence, setSelectionPresence] = createSignal<Vector>()
 export const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
 
 // Play-related state
+export const [bpm, setBpm] = createSignal(140)
 export const [playing, setPlaying] = createSignal(false)
 export const [playingNotes, setPlayingNotes] = createStore<Array<NoteData>>([])
 export const [now, setNow] = createSignal(0)
@@ -183,13 +184,13 @@ export function playNote(note: NoteData, delay = 0) {
   if (!player) {
     player = new Instruments()
   }
-  if (note.velocity === 0) {
+  if (note.volume === 0) {
     return
   }
   player.play(
     doc().instrument, // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch, // note: midi number or frequency in Hz (if > 127)
-    note.velocity, // velocity
+    note.volume, // velocity
     delay, // delay
     note.duration / VELOCITY, // duration
     0, // (optional - specify channel for tinysynth to use)
@@ -223,7 +224,7 @@ export async function handleCreateNote(event: PointerEvent) {
     duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
     time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale(),
-    velocity: 1
+    volume: 1
   }
 
   setDoc(doc => {

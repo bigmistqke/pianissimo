@@ -25,6 +25,7 @@ import zeptoid from 'zeptoid'
 import styles from './App.module.css'
 import {
   audioContext,
+  bpm,
   clipboard,
   clipOverlappingNotes,
   copyNotes,
@@ -55,6 +56,7 @@ import {
   selectedNotes,
   selectionArea,
   selectionPresence,
+  setBpm,
   setDimensions,
   setDoc,
   setLoop,
@@ -72,7 +74,6 @@ import {
   timeScale,
   togglePlaying,
   urls,
-  VELOCITY,
   WIDTH
 } from './state'
 import { Loop, NoteData } from './types'
@@ -139,6 +140,16 @@ function NumberButton(props: {
   value: string | number
   label: string
 }) {
+  async function handleLongPress(event: PointerEvent, callback: () => void) {
+    function loop() {
+      timeout = setTimeout(loop, 100)
+      callback()
+    }
+    let timeout = setTimeout(loop, 500)
+    await pointerHelper(event)
+    clearTimeout(timeout)
+  }
+
   return (
     <div class={styles.numberButton} style={{ display: 'flex', 'flex-direction': 'column' }}>
       <div class={styles.textContainer} style={{ 'flex-direction': 'column' }}>
@@ -146,14 +157,21 @@ function NumberButton(props: {
         <span class={styles.numberButtonValue}>{props.value}</span>
       </div>
       <div class={styles.buttonContainer}>
-        {/* style={{ position: 'relative' }}> */}
-        <button onClick={props.decrement} style={{ display: 'flex', 'flex-direction': 'column' }}>
+        <button
+          onPointerDown={event => handleLongPress(event, props.decrement)}
+          onClick={props.decrement}
+          style={{ display: 'flex', 'flex-direction': 'column' }}
+        >
           <div />
           <div>
             <IconGrommetIconsFormPreviousLink />
           </div>
         </button>
-        <button onClick={props.increment} style={{ display: 'flex', 'flex-direction': 'column' }}>
+        <button
+          onPointerDown={event => handleLongPress(event, props.increment)}
+          onClick={props.increment}
+          style={{ display: 'flex', 'flex-direction': 'column' }}
+        >
           <div />
           <div>
             <IconGrommetIconsFormNextLink />
@@ -311,7 +329,7 @@ function Note(props: { note: NoteData }) {
             note.active = true
           }
           if (note.id in initialNotes) {
-            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100))
+            note.volume = Math.min(1, Math.max(0, initialNotes[note.id].volume - delta.y / 100))
           }
         })
       })
@@ -331,7 +349,7 @@ function Note(props: { note: NoteData }) {
       y={-props.note.pitch * HEIGHT + MARGIN}
       width={(props.note._duration ?? props.note.duration) * WIDTH - MARGIN * 2}
       height={HEIGHT - MARGIN * 2}
-      opacity={!props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25}
+      opacity={!props.note._remove && props.note.active ? props.note.volume * 0.75 + 0.25 : 0.25}
       onDblClick={() => {
         if (mode() === 'note') {
           setDoc(doc => {
@@ -618,24 +636,6 @@ function Grid() {
           )}
         </Index>
       </g>
-      {/* <g style={{ transform: `translateY(${mod(-origin().y, HEIGHT) * -1}px)` }}>
-        <Index each={new Array(Math.floor(context.dimensions.height / HEIGHT) + 1)}>
-          {(_, index) => (
-            <line
-              y1={index * HEIGHT}
-              y2={index * HEIGHT}
-              x1={0}
-              x2={context.dimensions.width}
-              stroke="var(--color-stroke)"
-              stroke-width={
-                mod(index + Math.floor(-origin().y / HEIGHT), KEY_COLORS.length) === 0
-                  ? '2px'
-                  : '1px'
-              }
-            />
-          )}
-        </Index>
-      </g> */}
     </>
   )
 }
@@ -806,7 +806,7 @@ function TopRightHud() {
                     duration: note.duration - (cutLine - note.time),
                     pitch: note.pitch,
                     time: cutLine,
-                    velocity: note.velocity
+                    velocity: note.volume
                   }
                 })
 
@@ -922,9 +922,17 @@ function BottomRightHud() {
     <div class={styles.bottomRightHud}>
       <div>
         <NumberButton
+          label="tempo"
+          value={bpm()}
+          decrement={() => setBpm(bpm => Math.max(0, bpm - 1))}
+          increment={() => setBpm(bpm => Math.min(1000, bpm + 1))}
+        />
+      </div>
+      <div>
+        <NumberButton
           label="measure"
-          value={timeScale() < 1 ? `1:${1 / timeScale()}` : timeScale()}
-          decrement={() => setTimeScale(duration => duration / 2)}
+          value={timeScale() / 8 < 1 ? `1:${1 / (timeScale() / 8)}` : timeScale() / 8}
+          decrement={() => setTimeScale(duration => Math.max(duration / 2, 8 / 128))}
           increment={() => setTimeScale(duration => duration * 2)}
         />
       </div>
@@ -1009,14 +1017,25 @@ function App() {
   )
 
   // Audio Loop
+  let lastVelocity = bpm() / 60 // Track the last velocity to adjust time offset
+
   createEffect(
     on(playing, playing => {
       if (!playing || !audioContext) return
 
       let shouldPlay = true
 
+      // Adjust timeOffset when BPM changes to prevent abrupt shifts
+      const newVelocity = bpm() / 60
+      const currentTime = audioContext!.currentTime
+      const elapsedTime = currentTime * lastVelocity - timeOffset()
+      setTimeOffset(currentTime * newVelocity - elapsedTime)
+      lastVelocity = newVelocity
+
       function clock() {
         if (!shouldPlay) return
+
+        const VELOCITY = bpm() / 60 // Calculate velocity dynamically from BPM
         let time = audioContext!.currentTime * VELOCITY - timeOffset()
 
         if (loop) {

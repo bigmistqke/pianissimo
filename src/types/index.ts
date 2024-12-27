@@ -8,7 +8,7 @@ export interface NoteData {
   duration: number
   active: boolean
   id: string
-  velocity: number
+  volume: number
   _remove?: boolean // Temporary data: do not serialise
   _duration?: number // Temporary data: do not serialise
 }

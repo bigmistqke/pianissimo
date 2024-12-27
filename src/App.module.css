@@ -4,22 +4,25 @@
 }
 
 body {
-  --color-stroke: #6c6c6c;
-  --color-stroke-secondary: #303030;
-  --color-loop: #323332;
-  --color-loop-selected: #04ba81;
-  --color-note: #c6c6c6;
-  --color-note-selected: #04f9ac;
-  --color-selection-area: #077955;
-  --color-piano-black: #000000;
-  --color-piano-white: #cccccc;
-  --color-piano-underlay: #060606;
   --color-background: #191919;
-  --color-now: #9d9d9d;
-  --color-hud: #151515;
   --color-hud-stroke: #3a3a3a;
-  --color-text: #c6c6c6;
+  --color-hud: #151515;
+  --color-loop-selected: #04ba81;
+  --color-loop: #323332;
+  --color-note-selected: #04f9ac;
+  --color-note: #c6c6c6;
+  --color-now: #9d9d9d;
   --color-now: #c7c7c7;
+  --color-outline-hover: #d4d4d4;
+  --color-piano-black: #000000;
+  --color-piano-underlay: #060606;
+  --color-piano-white: #cccccc;
+  --color-selection-area: #077955;
+  --color-stroke-secondary: #303030;
+  --color-stroke: #6c6c6c;
+  --color-text: #c6c6c6;
+  --color-focus-stroke: #04f9ac;
+  --color-focus: #c7ffed;
 
   --opacity-now: 0.2;
 
@@ -53,12 +56,15 @@ body {
   font-family: inherit;
 
   &:focus-visible {
-    &.active::after {
+    color: var(--color-focus);
+
+    &.active::after,
+    &:hover::after {
       position: absolute;
       top: 0px;
       left: 0px;
-      opacity: 0.25;
-      background-color: var(--color-note-selected);
+      opacity: 0.5;
+      background: radial-gradient(rgba(255, 0, 0, 0) 25%, var(--color-focus-stroke) 100%);
       width: 100%;
       height: 100%;
       content: '';
@@ -68,7 +74,7 @@ body {
       top: 0px;
       left: 0px;
       box-sizing: border-box;
-      border: 2px solid var(--color-note-selected) !important;
+      border: 2px solid var(--color-focus-stroke) !important;
       border-radius: 2px;
       width: 100%;
       height: 100%;
@@ -147,31 +153,13 @@ body {
     & > button {
       all: unset;
       display: flex;
-      border: 2px solid transparent;
+      position: relative;
+      box-sizing: border-box;
+      padding: 0px 5px;
       /* Optical Padding */
       padding-bottom: 2px;
       width: var(--hud-height);
       color: var(--color-stroke);
-
-      &:focus-visible {
-        border: 2px solid var(--color-note-selected);
-
-        &:first-child {
-          border-right: 2px solid transparent;
-        }
-
-        &:last-child {
-          border-left: 2px solid transparent;
-        }
-      }
-
-      &:first-child {
-        padding-left: 2px;
-      }
-
-      &:last-child {
-        padding-right: 2px;
-      }
 
       & > div {
         display: flex;
@@ -179,14 +167,35 @@ body {
       }
 
       &:first-child {
-        padding-left: 2px;
+        padding-left: 3px;
       }
 
       &:last-child {
-        padding-right: 2px;
+        padding-right: 3px;
 
         & > div {
           justify-content: flex-end;
+        }
+      }
+
+      &::after {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+        content: '';
+      }
+
+      &:hover,
+      &:focus-visible {
+        &:first-child::after {
+          border-right: 2px solid transparent;
+        }
+
+        &:last-child::after {
+          border-left: 2px solid transparent;
         }
       }
 
@@ -194,6 +203,16 @@ body {
         opacity: 1;
         background: inherit;
         color: var(--color-text);
+        &::after {
+          border: 1px solid var(--color-outline-hover);
+        }
+      }
+
+      &:focus-visible {
+        color: var(--color-focus) !important;
+        &::after {
+          border: 2px solid var(--color-focus-stroke);
+        }
       }
     }
   }
