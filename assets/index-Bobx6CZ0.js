@@ -28025,7 +28025,7 @@ function TopLeftHud() {
             }
             setLoop({
               time: area.start.x,
-              duration: area.end.x - area.start.x + timeScale()
+              duration: area.end.x - area.start.x
             });
           },
           get children() {
