@@ -153,11 +153,11 @@ function createResource(pSource, pFetcher, pOptions) {
   if ((arguments.length === 2 && typeof pFetcher === "object") || arguments.length === 1) {
     source = true;
     fetcher = pSource;
-    options = pFetcher;
+    options = pFetcher || {};
   } else {
     source = pSource;
     fetcher = pFetcher;
-    options = pOptions;
+    options = pOptions || {};
   }
   let pr = null,
     initP = NO_INIT,
@@ -9731,32 +9731,31 @@ const get = () => {
     return id;
 };
 
-const main = "_main_zokhm_61";
-const piano = "_piano_zokhm_66";
-const note = "_note_zokhm_72";
-const selected = "_selected_zokhm_74";
-const now$1 = "_now_zokhm_79";
-const hud = "_hud_zokhm_86";
-const topHudContainer = "_topHudContainer_zokhm_99";
-const bottomHudContainer = "_bottomHudContainer_zokhm_100";
-const topRightHud = "_topRightHud_zokhm_110";
-const topLeftHud = "_topLeftHud_zokhm_111";
-const bottomLeftHud = "_bottomLeftHud_zokhm_112";
-const listContainer = "_listContainer_zokhm_121";
-const list = "_list_zokhm_121";
-const bottomRightHud = "_bottomRightHud_zokhm_161";
-const contentHide = "_contentHide_zokhm_1";
-const contentShow = "_contentShow_zokhm_1";
-const current = "_current_zokhm_258";
-const button = "_button_zokhm_348";
-const active = "_active_zokhm_363";
-const horizontal = "_horizontal_zokhm_385";
-const trigger = "_trigger_zokhm_404";
-const numberButton = "_numberButton_zokhm_410";
-const textContainer = "_textContainer_zokhm_425";
-const numberButtonLabel = "_numberButtonLabel_zokhm_429";
-const numberButtonValue = "_numberButtonValue_zokhm_436";
-const buttonContainer = "_buttonContainer_zokhm_452";
+const main = "_main_ukyvz_62";
+const piano = "_piano_ukyvz_67";
+const note = "_note_ukyvz_73";
+const selected = "_selected_ukyvz_75";
+const now$1 = "_now_ukyvz_80";
+const hud = "_hud_ukyvz_87";
+const topHudContainer = "_topHudContainer_ukyvz_100";
+const bottomHudContainer = "_bottomHudContainer_ukyvz_101";
+const topRightHud = "_topRightHud_ukyvz_111";
+const topLeftHud = "_topLeftHud_ukyvz_112";
+const bottomLeftHud = "_bottomLeftHud_ukyvz_113";
+const listContainer = "_listContainer_ukyvz_122";
+const list = "_list_ukyvz_122";
+const bottomRightHud = "_bottomRightHud_ukyvz_162";
+const contentHide = "_contentHide_ukyvz_1";
+const contentShow = "_contentShow_ukyvz_1";
+const button = "_button_ukyvz_349";
+const active = "_active_ukyvz_364";
+const horizontal = "_horizontal_ukyvz_386";
+const trigger = "_trigger_ukyvz_408";
+const numberButton = "_numberButton_ukyvz_414";
+const textContainer = "_textContainer_ukyvz_429";
+const numberButtonLabel = "_numberButtonLabel_ukyvz_433";
+const numberButtonValue = "_numberButtonValue_ukyvz_440";
+const buttonContainer = "_buttonContainer_ukyvz_456";
 const styles = {
 	main: main,
 	piano: piano,
@@ -9772,20 +9771,19 @@ const styles = {
 	listContainer: listContainer,
 	list: list,
 	bottomRightHud: bottomRightHud,
-	"dropdown-menu__trigger": "_dropdown-menu__trigger_zokhm_222",
-	"dropdown-menu__content": "_dropdown-menu__content_zokhm_237",
-	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_zokhm_241",
+	"dropdown-menu__trigger": "_dropdown-menu__trigger_ukyvz_223",
+	"dropdown-menu__content": "_dropdown-menu__content_ukyvz_238",
+	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_ukyvz_242",
 	contentHide: contentHide,
 	contentShow: contentShow,
-	"dropdown-menu__item": "_dropdown-menu__item_zokhm_258",
-	current: current,
-	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_zokhm_262",
-	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_zokhm_263",
-	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_zokhm_264",
-	"dropdown-menu__group-label": "_dropdown-menu__group-label_zokhm_294",
-	"dropdown-menu__separator": "_dropdown-menu__separator_zokhm_299",
-	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_zokhm_304",
-	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_zokhm_313",
+	"dropdown-menu__item": "_dropdown-menu__item_ukyvz_259",
+	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_ukyvz_263",
+	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_ukyvz_264",
+	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_ukyvz_265",
+	"dropdown-menu__group-label": "_dropdown-menu__group-label_ukyvz_295",
+	"dropdown-menu__separator": "_dropdown-menu__separator_ukyvz_300",
+	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_ukyvz_305",
+	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_ukyvz_314",
 	button: button,
 	active: active,
 	horizontal: horizontal,
@@ -39781,13 +39779,12 @@ createRoot(() => {
     }
   });
 });
-const [midiOutputChannel, setMidiOutputChannel] = createSignal();
-wm.enable().then(function() {
-  console.log("enabled!", wm.inputs, wm.outputs);
-  wm.inputs.forEach((input) => console.log(input.manufacturer, input.name));
-  wm.outputs.forEach((output) => console.log(output.manufacturer, output.name));
-  setMidiOutputChannel(wm.outputs[0].channels[1]);
-}).catch((err) => alert(err));
+const [midiOutputEnabled, setMidiOutputEnabled] = createSignal(false);
+const [midiOutputs] = createResource(midiOutputEnabled, async () => {
+  await wm.enable();
+  return wm.outputs;
+});
+const [selectedMidiOutputs, setSelectedMidiOutputs] = createSignal([]);
 let audioContext;
 let player;
 let playedNotes = /* @__PURE__ */ new Set();
@@ -39885,13 +39882,12 @@ function playNote(note, delay = 0) {
     0.05
     // (optional - override envelope "attack" parameter)
   );
-  const _midiOutputChannel = midiOutputChannel();
-  if (_midiOutputChannel) {
-    _midiOutputChannel.playNote(note.pitch, {
+  selectedMidiOutputs().forEach((output) => {
+    output.playNote(note.pitch, {
       duration: note.duration / (doc().bpm / 60) * 1e3 - 100,
       time: `+${delay * 1e3}`
     });
-  }
+  });
   setTimeout(() => {
     setPlayingNotes(produce((pitches) => pitches.push({ ...note })));
     setTimeout(
@@ -40283,7 +40279,7 @@ const IconGrommetIconsPause = (props = {}) => (() => {
   return _el$;
 })();
 
-var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg>`), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div></div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div><div>`), _tmpl$16 = /* @__PURE__ */ template(`<div>⌘+N`), _tmpl$17 = /* @__PURE__ */ template(`<div>⌘+O`), _tmpl$18 = /* @__PURE__ */ template(`<div>⇧+⌘+E`), _tmpl$19 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$20 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$21 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$22 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
+var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg>`), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div></div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div><div>`), _tmpl$16 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$17 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$18 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$19 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
 function Button(props) {
   return (() => {
     var _el$ = _tmpl$();
@@ -41246,13 +41242,7 @@ function BottomLeftHud() {
                     return styles["dropdown-menu__item"];
                   },
                   onClick: newDoc,
-                  get children() {
-                    return ["New File ", (() => {
-                      var _el$44 = _tmpl$16();
-                      createRenderEffect(() => className(_el$44, styles["dropdown-menu__item-right-slot"]));
-                      return _el$44;
-                    })()];
-                  }
+                  children: "New File"
                 }), createComponent(DropdownMenu.Sub, {
                   overlap: true,
                   gutter: 4,
@@ -41263,13 +41253,7 @@ function BottomLeftHud() {
                       get ["class"]() {
                         return styles["dropdown-menu__sub-trigger"];
                       },
-                      get children() {
-                        return ["Open File ", (() => {
-                          var _el$45 = _tmpl$17();
-                          createRenderEffect(() => className(_el$45, styles["dropdown-menu__item-right-slot"]));
-                          return _el$45;
-                        })()];
-                      }
+                      children: "Open File"
                     }), createComponent(DropdownMenu.Portal, {
                       get children() {
                         return createComponent(DropdownMenu.SubContent, {
@@ -41284,7 +41268,7 @@ function BottomLeftHud() {
                               children: ([_url, date]) => createComponent(DropdownMenu.Item, {
                                 as: Button,
                                 get ["class"]() {
-                                  return clsx(styles["dropdown-menu__item"], url() === _url && styles.current);
+                                  return clsx(styles["dropdown-menu__item"], url() === _url && styles.selected);
                                 },
                                 onClick: () => openUrl(_url),
                                 get children() {
@@ -41304,13 +41288,7 @@ function BottomLeftHud() {
                     return styles["dropdown-menu__item"];
                   },
                   onClick: () => downloadDataUri(createMidiDataUri(doc().notes), "pianissimo.mid"),
-                  get children() {
-                    return ["Export to Midi ", (() => {
-                      var _el$46 = _tmpl$18();
-                      createRenderEffect(() => className(_el$46, styles["dropdown-menu__item-right-slot"]));
-                      return _el$46;
-                    })()];
-                  }
+                  children: "Export to Midi"
                 }), createComponent(DropdownMenu.Item, {
                   as: Button,
                   closeOnSelect: false,
@@ -41320,6 +41298,55 @@ function BottomLeftHud() {
                   onClick: () => setFullscreen((fullscreen2) => !fullscreen2),
                   get children() {
                     return [createMemo(() => fullscreen() ? "Close" : "Open"), " Fullscreen"];
+                  }
+                }), createComponent(DropdownMenu.Sub, {
+                  overlap: true,
+                  gutter: 4,
+                  shift: -8,
+                  get children() {
+                    return [createComponent(DropdownMenu.SubTrigger, {
+                      as: Button,
+                      get ["class"]() {
+                        return styles["dropdown-menu__sub-trigger"];
+                      },
+                      onClick: () => {
+                        setMidiOutputEnabled(true);
+                      },
+                      children: "Midi Out"
+                    }), createComponent(DropdownMenu.Portal, {
+                      get children() {
+                        return createComponent(Show, {
+                          get when() {
+                            return midiOutputEnabled();
+                          },
+                          get children() {
+                            return createComponent(DropdownMenu.SubContent, {
+                              get ["class"]() {
+                                return styles["dropdown-menu__sub-content"];
+                              },
+                              get children() {
+                                return createComponent(For, {
+                                  get each() {
+                                    return midiOutputs();
+                                  },
+                                  children: (output) => createComponent(DropdownMenu.Item, {
+                                    as: Button,
+                                    closeOnSelect: false,
+                                    get ["class"]() {
+                                      return clsx(styles["dropdown-menu__item"], selectedMidiOutputs().includes(output) && styles.selected);
+                                    },
+                                    onClick: () => setSelectedMidiOutputs((outputs) => outputs.includes(output) ? outputs.filter((_output) => _output !== output) : [...outputs, output]),
+                                    get children() {
+                                      return output.name;
+                                    }
+                                  })
+                                });
+                              }
+                            });
+                          }
+                        });
+                      }
+                    })];
                   }
                 })];
               }
@@ -41342,8 +41369,8 @@ function BottomLeftHud() {
 }
 function BottomRightHud() {
   return (() => {
-    var _el$47 = _tmpl$19(), _el$48 = _el$47.firstChild, _el$49 = _el$48.nextSibling, _el$50 = _el$49.nextSibling, _el$51 = _el$50.nextSibling, _el$52 = _el$51.nextSibling, _el$53 = _el$52.nextSibling, _el$54 = _el$53.nextSibling;
-    insert(_el$48, createComponent(NumberButton, {
+    var _el$44 = _tmpl$16(), _el$45 = _el$44.firstChild, _el$46 = _el$45.nextSibling, _el$47 = _el$46.nextSibling, _el$48 = _el$47.nextSibling, _el$49 = _el$48.nextSibling, _el$50 = _el$49.nextSibling, _el$51 = _el$50.nextSibling;
+    insert(_el$45, createComponent(NumberButton, {
       label: "zoom time",
       get value() {
         return zoom().x;
@@ -41363,7 +41390,7 @@ function BottomRightHud() {
         return zoom().x < 10;
       }
     }));
-    insert(_el$49, createComponent(NumberButton, {
+    insert(_el$46, createComponent(NumberButton, {
       label: "zoom pitch",
       get value() {
         return zoom().y;
@@ -41383,7 +41410,7 @@ function BottomRightHud() {
         return zoom().y < 10;
       }
     }));
-    insert(_el$50, createComponent(NumberButton, {
+    insert(_el$47, createComponent(NumberButton, {
       label: "volume",
       get value() {
         return volume();
@@ -41397,7 +41424,7 @@ function BottomRightHud() {
         return volume() < 10;
       }
     }));
-    insert(_el$51, createComponent(NumberButton, {
+    insert(_el$48, createComponent(NumberButton, {
       label: "tempo",
       get value() {
         return doc().bpm;
@@ -41411,7 +41438,7 @@ function BottomRightHud() {
         return doc().bpm < 1e3;
       }
     }));
-    insert(_el$52, createComponent(NumberButton, {
+    insert(_el$49, createComponent(NumberButton, {
       label: "grid",
       get value() {
         return createMemo(() => timeScale() / 8 < 1)() ? `1:${1 / (timeScale() / 8)}` : timeScale() / 8;
@@ -41422,7 +41449,7 @@ function BottomRightHud() {
         return timeScale() > 8 / 128;
       }
     }));
-    insert(_el$53, createComponent(NumberButton, {
+    insert(_el$50, createComponent(NumberButton, {
       label: "instrument",
       get value() {
         return doc().instrument.toString().padStart(3, "0");
@@ -41450,7 +41477,7 @@ function BottomRightHud() {
         }
       }
     }));
-    insert(_el$54, createComponent(Button, {
+    insert(_el$51, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -41463,7 +41490,7 @@ function BottomRightHud() {
         return createComponent(IconGrommetIconsStop, {});
       }
     }), null);
-    insert(_el$54, createComponent(Button, {
+    insert(_el$51, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -41472,8 +41499,8 @@ function BottomRightHud() {
         return createMemo(() => !!!playing())() ? createComponent(IconGrommetIconsPlay, {}) : createComponent(IconGrommetIconsPause, {});
       }
     }), null);
-    createRenderEffect(() => className(_el$47, styles.bottomRightHud));
-    return _el$47;
+    createRenderEffect(() => className(_el$44, styles.bottomRightHud));
+    return _el$44;
   })();
 }
 const dimensionsContext = createContext();
@@ -41564,9 +41591,9 @@ function App() {
     });
   });
   return [createComponent(Piano, {}), (() => {
-    var _el$55 = _tmpl$20(), _el$56 = _el$55.firstChild;
-    insert(_el$55, createComponent(Hud, {}), _el$56);
-    _el$56.$$pointerdown = async (event) => {
+    var _el$52 = _tmpl$17(), _el$53 = _el$52.firstChild;
+    insert(_el$52, createComponent(Hud, {}), _el$53);
+    _el$53.$$pointerdown = async (event) => {
       switch (mode()) {
         case "note":
           handleCreateNote(event);
@@ -41578,11 +41605,11 @@ function App() {
           handlePan(event);
       }
     };
-    _el$56.addEventListener("wheel", (event) => setOrigin((origin) => ({
+    _el$53.addEventListener("wheel", (event) => setOrigin((origin) => ({
       x: origin.x - event.deltaX / zoom().x,
       y: origin.y - event.deltaY / zoom().y * (2 / 3)
     })));
-    _el$56.$$dblclick = () => setSelectedNotes([]);
+    _el$53.$$dblclick = () => setSelectedNotes([]);
     use((element) => {
       onMount(() => {
         const observer = new ResizeObserver(() => {
@@ -41591,11 +41618,11 @@ function App() {
         observer.observe(element);
         onCleanup(() => observer.disconnect());
       });
-    }, _el$56);
-    _el$56.style.setProperty("width", "100%");
-    _el$56.style.setProperty("height", "100%");
-    _el$56.style.setProperty("overflow", "hidden");
-    insert(_el$56, createComponent(Show, {
+    }, _el$53);
+    _el$53.style.setProperty("width", "100%");
+    _el$53.style.setProperty("height", "100%");
+    _el$53.style.setProperty("overflow", "hidden");
+    insert(_el$53, createComponent(Show, {
       get when() {
         return dimensions();
       },
@@ -41607,13 +41634,13 @@ function App() {
               return createMemo(() => mode() === "select")() && selectionArea();
             },
             children: (area) => (() => {
-              var _el$59 = _tmpl$21();
+              var _el$56 = _tmpl$18();
               createRenderEffect((_p$) => {
                 var _v$67 = area().start.x * projectedWidth() + projectedOrigin().x, _v$68 = area().start.y * projectedHeight() + projectedOrigin().y, _v$69 = (area().end.x - area().start.x) * projectedWidth(), _v$70 = (area().end.y - area().start.y) * projectedHeight();
-                _v$67 !== _p$.e && setAttribute(_el$59, "x", _p$.e = _v$67);
-                _v$68 !== _p$.t && setAttribute(_el$59, "y", _p$.t = _v$68);
-                _v$69 !== _p$.a && setAttribute(_el$59, "width", _p$.a = _v$69);
-                _v$70 !== _p$.o && setAttribute(_el$59, "height", _p$.o = _v$70);
+                _v$67 !== _p$.e && setAttribute(_el$56, "x", _p$.e = _v$67);
+                _v$68 !== _p$.t && setAttribute(_el$56, "y", _p$.t = _v$68);
+                _v$69 !== _p$.a && setAttribute(_el$56, "width", _p$.a = _v$69);
+                _v$70 !== _p$.o && setAttribute(_el$56, "height", _p$.o = _v$70);
                 return _p$;
               }, {
                 e: void 0,
@@ -41621,20 +41648,20 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$59;
+              return _el$56;
             })()
           }), createComponent(Show, {
             get when() {
               return createMemo(() => mode() === "select")() && selectionPresence();
             },
             children: (presence) => (() => {
-              var _el$60 = _tmpl$22();
+              var _el$57 = _tmpl$19();
               createRenderEffect((_p$) => {
                 var _v$71 = presence().x * projectedWidth() + projectedOrigin().x, _v$72 = presence().y * projectedHeight() + projectedOrigin().y, _v$73 = projectedWidth() * timeScale(), _v$74 = projectedHeight();
-                _v$71 !== _p$.e && setAttribute(_el$60, "x", _p$.e = _v$71);
-                _v$72 !== _p$.t && setAttribute(_el$60, "y", _p$.t = _v$72);
-                _v$73 !== _p$.a && setAttribute(_el$60, "width", _p$.a = _v$73);
-                _v$74 !== _p$.o && setAttribute(_el$60, "height", _p$.o = _v$74);
+                _v$71 !== _p$.e && setAttribute(_el$57, "x", _p$.e = _v$71);
+                _v$72 !== _p$.t && setAttribute(_el$57, "y", _p$.t = _v$72);
+                _v$73 !== _p$.a && setAttribute(_el$57, "width", _p$.a = _v$73);
+                _v$74 !== _p$.o && setAttribute(_el$57, "height", _p$.o = _v$74);
                 return _p$;
               }, {
                 e: void 0,
@@ -41642,15 +41669,15 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$60;
+              return _el$57;
             })()
           }), createComponent(Show, {
             get when() {
               return doc().notes.length > 0;
             },
             get children() {
-              var _el$57 = _tmpl$5();
-              insert(_el$57, createComponent(For, {
+              var _el$54 = _tmpl$5();
+              insert(_el$54, createComponent(For, {
                 get each() {
                   return doc().notes;
                 },
@@ -41658,18 +41685,18 @@ function App() {
                   note
                 })
               }));
-              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$57.style.setProperty("transform", _$p) : _el$57.style.removeProperty("transform"));
-              return _el$57;
+              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$54.style.setProperty("transform", _$p) : _el$54.style.removeProperty("transform"));
+              return _el$54;
             }
           }), (() => {
-            var _el$58 = _tmpl$3();
-            _el$58.style.setProperty("opacity", "0.075");
+            var _el$55 = _tmpl$3();
+            _el$55.style.setProperty("opacity", "0.075");
             createRenderEffect((_p$) => {
               var _v$63 = styles.now, _v$64 = projectedWidth() * timeScale(), _v$65 = dimensions2().height, _v$66 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
-              _v$63 !== _p$.e && setAttribute(_el$58, "class", _p$.e = _v$63);
-              _v$64 !== _p$.t && setAttribute(_el$58, "width", _p$.t = _v$64);
-              _v$65 !== _p$.a && setAttribute(_el$58, "height", _p$.a = _v$65);
-              _v$66 !== _p$.o && ((_p$.o = _v$66) != null ? _el$58.style.setProperty("transform", _v$66) : _el$58.style.removeProperty("transform"));
+              _v$63 !== _p$.e && setAttribute(_el$55, "class", _p$.e = _v$63);
+              _v$64 !== _p$.t && setAttribute(_el$55, "width", _p$.t = _v$64);
+              _v$65 !== _p$.a && setAttribute(_el$55, "height", _p$.a = _v$65);
+              _v$66 !== _p$.o && ((_p$.o = _v$66) != null ? _el$55.style.setProperty("transform", _v$66) : _el$55.style.removeProperty("transform"));
               return _p$;
             }, {
               e: void 0,
@@ -41677,7 +41704,7 @@ function App() {
               a: void 0,
               o: void 0
             });
-            return _el$58;
+            return _el$55;
           })(), createComponent(Ruler, {
             loop,
             setLoop
@@ -41685,8 +41712,8 @@ function App() {
         }
       })
     }));
-    createRenderEffect(() => className(_el$55, styles.main));
-    return _el$55;
+    createRenderEffect(() => className(_el$52, styles.main));
+    return _el$52;
   })()];
 }
 delegateEvents(["pointerdown", "click", "dblclick"]);
