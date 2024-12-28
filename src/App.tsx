@@ -524,26 +524,26 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     const initialDuration = loop.duration
 
     if (event.clientX < left + projectedWidth() / 3) {
-      const offset = event.layerX - initialTime * projectedWidth() - projectedOrigin().x
+      const offset = event.clientX - initialTime * projectedWidth() - projectedOrigin().x
 
       await pointerHelper(event, ({ delta }) => {
         const deltaX = Math.floor((delta.x + offset) / projectedWidth())
         if (deltaX >= initialDuration) {
           props.setLoop('duration', deltaX - initialDuration + 2)
         } else {
-          const time = initialTime + deltaX
+          const time = initialTime + deltaX - 1
           props.setLoop('time', time)
-          props.setLoop('duration', initialDuration - deltaX)
+          props.setLoop('duration', initialDuration - deltaX + 1)
         }
       })
-    } else if (event.layerX > left + width - projectedWidth() / 3) {
+    } else if (event.clientX > left + width - projectedWidth() / 3) {
       await pointerHelper(event, ({ delta }) => {
         const duration =
-          Math.floor((event.layerX - projectedOrigin().x + delta.x) / projectedWidth()) -
+          Math.floor((event.clientX - projectedOrigin().x + delta.x) / projectedWidth()) -
           initialTime
 
         if (duration > 0) {
-          props.setLoop('duration', 1 + duration)
+          props.setLoop('duration', duration)
         } else if (duration < 0) {
           props.setLoop('duration', 1 - duration)
           props.setLoop('time', initialTime + duration)

@@ -306,9 +306,10 @@ export async function handleCreateNote(event: PointerEvent) {
   clipOverlappingNotes(note)
 }
 
-export async function handleSelectionBox(event: PointerEvent) {
+export async function handleSelectionBox(event: PointerEvent & { currentTarget: SVGElement }) {
+  const offset = event.currentTarget.getBoundingClientRect().left
   const position = {
-    x: event.clientX - projectedOrigin().x,
+    x: event.clientX - projectedOrigin().x - offset,
     y: event.clientY - projectedOrigin().y
   }
   const normalizedPosition = normalizeVector(position)
