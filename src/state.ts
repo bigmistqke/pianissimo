@@ -62,7 +62,7 @@ export function deserializeDate(serialized: number): string {
 // Initialise automerge-state
 
 export const repo = new Repo({
-  network: [new BrowserWebSocketClientAdapter('ws://167.99.210.141')],
+  network: [new BrowserWebSocketClientAdapter('wss://sync.cyberspatialstudies.org')],
   storage: new IndexedDBStorageAdapter()
 })
 
