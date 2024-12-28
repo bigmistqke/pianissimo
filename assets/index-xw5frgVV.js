@@ -9731,32 +9731,32 @@ const get = () => {
     return id;
 };
 
-const main = "_main_2qy5n_61";
-const piano = "_piano_2qy5n_66";
-const note = "_note_2qy5n_72";
-const selected = "_selected_2qy5n_74";
-const now$1 = "_now_2qy5n_79";
-const hud = "_hud_2qy5n_86";
-const topHudContainer = "_topHudContainer_2qy5n_99";
-const bottomHudContainer = "_bottomHudContainer_2qy5n_100";
-const topRightHud = "_topRightHud_2qy5n_110";
-const topLeftHud = "_topLeftHud_2qy5n_111";
-const bottomLeftHud = "_bottomLeftHud_2qy5n_112";
-const listContainer = "_listContainer_2qy5n_121";
-const list = "_list_2qy5n_121";
-const bottomRightHud = "_bottomRightHud_2qy5n_161";
-const contentHide = "_contentHide_2qy5n_1";
-const contentShow = "_contentShow_2qy5n_1";
-const current = "_current_2qy5n_258";
-const button = "_button_2qy5n_348";
-const active = "_active_2qy5n_363";
-const horizontal = "_horizontal_2qy5n_385";
-const trigger = "_trigger_2qy5n_404";
-const numberButton = "_numberButton_2qy5n_410";
-const textContainer = "_textContainer_2qy5n_425";
-const numberButtonLabel = "_numberButtonLabel_2qy5n_429";
-const numberButtonValue = "_numberButtonValue_2qy5n_436";
-const buttonContainer = "_buttonContainer_2qy5n_452";
+const main = "_main_zokhm_61";
+const piano = "_piano_zokhm_66";
+const note = "_note_zokhm_72";
+const selected = "_selected_zokhm_74";
+const now$1 = "_now_zokhm_79";
+const hud = "_hud_zokhm_86";
+const topHudContainer = "_topHudContainer_zokhm_99";
+const bottomHudContainer = "_bottomHudContainer_zokhm_100";
+const topRightHud = "_topRightHud_zokhm_110";
+const topLeftHud = "_topLeftHud_zokhm_111";
+const bottomLeftHud = "_bottomLeftHud_zokhm_112";
+const listContainer = "_listContainer_zokhm_121";
+const list = "_list_zokhm_121";
+const bottomRightHud = "_bottomRightHud_zokhm_161";
+const contentHide = "_contentHide_zokhm_1";
+const contentShow = "_contentShow_zokhm_1";
+const current = "_current_zokhm_258";
+const button = "_button_zokhm_348";
+const active = "_active_zokhm_363";
+const horizontal = "_horizontal_zokhm_385";
+const trigger = "_trigger_zokhm_404";
+const numberButton = "_numberButton_zokhm_410";
+const textContainer = "_textContainer_zokhm_425";
+const numberButtonLabel = "_numberButtonLabel_zokhm_429";
+const numberButtonValue = "_numberButtonValue_zokhm_436";
+const buttonContainer = "_buttonContainer_zokhm_452";
 const styles = {
 	main: main,
 	piano: piano,
@@ -9772,20 +9772,20 @@ const styles = {
 	listContainer: listContainer,
 	list: list,
 	bottomRightHud: bottomRightHud,
-	"dropdown-menu__trigger": "_dropdown-menu__trigger_2qy5n_222",
-	"dropdown-menu__content": "_dropdown-menu__content_2qy5n_237",
-	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_2qy5n_241",
+	"dropdown-menu__trigger": "_dropdown-menu__trigger_zokhm_222",
+	"dropdown-menu__content": "_dropdown-menu__content_zokhm_237",
+	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_zokhm_241",
 	contentHide: contentHide,
 	contentShow: contentShow,
-	"dropdown-menu__item": "_dropdown-menu__item_2qy5n_258",
+	"dropdown-menu__item": "_dropdown-menu__item_zokhm_258",
 	current: current,
-	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_2qy5n_262",
-	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_2qy5n_263",
-	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_2qy5n_264",
-	"dropdown-menu__group-label": "_dropdown-menu__group-label_2qy5n_294",
-	"dropdown-menu__separator": "_dropdown-menu__separator_2qy5n_299",
-	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_2qy5n_304",
-	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_2qy5n_313",
+	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_zokhm_262",
+	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_zokhm_263",
+	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_zokhm_264",
+	"dropdown-menu__group-label": "_dropdown-menu__group-label_zokhm_294",
+	"dropdown-menu__separator": "_dropdown-menu__separator_zokhm_299",
+	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_zokhm_304",
+	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_zokhm_313",
 	button: button,
 	active: active,
 	horizontal: horizontal,
@@ -39955,8 +39955,9 @@ async function handleCreateNote(event) {
   clipOverlappingNotes(note);
 }
 async function handleSelectionBox(event) {
+  const offset = event.currentTarget.getBoundingClientRect().left;
   const position = {
-    x: event.clientX - projectedOrigin().x,
+    x: event.clientX - projectedOrigin().x - offset,
     y: event.clientY - projectedOrigin().y
   };
   const normalizedPosition = normalizeVector(position);
@@ -40686,7 +40687,7 @@ function Ruler(props) {
     const initialTime = loop2.time;
     const initialDuration = loop2.duration;
     if (event.clientX < left + projectedWidth() / 3) {
-      const offset = event.layerX - initialTime * projectedWidth() - projectedOrigin().x;
+      const offset = event.clientX - initialTime * projectedWidth() - projectedOrigin().x;
       await pointerHelper(event, ({
         delta
       }) => {
@@ -40694,18 +40695,18 @@ function Ruler(props) {
         if (deltaX >= initialDuration) {
           props.setLoop("duration", deltaX - initialDuration + 2);
         } else {
-          const time = initialTime + deltaX;
+          const time = initialTime + deltaX - 1;
           props.setLoop("time", time);
-          props.setLoop("duration", initialDuration - deltaX);
+          props.setLoop("duration", initialDuration - deltaX + 1);
         }
       });
-    } else if (event.layerX > left + width - projectedWidth() / 3) {
+    } else if (event.clientX > left + width - projectedWidth() / 3) {
       await pointerHelper(event, ({
         delta
       }) => {
-        const duration = Math.floor((event.layerX - projectedOrigin().x + delta.x) / projectedWidth()) - initialTime;
+        const duration = Math.floor((event.clientX - projectedOrigin().x + delta.x) / projectedWidth()) - initialTime;
         if (duration > 0) {
-          props.setLoop("duration", 1 + duration);
+          props.setLoop("duration", duration);
         } else if (duration < 0) {
           props.setLoop("duration", 1 - duration);
           props.setLoop("time", initialTime + duration);
