@@ -43,6 +43,8 @@ import {
   loop,
   MARGIN,
   markOverlappingNotes,
+  midiOutputEnabled,
+  midiOutputs,
   mode,
   newDoc,
   now,
@@ -54,6 +56,7 @@ import {
   projectedHeight,
   projectedOrigin,
   projectedWidth,
+  selectedMidiOutputs,
   selectedNotes,
   selectionArea,
   selectionPresence,
@@ -61,10 +64,12 @@ import {
   setDoc,
   setInternalTimeOffset,
   setLoop,
+  setMidiOutputEnabled,
   setMode,
   setNow,
   setOrigin,
   setPlaying,
+  setSelectedMidiOutputs,
   setSelectedNotes,
   setSelectionArea,
   setSelectionPresence,
@@ -956,11 +961,11 @@ function BottomLeftHud() {
           <DropdownMenu.Portal>
             <DropdownMenu.Content class={styles['dropdown-menu__content']}>
               <DropdownMenu.Item as={Button} class={styles['dropdown-menu__item']} onClick={newDoc}>
-                New File <div class={styles['dropdown-menu__item-right-slot']}>⌘+N</div>
+                New File
               </DropdownMenu.Item>
               <DropdownMenu.Sub overlap gutter={4} shift={-8}>
                 <DropdownMenu.SubTrigger as={Button} class={styles['dropdown-menu__sub-trigger']}>
-                  Open File <div class={styles['dropdown-menu__item-right-slot']}>⌘+O</div>
+                  Open File
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.Portal>
                   <DropdownMenu.SubContent class={styles['dropdown-menu__sub-content']}>
@@ -970,7 +975,7 @@ function BottomLeftHud() {
                           as={Button}
                           class={clsx(
                             styles['dropdown-menu__item'],
-                            url() === _url && styles.current
+                            url() === _url && styles.selected
                           )}
                           onClick={() => openUrl(_url)}
                         >
@@ -987,7 +992,7 @@ function BottomLeftHud() {
                 class={styles['dropdown-menu__item']}
                 onClick={() => downloadDataUri(createMidiDataUri(doc().notes), 'pianissimo.mid')}
               >
-                Export to Midi <div class={styles['dropdown-menu__item-right-slot']}>⇧+⌘+E</div>
+                Export to Midi
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 as={Button}
@@ -997,6 +1002,44 @@ function BottomLeftHud() {
               >
                 {fullscreen() ? 'Close' : 'Open'} Fullscreen
               </DropdownMenu.Item>
+              <DropdownMenu.Sub overlap gutter={4} shift={-8}>
+                <DropdownMenu.SubTrigger
+                  as={Button}
+                  class={styles['dropdown-menu__sub-trigger']}
+                  onClick={() => {
+                    setMidiOutputEnabled(true)
+                  }}
+                >
+                  Midi Out
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.Portal>
+                  <Show when={midiOutputEnabled()}>
+                    <DropdownMenu.SubContent class={styles['dropdown-menu__sub-content']}>
+                      <For each={midiOutputs()}>
+                        {output => (
+                          <DropdownMenu.Item
+                            as={Button}
+                            closeOnSelect={false}
+                            class={clsx(
+                              styles['dropdown-menu__item'],
+                              selectedMidiOutputs().includes(output) && styles.selected
+                            )}
+                            onClick={() =>
+                              setSelectedMidiOutputs(outputs =>
+                                outputs.includes(output)
+                                  ? outputs.filter(_output => _output !== output)
+                                  : [...outputs, output]
+                              )
+                            }
+                          >
+                            {output.name}
+                          </DropdownMenu.Item>
+                        )}
+                      </For>
+                    </DropdownMenu.SubContent>
+                  </Show>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Sub>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu>

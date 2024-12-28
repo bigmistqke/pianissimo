@@ -2,10 +2,18 @@ import { Repo } from '@automerge/automerge-repo'
 import { BrowserWebSocketClientAdapter } from '@automerge/automerge-repo-network-websocket'
 import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-indexeddb'
 import { makePersisted } from '@solid-primitives/storage'
-import { batch, createEffect, createMemo, createRoot, createSelector, createSignal } from 'solid-js'
+import {
+  batch,
+  createEffect,
+  createMemo,
+  createResource,
+  createRoot,
+  createSelector,
+  createSignal
+} from 'solid-js'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
-import { OutputChannel, WebMidi } from 'webmidi'
+import { Output, WebMidi } from 'webmidi'
 import zeptoid from 'zeptoid'
 import { Loop, Mode, NoteData, SelectionArea, SharedState, Vector } from './types'
 import { createDocumentStore } from './utils/create-document-store'
@@ -99,19 +107,12 @@ createRoot(() => {
 
 // WebMidi
 
-const [midiOutputChannel, setMidiOutputChannel] = createSignal<OutputChannel>()
-
-WebMidi.enable()
-  .then(function () {
-    console.log('enabled!', WebMidi.inputs, WebMidi.outputs)
-    // Inputs
-    WebMidi.inputs.forEach(input => console.log(input.manufacturer, input.name))
-
-    // Outputs
-    WebMidi.outputs.forEach(output => console.log(output.manufacturer, output.name))
-    setMidiOutputChannel(WebMidi.outputs[0].channels[1])
-  })
-  .catch(err => alert(err))
+export const [midiOutputEnabled, setMidiOutputEnabled] = createSignal(false)
+export const [midiOutputs] = createResource(midiOutputEnabled, async () => {
+  await WebMidi.enable()
+  return WebMidi.outputs
+})
+export const [selectedMidiOutputs, setSelectedMidiOutputs] = createSignal<Array<Output>>([])
 
 // Initialise local state
 
@@ -227,13 +228,12 @@ export function playNote(note: NoteData, delay = 0) {
     0.05 // (optional - override envelope "attack" parameter)
   )
 
-  const _midiOutputChannel = midiOutputChannel()
-  if (_midiOutputChannel) {
-    _midiOutputChannel.playNote(note.pitch, {
+  selectedMidiOutputs().forEach(output => {
+    output.playNote(note.pitch, {
       duration: (note.duration / (doc().bpm / 60)) * 1000 - 100,
       time: `+${delay * 1000}`
     })
-  }
+  })
 
   setTimeout(() => {
     setPlayingNotes(produce(pitches => pitches.push({ ...note })))
