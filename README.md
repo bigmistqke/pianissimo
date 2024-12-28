@@ -27,8 +27,10 @@ A collaborative piano roll, powered by [solid-js](https://github.com/solidjs/sol
 - [x] change tempo/bpm
   - [ ] needs fix: bpm is not correct and creates glitches when changing tempo
 - [x] change volume
+- [ ] zoom
+  - [x] controls for desktop
+  - [ ] pinch on mobile?
 - [ ] change measure
-- [ ] zoom (pinch on mobile?)
 - [ ] theming
   - [x] dark mode
   - [ ] light mode
