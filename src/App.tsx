@@ -384,43 +384,58 @@ function Note(props: { note: NoteData }) {
 }
 
 function Piano() {
-  const dimensions = useDimensions()
+  const [dimensions, setDimensions] = createSignal<DOMRect>()
   return (
-    <g class={styles.piano}>
-      <rect
-        height={dimensions().height}
-        style={{
-          width: 'var(--width-piano)',
-          fill: 'var(--color-piano-white)'
-        }}
-      />
-      <g
-        style={{
-          transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`
-        }}
-      >
-        <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
-          {(_, index) => (
-            <rect
-              y={index * projectedHeight()}
-              x={0}
+    <svg
+      class={styles.piano}
+      style={{
+        width: 'var(--width-piano)',
+        fill: '100%',
+        background: 'var(--color-piano-white)'
+      }}
+      ref={element => {
+        onMount(() => {
+          const observer = new ResizeObserver(() => {
+            setDimensions(element.getBoundingClientRect())
+          })
+          observer.observe(element)
+          onCleanup(() => observer.disconnect())
+        })
+      }}
+    >
+      <Show when={dimensions()}>
+        {dimensions => (
+          <dimensionsContext.Provider value={dimensions}>
+            <PlayingNotes />
+            <g
               style={{
-                width: 'var(--width-piano)',
-                height: `${projectedHeight()}px`,
-                fill: KEY_COLORS[
-                  mod(
-                    index + Math.floor(-projectedOrigin().y / projectedHeight()),
-                    KEY_COLORS.length
-                  )
-                ]
-                  ? 'none'
-                  : 'var(--color-piano-black)'
+                transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`
               }}
-            />
-          )}
-        </Index>
-      </g>
-    </g>
+            >
+              <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
+                {(_, index) => (
+                  <rect
+                    y={index * projectedHeight()}
+                    x={0}
+                    style={{
+                      height: `${projectedHeight()}px`,
+                      fill: KEY_COLORS[
+                        mod(
+                          index + Math.floor(-projectedOrigin().y / projectedHeight()),
+                          KEY_COLORS.length
+                        )
+                      ]
+                        ? 'none'
+                        : 'var(--color-piano-black)'
+                    }}
+                  />
+                )}
+              </Index>
+            </g>
+          </dimensionsContext.Provider>
+        )}
+      </Show>
+    </svg>
   )
 }
 
@@ -979,10 +994,10 @@ function BottomRightHud() {
         <NumberButton
           label="zoom pitch"
           value={zoom().y}
-          decrement={() => setZoom(zoom => ({ ...zoom, y: zoom.y + 10 }))}
-          increment={() => setZoom(zoom => ({ ...zoom, y: zoom.y - 10 }))}
+          decrement={() => setZoom(zoom => ({ ...zoom, y: zoom.y + 0.1 }))}
+          increment={() => setZoom(zoom => ({ ...zoom, y: zoom.y - 0.1 }))}
           canDecrement={zoom().y > 0}
-          canIncrement={zoom().y < 1000}
+          canIncrement={zoom().y < 10}
         />
       </div>
       <div>
@@ -1178,104 +1193,105 @@ function App() {
   })
 
   return (
-    <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-      <TopLeftHud />
-      <TopRightHud />
-      <BottomLeftHud />
-      <BottomRightHud />
-      <svg
-        style={{ width: '100%', height: '100%', overflow: 'hidden' }}
-        ref={element => {
-          onMount(() => {
-            const observer = new ResizeObserver(() => {
-              setDimensions(element.getBoundingClientRect())
+    <>
+      <Piano />
+      <div class={styles.main}>
+        <TopLeftHud />
+        <TopRightHud />
+        <BottomLeftHud />
+        <BottomRightHud />
+        <svg
+          style={{ width: '100%', height: '100%', overflow: 'hidden' }}
+          ref={element => {
+            onMount(() => {
+              const observer = new ResizeObserver(() => {
+                setDimensions(element.getBoundingClientRect())
+              })
+              observer.observe(element)
+              onCleanup(() => observer.disconnect())
             })
-            observer.observe(element)
-            onCleanup(() => observer.disconnect())
-          })
-        }}
-        onDblClick={() => setSelectedNotes([])}
-        onWheel={event =>
-          setOrigin(origin => ({
-            x: origin.x - event.deltaX / zoom().x,
-            y: origin.y - (event.deltaY / zoom().y) * (2 / 3)
-          }))
-        }
-        onPointerDown={async event => {
-          switch (mode()) {
-            case 'note':
-              handleCreateNote(event)
-              break
-            case 'select':
-              handleSelectionBox(event)
-              break
-            case 'pan':
-              handlePan(event)
+          }}
+          onDblClick={() => setSelectedNotes([])}
+          onWheel={event =>
+            setOrigin(origin => ({
+              x: origin.x - event.deltaX / zoom().x,
+              y: origin.y - (event.deltaY / zoom().y) * (2 / 3)
+            }))
           }
-        }}
-      >
-        <Show when={dimensions()}>
-          {dimensions => (
-            <dimensionsContext.Provider value={dimensions}>
-              <PianoUnderlay />
-              <Grid />
-              {/* Selection Area */}
-              <Show when={mode() === 'select' && selectionArea()}>
-                {area => (
-                  <rect
-                    x={area().start.x * projectedWidth() + projectedOrigin().x}
-                    y={area().start.y * projectedHeight() + projectedOrigin().y}
-                    width={(area().end.x - area().start.x) * projectedWidth()}
-                    height={(area().end.y - area().start.y) * projectedHeight()}
-                    opacity={0.3}
-                    fill="var(--color-selection-area)"
-                  />
-                )}
-              </Show>
-              {/* Selection Presence */}
-              <Show when={mode() === 'select' && selectionPresence()}>
-                {presence => (
-                  <rect
-                    x={presence().x * projectedWidth() + projectedOrigin().x}
-                    y={presence().y * projectedHeight() + projectedOrigin().y}
-                    width={projectedWidth() * timeScale()}
-                    height={projectedHeight()}
-                    opacity={0.8}
-                    fill="var(--color-selection-area)"
-                  />
-                )}
-              </Show>
-              {/* Notes */}
-              <Show when={doc().notes.length > 0}>
-                <g
+          onPointerDown={async event => {
+            switch (mode()) {
+              case 'note':
+                handleCreateNote(event)
+                break
+              case 'select':
+                handleSelectionBox(event)
+                break
+              case 'pan':
+                handlePan(event)
+            }
+          }}
+        >
+          <Show when={dimensions()}>
+            {dimensions => (
+              <dimensionsContext.Provider value={dimensions}>
+                <PianoUnderlay />
+                <Grid />
+                {/* Selection Area */}
+                <Show when={mode() === 'select' && selectionArea()}>
+                  {area => (
+                    <rect
+                      x={area().start.x * projectedWidth() + projectedOrigin().x}
+                      y={area().start.y * projectedHeight() + projectedOrigin().y}
+                      width={(area().end.x - area().start.x) * projectedWidth()}
+                      height={(area().end.y - area().start.y) * projectedHeight()}
+                      opacity={0.3}
+                      fill="var(--color-selection-area)"
+                    />
+                  )}
+                </Show>
+                {/* Selection Presence */}
+                <Show when={mode() === 'select' && selectionPresence()}>
+                  {presence => (
+                    <rect
+                      x={presence().x * projectedWidth() + projectedOrigin().x}
+                      y={presence().y * projectedHeight() + projectedOrigin().y}
+                      width={projectedWidth() * timeScale()}
+                      height={projectedHeight()}
+                      opacity={0.8}
+                      fill="var(--color-selection-area)"
+                    />
+                  )}
+                </Show>
+                {/* Notes */}
+                <Show when={doc().notes.length > 0}>
+                  <g
+                    style={{
+                      transform: `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`
+                    }}
+                  >
+                    <For each={doc().notes}>{note => <Note note={note} />}</For>
+                  </g>
+                </Show>
+                {/* Now Underlay */}
+                <rect
+                  class={styles.now}
+                  width={projectedWidth() * timeScale()}
+                  height={dimensions().height}
                   style={{
-                    transform: `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`
+                    opacity: 0.075,
+                    transform: `translateX(${
+                      projectedOrigin().x +
+                      Math.floor(now() / timeScale()) * projectedWidth() * timeScale()
+                    }px)`
                   }}
-                >
-                  <For each={doc().notes}>{note => <Note note={note} />}</For>
-                </g>
-              </Show>
-              {/* Now Underlay */}
-              <rect
-                class={styles.now}
-                width={projectedWidth() * timeScale()}
-                height={dimensions().height}
-                style={{
-                  opacity: 0.075,
-                  transform: `translateX(${
-                    projectedOrigin().x +
-                    Math.floor(now() / timeScale()) * projectedWidth() * timeScale()
-                  }px)`
-                }}
-              />
-              <Ruler loop={loop} setLoop={setLoop} />
-              <Piano />
-              <PlayingNotes />
-            </dimensionsContext.Provider>
-          )}
-        </Show>
-      </svg>
-    </div>
+                />
+                <Ruler loop={loop} setLoop={setLoop} />
+              </dimensionsContext.Provider>
+            )}
+          </Show>
+        </svg>
+      </div>
+    </>
   )
 }
 
