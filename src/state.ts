@@ -54,7 +54,7 @@ export function deserializeDate(serialized: number): string {
 // Initialise automerge-state
 
 export const repo = new Repo({
-  network: [new BrowserWebSocketClientAdapter('wss://sync.automerge.org')],
+  network: [new BrowserWebSocketClientAdapter('ws://167.99.210.141')],
   storage: new IndexedDBStorageAdapter()
 })
 
@@ -222,7 +222,7 @@ export function playNote(note: NoteData, delay = 0) {
     // NOTE: later commit should use GainNode to change volume
     note.velocity * (volume() / 10), // velocity
     delay, // delay
-    note.duration / VELOCITY, // duration
+    note.duration / (doc().bpm / 60), // duration
     0, // (optional - specify channel for tinysynth to use)
     0.05 // (optional - override envelope "attack" parameter)
   )
