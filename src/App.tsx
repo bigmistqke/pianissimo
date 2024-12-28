@@ -935,6 +935,17 @@ function TopRightHud() {
 }
 
 function BottomLeftHud() {
+  const [fullscreen, setFullscreen] = createSignal(false)
+
+  const root = document.body
+  createEffect(() => {
+    if (fullscreen()) {
+      root.requestFullscreen()
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen()
+    }
+  })
+
   return (
     <div class={styles.bottomLeftHud}>
       <div class={styles.list}>
@@ -977,6 +988,14 @@ function BottomLeftHud() {
                 onClick={() => downloadDataUri(createMidiDataUri(doc().notes), 'pianissimo.mid')}
               >
                 Export to Midi <div class={styles['dropdown-menu__item-right-slot']}>⇧+⌘+E</div>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                as={Button}
+                closeOnSelect={false}
+                class={styles['dropdown-menu__item']}
+                onClick={() => setFullscreen(fullscreen => !fullscreen)}
+              >
+                {fullscreen() ? 'Close' : 'Open'} Fullscreen
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>

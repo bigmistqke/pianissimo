@@ -33,7 +33,6 @@ body {
   --gap: 5px;
 
   margin: 0px;
-  background: var(--color-background);
   width: 100svw;
   height: 100svh;
   overscroll-behavior-x: none;
@@ -56,6 +55,7 @@ body {
   overflow: hidden;
   overflow: hidden;
   touch-action: none;
+  background: var(--color-background);
 }
 
 .main {
