@@ -77,7 +77,6 @@ import {
   url,
   urls,
   volume,
-  WIDTH,
   zoom
 } from './state'
 import { Loop, NoteData } from './types'
@@ -387,19 +386,27 @@ function Note(props: { note: NoteData }) {
 function Piano() {
   const dimensions = useDimensions()
   return (
-    <>
-      <rect width={WIDTH} height={dimensions().height} fill="var(--color-piano-white)" />
+    <g class={styles.piano}>
+      <rect
+        height={dimensions().height}
+        style={{
+          width: 'var(--width-piano)',
+          fill: 'var(--color-piano-white)'
+        }}
+      />
       <g
-        style={{ transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)` }}
+        style={{
+          transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`
+        }}
       >
         <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
           {(_, index) => (
             <rect
               y={index * projectedHeight()}
               x={0}
-              width={WIDTH}
-              height={projectedHeight()}
               style={{
+                width: 'var(--width-piano)',
+                height: `${projectedHeight()}px`,
                 fill: KEY_COLORS[
                   mod(
                     index + Math.floor(-projectedOrigin().y / projectedHeight()),
@@ -413,7 +420,7 @@ function Piano() {
           )}
         </Index>
       </g>
-    </>
+    </g>
   )
 }
 
@@ -908,7 +915,7 @@ function BottomLeftHud() {
     <div class={styles.bottomLeftHud}>
       <div>
         <DropdownMenu>
-          <DropdownMenu.Trigger as={Button} onClick={() => setTimeScale(duration => duration / 2)}>
+          <DropdownMenu.Trigger as={Button}>
             <IconGrommetIconsMenu />
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
@@ -961,17 +968,17 @@ function BottomRightHud() {
       <div>
         <NumberButton
           label="zoom time"
-          value={zoom().x / 100}
-          decrement={() => setZoom(zoom => ({ ...zoom, x: zoom.x + 10 }))}
-          increment={() => setZoom(zoom => ({ ...zoom, x: zoom.x - 10 }))}
+          value={zoom().x}
+          decrement={() => setZoom(zoom => ({ ...zoom, x: zoom.x + 0.1 }))}
+          increment={() => setZoom(zoom => ({ ...zoom, x: zoom.x - 0.1 }))}
           canDecrement={zoom().x > 0}
-          canIncrement={zoom().x < 1000}
+          canIncrement={zoom().x < 10}
         />
       </div>
       <div>
         <NumberButton
           label="zoom pitch"
-          value={zoom().y / 100}
+          value={zoom().y}
           decrement={() => setZoom(zoom => ({ ...zoom, y: zoom.y + 10 }))}
           increment={() => setZoom(zoom => ({ ...zoom, y: zoom.y - 10 }))}
           canDecrement={zoom().y > 0}
@@ -1190,8 +1197,8 @@ function App() {
         onDblClick={() => setSelectedNotes([])}
         onWheel={event =>
           setOrigin(origin => ({
-            x: origin.x - event.deltaX,
-            y: origin.y - (event.deltaY * 2) / 3
+            x: origin.x - event.deltaX / zoom().x,
+            y: origin.y - (event.deltaY / zoom().y) * (2 / 3)
           }))
         }
         onPointerDown={async event => {

@@ -141,14 +141,14 @@ export const [volume, setVolume] = createSignal(10)
 
 // Projection
 export const [origin, setOrigin] = createSignal<Vector>({ x: 0, y: 6 * HEIGHT * 12 })
-export const [zoom, setZoom] = createSignal({ x: 100, y: 100 })
+export const [zoom, setZoom] = createSignal({ x: 1, y: 1 })
 
-export const projectedWidth = () => WIDTH * (zoom().x / 100)
-export const projectedHeight = () => HEIGHT * (zoom().y / 100)
+export const projectedWidth = () => WIDTH * zoom().x
+export const projectedHeight = () => HEIGHT * zoom().y
 export const projectedOrigin = createMemo(() => {
   return {
-    x: WIDTH + origin().x * (zoom().x / 100),
-    y: origin().y * (zoom().y / 100)
+    x: WIDTH + origin().x * zoom().x,
+    y: origin().y * zoom().y
   }
 })
 
@@ -173,8 +173,8 @@ export const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => 
 
 function normalizeVector(value: Vector) {
   return {
-    x: Math.floor(value.x / WIDTH / timeScale()) * timeScale(),
-    y: Math.floor(value.y / HEIGHT)
+    x: Math.floor(value.x / projectedWidth() / timeScale()) * timeScale(),
+    y: Math.floor(value.y / projectedHeight())
   }
 }
 
@@ -230,8 +230,8 @@ export function playNote(note: NoteData, delay = 0) {
   const _midiOutputChannel = midiOutputChannel()
   if (_midiOutputChannel) {
     _midiOutputChannel.playNote(note.pitch, {
-      duration: (note.duration / VELOCITY) * 1000,
-      time: WebMidi.time + delay * 1000
+      duration: (note.duration / (doc().bpm / 60)) * 1000 - 100,
+      time: `+${delay * 1000}`
     })
   }
 
@@ -252,16 +252,16 @@ export function playNote(note: NoteData, delay = 0) {
 
 export async function handleCreateNote(event: PointerEvent) {
   const absolutePosition = {
-    x: event.layerX - origin().x - WIDTH,
-    y: event.layerY - origin().y
+    x: event.layerX - projectedOrigin().x,
+    y: event.layerY - projectedOrigin().y
   }
 
   const note: NoteData = {
     id: zeptoid(),
     active: true,
     duration: timeScale(),
-    pitch: Math.floor(-absolutePosition.y / HEIGHT) + 1,
-    time: Math.floor(absolutePosition.x / WIDTH / timeScale()) * timeScale(),
+    pitch: Math.floor(-absolutePosition.y / projectedHeight()) + 1,
+    time: Math.floor(absolutePosition.x / projectedWidth() / timeScale()) * timeScale(),
     velocity: 1
   }
 
@@ -272,12 +272,12 @@ export async function handleCreateNote(event: PointerEvent) {
 
   const initialTime = note.time
   const initialDuration = note.duration
-  const offset = absolutePosition.x - initialTime * WIDTH
+  const offset = absolutePosition.x - initialTime * projectedWidth()
 
   setSelectedNotes([note])
 
   await pointerHelper(event, ({ delta }) => {
-    const deltaX = Math.floor((offset + delta.x) / WIDTH / timeScale()) * timeScale()
+    const deltaX = Math.floor((offset + delta.x) / projectedWidth() / timeScale()) * timeScale()
     if (deltaX < 0) {
       setDoc(doc => {
         const _note = doc.notes.find(filterNote(note))
@@ -308,14 +308,14 @@ export async function handleCreateNote(event: PointerEvent) {
 
 export async function handleSelectionBox(event: PointerEvent) {
   const position = {
-    x: event.clientX - origin().x - WIDTH,
-    y: event.clientY - origin().y
+    x: event.clientX - projectedOrigin().x,
+    y: event.clientY - projectedOrigin().y
   }
   const normalizedPosition = normalizeVector(position)
   setSelectionArea({
     start: normalizedPosition,
     end: {
-      x: normalizedPosition.x + timeScale(),
+      x: normalizedPosition.x + timeScale() * zoom().x,
       y: normalizedPosition.y
     }
   })
@@ -345,8 +345,8 @@ export async function handlePan(event: PointerEvent) {
   const initialOrigin = { ...origin() }
   await pointerHelper(event, ({ delta }) => {
     setOrigin({
-      x: initialOrigin.x + delta.x,
-      y: initialOrigin.y + delta.y
+      x: initialOrigin.x + delta.x / zoom().x,
+      y: initialOrigin.y + delta.y / zoom().y
     })
   })
 }
