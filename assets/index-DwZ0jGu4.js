@@ -9731,51 +9731,61 @@ const get = () => {
     return id;
 };
 
-const main = "_main_1lv1g_59";
-const piano = "_piano_1lv1g_64";
-const note = "_note_1lv1g_70";
-const selected = "_selected_1lv1g_72";
-const now$1 = "_now_1lv1g_77";
-const topRightHud = "_topRightHud_1lv1g_84";
-const topLeftHud = "_topLeftHud_1lv1g_85";
-const bottomLeftHud = "_bottomLeftHud_1lv1g_86";
-const bottomRightHud = "_bottomRightHud_1lv1g_138";
-const contentHide = "_contentHide_1lv1g_1";
-const contentShow = "_contentShow_1lv1g_1";
-const current = "_current_1lv1g_232";
-const button = "_button_1lv1g_322";
-const active = "_active_1lv1g_335";
-const horizontal = "_horizontal_1lv1g_357";
-const trigger = "_trigger_1lv1g_376";
-const numberButton = "_numberButton_1lv1g_382";
-const textContainer = "_textContainer_1lv1g_397";
-const numberButtonLabel = "_numberButtonLabel_1lv1g_401";
-const numberButtonValue = "_numberButtonValue_1lv1g_408";
-const buttonContainer = "_buttonContainer_1lv1g_424";
+const main = "_main_rgmf4_61";
+const piano = "_piano_rgmf4_66";
+const note = "_note_rgmf4_72";
+const selected = "_selected_rgmf4_74";
+const now$1 = "_now_rgmf4_79";
+const hud = "_hud_rgmf4_86";
+const topHudContainer = "_topHudContainer_rgmf4_99";
+const bottomHudContainer = "_bottomHudContainer_rgmf4_100";
+const topRightHud = "_topRightHud_rgmf4_109";
+const topLeftHud = "_topLeftHud_rgmf4_110";
+const bottomLeftHud = "_bottomLeftHud_rgmf4_111";
+const listContainer = "_listContainer_rgmf4_120";
+const list = "_list_rgmf4_120";
+const bottomRightHud = "_bottomRightHud_rgmf4_160";
+const contentHide = "_contentHide_rgmf4_1";
+const contentShow = "_contentShow_rgmf4_1";
+const current = "_current_rgmf4_257";
+const button = "_button_rgmf4_347";
+const active = "_active_rgmf4_362";
+const horizontal = "_horizontal_rgmf4_384";
+const trigger = "_trigger_rgmf4_403";
+const numberButton = "_numberButton_rgmf4_409";
+const textContainer = "_textContainer_rgmf4_424";
+const numberButtonLabel = "_numberButtonLabel_rgmf4_428";
+const numberButtonValue = "_numberButtonValue_rgmf4_435";
+const buttonContainer = "_buttonContainer_rgmf4_451";
 const styles = {
 	main: main,
 	piano: piano,
 	note: note,
 	selected: selected,
 	now: now$1,
+	hud: hud,
+	topHudContainer: topHudContainer,
+	bottomHudContainer: bottomHudContainer,
 	topRightHud: topRightHud,
 	topLeftHud: topLeftHud,
 	bottomLeftHud: bottomLeftHud,
+	listContainer: listContainer,
+	list: list,
 	bottomRightHud: bottomRightHud,
-	"dropdown-menu__trigger": "_dropdown-menu__trigger_1lv1g_196",
-	"dropdown-menu__content": "_dropdown-menu__content_1lv1g_211",
-	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_1lv1g_215",
+	"dropdown-menu__trigger": "_dropdown-menu__trigger_rgmf4_221",
+	"dropdown-menu__content": "_dropdown-menu__content_rgmf4_236",
+	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_rgmf4_240",
 	contentHide: contentHide,
 	contentShow: contentShow,
-	"dropdown-menu__item": "_dropdown-menu__item_1lv1g_232",
+	"dropdown-menu__item": "_dropdown-menu__item_rgmf4_257",
 	current: current,
-	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_1lv1g_236",
-	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_1lv1g_237",
-	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_1lv1g_238",
-	"dropdown-menu__group-label": "_dropdown-menu__group-label_1lv1g_268",
-	"dropdown-menu__separator": "_dropdown-menu__separator_1lv1g_273",
-	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_1lv1g_278",
-	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_1lv1g_287",
+	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_rgmf4_261",
+	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_rgmf4_262",
+	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_rgmf4_263",
+	"dropdown-menu__group-label": "_dropdown-menu__group-label_rgmf4_293",
+	"dropdown-menu__separator": "_dropdown-menu__separator_rgmf4_298",
+	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_rgmf4_303",
+	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_rgmf4_312",
 	button: button,
 	active: active,
 	horizontal: horizontal,
@@ -40272,7 +40282,7 @@ const IconGrommetIconsPause = (props = {}) => (() => {
   return _el$;
 })();
 
-var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg>`), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div>`), _tmpl$16 = /* @__PURE__ */ template(`<div>⌘+N`), _tmpl$17 = /* @__PURE__ */ template(`<div>⌘+O`), _tmpl$18 = /* @__PURE__ */ template(`<div>⇧+⌘+E`), _tmpl$19 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$20 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$21 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$22 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
+var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg>`), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div></div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div><div>`), _tmpl$16 = /* @__PURE__ */ template(`<div>⌘+N`), _tmpl$17 = /* @__PURE__ */ template(`<div>⌘+O`), _tmpl$18 = /* @__PURE__ */ template(`<div>⇧+⌘+E`), _tmpl$19 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$20 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$21 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$22 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
 function Button(props) {
   return (() => {
     var _el$ = _tmpl$();
@@ -40928,11 +40938,32 @@ function PianoUnderlay() {
     return _el$31;
   })();
 }
+function Hud() {
+  return (() => {
+    var _el$33 = _tmpl$14(), _el$34 = _el$33.firstChild, _el$35 = _el$34.nextSibling;
+    insert(_el$34, createComponent(TopLeftHud, {}), null);
+    insert(_el$34, createComponent(TopRightHud, {}), null);
+    insert(_el$35, createComponent(BottomLeftHud, {}), null);
+    insert(_el$35, createComponent(BottomRightHud, {}), null);
+    createRenderEffect((_p$) => {
+      var _v$51 = styles.hud, _v$52 = styles.topHudContainer, _v$53 = styles.bottomHudContainer;
+      _v$51 !== _p$.e && className(_el$33, _p$.e = _v$51);
+      _v$52 !== _p$.t && className(_el$34, _p$.t = _v$52);
+      _v$53 !== _p$.a && className(_el$35, _p$.a = _v$53);
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0,
+      a: void 0
+    });
+    return _el$33;
+  })();
+}
 function TopLeftHud() {
   return (() => {
-    var _el$33 = _tmpl$14(), _el$34 = _el$33.firstChild;
-    _el$33.style.setProperty("gap", "5px");
-    insert(_el$34, createComponent(ActionButton, {
+    var _el$36 = _tmpl$15(), _el$37 = _el$36.firstChild;
+    _el$36.style.setProperty("gap", "5px");
+    insert(_el$37, createComponent(ActionButton, {
       onClick: () => {
         const selection = doc().notes?.filter((note) => note.time >= loop.time && note.time < loop.time + loop.duration);
         if (!selection) return;
@@ -40949,7 +40980,7 @@ function TopLeftHud() {
         return createComponent(IconGrommetIconsDuplicate, {});
       }
     }), null);
-    insert(_el$34, createComponent(Show, {
+    insert(_el$37, createComponent(Show, {
       get when() {
         return mode() === "select";
       },
@@ -40983,21 +41014,23 @@ function TopLeftHud() {
       }
     }), null);
     createRenderEffect((_p$) => {
-      var _v$51 = styles.topLeftHud, _v$52 = `${projectedHeight()}px`;
-      _v$51 !== _p$.e && className(_el$33, _p$.e = _v$51);
-      _v$52 !== _p$.t && ((_p$.t = _v$52) != null ? _el$33.style.setProperty("top", _v$52) : _el$33.style.removeProperty("top"));
+      var _v$54 = styles.topLeftHud, _v$55 = `${projectedHeight()}px`, _v$56 = styles.list;
+      _v$54 !== _p$.e && className(_el$36, _p$.e = _v$54);
+      _v$55 !== _p$.t && ((_p$.t = _v$55) != null ? _el$36.style.setProperty("top", _v$55) : _el$36.style.removeProperty("top"));
+      _v$56 !== _p$.a && className(_el$37, _p$.a = _v$56);
       return _p$;
     }, {
       e: void 0,
-      t: void 0
+      t: void 0,
+      a: void 0
     });
-    return _el$33;
+    return _el$36;
   })();
 }
 function TopRightHud() {
   return (() => {
-    var _el$35 = _tmpl$14(), _el$36 = _el$35.firstChild;
-    insert(_el$36, createComponent(Button, {
+    var _el$38 = _tmpl$15(), _el$39 = _el$38.firstChild;
+    insert(_el$39, createComponent(Button, {
       get ["class"]() {
         return mode() === "note" ? styles.active : void 0;
       },
@@ -41006,7 +41039,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsMusic, {});
       }
     }), null);
-    insert(_el$36, createComponent(Button, {
+    insert(_el$39, createComponent(Button, {
       get ["class"]() {
         return mode() === "select" ? styles.active : void 0;
       },
@@ -41015,7 +41048,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsSelect, {});
       }
     }), null);
-    insert(_el$36, createComponent(Button, {
+    insert(_el$39, createComponent(Button, {
       get ["class"]() {
         return mode() === "stretch" ? styles.active : void 0;
       },
@@ -41024,7 +41057,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsShift, {});
       }
     }), null);
-    insert(_el$36, createComponent(Button, {
+    insert(_el$39, createComponent(Button, {
       get ["class"]() {
         return mode() === "velocity" ? styles.active : void 0;
       },
@@ -41033,7 +41066,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsVolumeControl, {});
       }
     }), null);
-    insert(_el$36, createComponent(Button, {
+    insert(_el$39, createComponent(Button, {
       get ["class"]() {
         return mode() === "pan" ? styles.active : void 0;
       },
@@ -41042,7 +41075,7 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsPan, {});
       }
     }), null);
-    insert(_el$35, createComponent(Show, {
+    insert(_el$38, createComponent(Show, {
       get when() {
         return mode() === "select";
       },
@@ -41050,9 +41083,8 @@ function TopRightHud() {
         const hasClipboardAndPresence = () => clipboard() && selectionPresence();
         const clipboardAndPresence = () => hasClipboardAndPresence() && [clipboard(), selectionPresence()];
         return (() => {
-          var _el$38 = _tmpl$15();
-          _el$38.style.setProperty("display", "grid");
-          insert(_el$38, createComponent(ActionButton, {
+          var _el$40 = _tmpl$15(), _el$41 = _el$40.firstChild;
+          insert(_el$41, createComponent(ActionButton, {
             get disabled() {
               return !hasClipboardAndPresence();
             },
@@ -41068,7 +41100,7 @@ function TopRightHud() {
               return createComponent(IconGrommetIconsCopy, {});
             }
           }), null);
-          insert(_el$38, createComponent(ActionButton, {
+          insert(_el$41, createComponent(ActionButton, {
             get disabled() {
               return selectedNotes().length === 0;
             },
@@ -41080,104 +41112,111 @@ function TopRightHud() {
               return createComponent(IconGrommetIconsClipboard, {});
             }
           }), null);
-          createRenderEffect((_$p) => (_$p = `${projectedHeight() * 2 - 2}px`) != null ? _el$38.style.setProperty("grid-template-rows", _$p) : _el$38.style.removeProperty("grid-template-rows"));
-          return _el$38;
+          insert(_el$41, createComponent(ActionButton, {
+            get disabled() {
+              return selectedNotes().length === 0;
+            },
+            onClick: () => {
+              const cutLine = selectionArea()?.start.x;
+              if (!cutLine) {
+                console.error("Attempting to slice without slice-line");
+                return;
+              }
+              const newNotes = selectedNotes().filter((note) => note.time < selectionArea().start.x).map((note) => {
+                return {
+                  id: get(),
+                  active: true,
+                  duration: note.duration - (cutLine - note.time),
+                  pitch: note.pitch,
+                  time: cutLine,
+                  velocity: note.velocity
+                };
+              });
+              setDoc((doc2) => doc2.notes.push(...newNotes));
+              setSelectedNotes((notes) => [...notes, ...newNotes]);
+              setDoc((doc2) => {
+                doc2.notes.forEach((note) => {
+                  if (isNoteSelected(note) && note.time < cutLine) {
+                    note.duration = cutLine - note.time;
+                  }
+                });
+              });
+            },
+            get children() {
+              return createComponent(IconGrommetIconsCut, {});
+            }
+          }), null);
+          insert(_el$41, createComponent(ActionButton, {
+            get disabled() {
+              return selectedNotes().length === 0;
+            },
+            onClick: () => {
+              setDoc((doc2) => {
+                for (let index = doc2.notes.length - 1; index >= 0; index--) {
+                  if (isNoteSelected(doc2.notes[index])) {
+                    doc2.notes.splice(index, 1);
+                  }
+                }
+              });
+              setSelectedNotes([]);
+            },
+            get children() {
+              return createComponent(IconGrommetIconsErase, {});
+            }
+          }), null);
+          insert(_el$41, createComponent(ActionButton, {
+            get disabled() {
+              return selectedNotes().length === 0;
+            },
+            onClick: () => {
+              let inactiveSelectedNotes = 0;
+              selectedNotes().forEach((note) => {
+                if (!note.active) {
+                  inactiveSelectedNotes++;
+                }
+              });
+              const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2;
+              setDoc((doc2) => {
+                doc2.notes.forEach((note) => {
+                  if (isNoteSelected(note)) {
+                    note.active = shouldActivate;
+                  }
+                });
+              });
+            },
+            get children() {
+              return createComponent(IconGrommetIconsDisabledOutline, {});
+            }
+          }), null);
+          createRenderEffect((_p$) => {
+            var _v$59 = styles.listContainer, _v$60 = styles.list;
+            _v$59 !== _p$.e && className(_el$40, _p$.e = _v$59);
+            _v$60 !== _p$.t && className(_el$41, _p$.t = _v$60);
+            return _p$;
+          }, {
+            e: void 0,
+            t: void 0
+          });
+          return _el$40;
         })();
       }
     }), null);
-    insert(_el$35, createComponent(Show, {
-      get when() {
-        return mode() === "select";
-      },
-      get children() {
-        var _el$37 = _tmpl$15();
-        insert(_el$37, createComponent(ActionButton, {
-          get disabled() {
-            return selectedNotes().length === 0;
-          },
-          onClick: () => {
-            const cutLine = selectionArea()?.start.x;
-            if (!cutLine) {
-              console.error("Attempting to slice without slice-line");
-              return;
-            }
-            const newNotes = selectedNotes().filter((note) => note.time < selectionArea().start.x).map((note) => {
-              return {
-                id: get(),
-                active: true,
-                duration: note.duration - (cutLine - note.time),
-                pitch: note.pitch,
-                time: cutLine,
-                velocity: note.velocity
-              };
-            });
-            setDoc((doc2) => doc2.notes.push(...newNotes));
-            setSelectedNotes((notes) => [...notes, ...newNotes]);
-            setDoc((doc2) => {
-              doc2.notes.forEach((note) => {
-                if (isNoteSelected(note) && note.time < cutLine) {
-                  note.duration = cutLine - note.time;
-                }
-              });
-            });
-          },
-          get children() {
-            return createComponent(IconGrommetIconsCut, {});
-          }
-        }), null);
-        insert(_el$37, createComponent(ActionButton, {
-          get disabled() {
-            return selectedNotes().length === 0;
-          },
-          onClick: () => {
-            setDoc((doc2) => {
-              for (let index = doc2.notes.length - 1; index >= 0; index--) {
-                if (isNoteSelected(doc2.notes[index])) {
-                  doc2.notes.splice(index, 1);
-                }
-              }
-            });
-            setSelectedNotes([]);
-          },
-          get children() {
-            return createComponent(IconGrommetIconsErase, {});
-          }
-        }), null);
-        insert(_el$37, createComponent(ActionButton, {
-          get disabled() {
-            return selectedNotes().length === 0;
-          },
-          onClick: () => {
-            let inactiveSelectedNotes = 0;
-            selectedNotes().forEach((note) => {
-              if (!note.active) {
-                inactiveSelectedNotes++;
-              }
-            });
-            const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2;
-            setDoc((doc2) => {
-              doc2.notes.forEach((note) => {
-                if (isNoteSelected(note)) {
-                  note.active = shouldActivate;
-                }
-              });
-            });
-          },
-          get children() {
-            return createComponent(IconGrommetIconsDisabledOutline, {});
-          }
-        }), null);
-        return _el$37;
-      }
-    }), null);
-    createRenderEffect(() => className(_el$35, styles.topRightHud));
-    return _el$35;
+    createRenderEffect((_p$) => {
+      var _v$57 = styles.topRightHud, _v$58 = styles.list;
+      _v$57 !== _p$.e && className(_el$38, _p$.e = _v$57);
+      _v$58 !== _p$.t && className(_el$39, _p$.t = _v$58);
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0
+    });
+    return _el$38;
   })();
 }
 function BottomLeftHud() {
   return (() => {
-    var _el$39 = _tmpl$14(), _el$40 = _el$39.firstChild;
-    insert(_el$40, createComponent(DropdownMenu, {
+    var _el$42 = _tmpl$15(), _el$43 = _el$42.firstChild;
+    insert(_el$43, createComponent(DropdownMenu, {
       get children() {
         return [createComponent(DropdownMenu.Trigger, {
           as: Button,
@@ -41199,9 +41238,9 @@ function BottomLeftHud() {
                   onClick: newDoc,
                   get children() {
                     return ["New File ", (() => {
-                      var _el$41 = _tmpl$16();
-                      createRenderEffect(() => className(_el$41, styles["dropdown-menu__item-right-slot"]));
-                      return _el$41;
+                      var _el$44 = _tmpl$16();
+                      createRenderEffect(() => className(_el$44, styles["dropdown-menu__item-right-slot"]));
+                      return _el$44;
                     })()];
                   }
                 }), createComponent(DropdownMenu.Sub, {
@@ -41216,9 +41255,9 @@ function BottomLeftHud() {
                       },
                       get children() {
                         return ["Open File ", (() => {
-                          var _el$42 = _tmpl$17();
-                          createRenderEffect(() => className(_el$42, styles["dropdown-menu__item-right-slot"]));
-                          return _el$42;
+                          var _el$45 = _tmpl$17();
+                          createRenderEffect(() => className(_el$45, styles["dropdown-menu__item-right-slot"]));
+                          return _el$45;
                         })()];
                       }
                     }), createComponent(DropdownMenu.Portal, {
@@ -41257,9 +41296,9 @@ function BottomLeftHud() {
                   onClick: () => downloadDataUri(createMidiDataUri(doc().notes), "pianissimo.mid"),
                   get children() {
                     return ["Export to Midi ", (() => {
-                      var _el$43 = _tmpl$18();
-                      createRenderEffect(() => className(_el$43, styles["dropdown-menu__item-right-slot"]));
-                      return _el$43;
+                      var _el$46 = _tmpl$18();
+                      createRenderEffect(() => className(_el$46, styles["dropdown-menu__item-right-slot"]));
+                      return _el$46;
                     })()];
                   }
                 })];
@@ -41269,14 +41308,22 @@ function BottomLeftHud() {
         })];
       }
     }));
-    createRenderEffect(() => className(_el$39, styles.bottomLeftHud));
-    return _el$39;
+    createRenderEffect((_p$) => {
+      var _v$61 = styles.bottomLeftHud, _v$62 = styles.list;
+      _v$61 !== _p$.e && className(_el$42, _p$.e = _v$61);
+      _v$62 !== _p$.t && className(_el$43, _p$.t = _v$62);
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0
+    });
+    return _el$42;
   })();
 }
 function BottomRightHud() {
   return (() => {
-    var _el$44 = _tmpl$19(), _el$45 = _el$44.firstChild, _el$46 = _el$45.nextSibling, _el$47 = _el$46.nextSibling, _el$48 = _el$47.nextSibling, _el$49 = _el$48.nextSibling, _el$50 = _el$49.nextSibling, _el$51 = _el$50.nextSibling;
-    insert(_el$45, createComponent(NumberButton, {
+    var _el$47 = _tmpl$19(), _el$48 = _el$47.firstChild, _el$49 = _el$48.nextSibling, _el$50 = _el$49.nextSibling, _el$51 = _el$50.nextSibling, _el$52 = _el$51.nextSibling, _el$53 = _el$52.nextSibling, _el$54 = _el$53.nextSibling;
+    insert(_el$48, createComponent(NumberButton, {
       label: "zoom time",
       get value() {
         return zoom().x;
@@ -41296,7 +41343,7 @@ function BottomRightHud() {
         return zoom().x < 10;
       }
     }));
-    insert(_el$46, createComponent(NumberButton, {
+    insert(_el$49, createComponent(NumberButton, {
       label: "zoom pitch",
       get value() {
         return zoom().y;
@@ -41316,7 +41363,7 @@ function BottomRightHud() {
         return zoom().y < 10;
       }
     }));
-    insert(_el$47, createComponent(NumberButton, {
+    insert(_el$50, createComponent(NumberButton, {
       label: "volume",
       get value() {
         return volume();
@@ -41330,7 +41377,7 @@ function BottomRightHud() {
         return volume() < 10;
       }
     }));
-    insert(_el$48, createComponent(NumberButton, {
+    insert(_el$51, createComponent(NumberButton, {
       label: "tempo",
       get value() {
         return doc().bpm;
@@ -41344,7 +41391,7 @@ function BottomRightHud() {
         return doc().bpm < 1e3;
       }
     }));
-    insert(_el$49, createComponent(NumberButton, {
+    insert(_el$52, createComponent(NumberButton, {
       label: "grid",
       get value() {
         return createMemo(() => timeScale() / 8 < 1)() ? `1:${1 / (timeScale() / 8)}` : timeScale() / 8;
@@ -41355,7 +41402,7 @@ function BottomRightHud() {
         return timeScale() > 8 / 128;
       }
     }));
-    insert(_el$50, createComponent(NumberButton, {
+    insert(_el$53, createComponent(NumberButton, {
       label: "instrument",
       get value() {
         return doc().instrument.toString().padStart(3, "0");
@@ -41383,7 +41430,7 @@ function BottomRightHud() {
         }
       }
     }));
-    insert(_el$51, createComponent(Button, {
+    insert(_el$54, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -41396,7 +41443,7 @@ function BottomRightHud() {
         return createComponent(IconGrommetIconsStop, {});
       }
     }), null);
-    insert(_el$51, createComponent(Button, {
+    insert(_el$54, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -41405,8 +41452,8 @@ function BottomRightHud() {
         return createMemo(() => !!!playing())() ? createComponent(IconGrommetIconsPlay, {}) : createComponent(IconGrommetIconsPause, {});
       }
     }), null);
-    createRenderEffect(() => className(_el$44, styles.bottomRightHud));
-    return _el$44;
+    createRenderEffect(() => className(_el$47, styles.bottomRightHud));
+    return _el$47;
   })();
 }
 const dimensionsContext = createContext();
@@ -41497,12 +41544,9 @@ function App() {
     });
   });
   return [createComponent(Piano, {}), (() => {
-    var _el$52 = _tmpl$20(), _el$53 = _el$52.firstChild;
-    insert(_el$52, createComponent(TopLeftHud, {}), _el$53);
-    insert(_el$52, createComponent(TopRightHud, {}), _el$53);
-    insert(_el$52, createComponent(BottomLeftHud, {}), _el$53);
-    insert(_el$52, createComponent(BottomRightHud, {}), _el$53);
-    _el$53.$$pointerdown = async (event) => {
+    var _el$55 = _tmpl$20(), _el$56 = _el$55.firstChild;
+    insert(_el$55, createComponent(Hud, {}), _el$56);
+    _el$56.$$pointerdown = async (event) => {
       switch (mode()) {
         case "note":
           handleCreateNote(event);
@@ -41514,11 +41558,11 @@ function App() {
           handlePan(event);
       }
     };
-    _el$53.addEventListener("wheel", (event) => setOrigin((origin) => ({
+    _el$56.addEventListener("wheel", (event) => setOrigin((origin) => ({
       x: origin.x - event.deltaX / zoom().x,
       y: origin.y - event.deltaY / zoom().y * (2 / 3)
     })));
-    _el$53.$$dblclick = () => setSelectedNotes([]);
+    _el$56.$$dblclick = () => setSelectedNotes([]);
     use((element) => {
       onMount(() => {
         const observer = new ResizeObserver(() => {
@@ -41527,11 +41571,11 @@ function App() {
         observer.observe(element);
         onCleanup(() => observer.disconnect());
       });
-    }, _el$53);
-    _el$53.style.setProperty("width", "100%");
-    _el$53.style.setProperty("height", "100%");
-    _el$53.style.setProperty("overflow", "hidden");
-    insert(_el$53, createComponent(Show, {
+    }, _el$56);
+    _el$56.style.setProperty("width", "100%");
+    _el$56.style.setProperty("height", "100%");
+    _el$56.style.setProperty("overflow", "hidden");
+    insert(_el$56, createComponent(Show, {
       get when() {
         return dimensions();
       },
@@ -41543,13 +41587,13 @@ function App() {
               return createMemo(() => mode() === "select")() && selectionArea();
             },
             children: (area) => (() => {
-              var _el$56 = _tmpl$21();
+              var _el$59 = _tmpl$21();
               createRenderEffect((_p$) => {
-                var _v$57 = area().start.x * projectedWidth() + projectedOrigin().x, _v$58 = area().start.y * projectedHeight() + projectedOrigin().y, _v$59 = (area().end.x - area().start.x) * projectedWidth(), _v$60 = (area().end.y - area().start.y) * projectedHeight();
-                _v$57 !== _p$.e && setAttribute(_el$56, "x", _p$.e = _v$57);
-                _v$58 !== _p$.t && setAttribute(_el$56, "y", _p$.t = _v$58);
-                _v$59 !== _p$.a && setAttribute(_el$56, "width", _p$.a = _v$59);
-                _v$60 !== _p$.o && setAttribute(_el$56, "height", _p$.o = _v$60);
+                var _v$67 = area().start.x * projectedWidth() + projectedOrigin().x, _v$68 = area().start.y * projectedHeight() + projectedOrigin().y, _v$69 = (area().end.x - area().start.x) * projectedWidth(), _v$70 = (area().end.y - area().start.y) * projectedHeight();
+                _v$67 !== _p$.e && setAttribute(_el$59, "x", _p$.e = _v$67);
+                _v$68 !== _p$.t && setAttribute(_el$59, "y", _p$.t = _v$68);
+                _v$69 !== _p$.a && setAttribute(_el$59, "width", _p$.a = _v$69);
+                _v$70 !== _p$.o && setAttribute(_el$59, "height", _p$.o = _v$70);
                 return _p$;
               }, {
                 e: void 0,
@@ -41557,20 +41601,20 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$56;
+              return _el$59;
             })()
           }), createComponent(Show, {
             get when() {
               return createMemo(() => mode() === "select")() && selectionPresence();
             },
             children: (presence) => (() => {
-              var _el$57 = _tmpl$22();
+              var _el$60 = _tmpl$22();
               createRenderEffect((_p$) => {
-                var _v$61 = presence().x * projectedWidth() + projectedOrigin().x, _v$62 = presence().y * projectedHeight() + projectedOrigin().y, _v$63 = projectedWidth() * timeScale(), _v$64 = projectedHeight();
-                _v$61 !== _p$.e && setAttribute(_el$57, "x", _p$.e = _v$61);
-                _v$62 !== _p$.t && setAttribute(_el$57, "y", _p$.t = _v$62);
-                _v$63 !== _p$.a && setAttribute(_el$57, "width", _p$.a = _v$63);
-                _v$64 !== _p$.o && setAttribute(_el$57, "height", _p$.o = _v$64);
+                var _v$71 = presence().x * projectedWidth() + projectedOrigin().x, _v$72 = presence().y * projectedHeight() + projectedOrigin().y, _v$73 = projectedWidth() * timeScale(), _v$74 = projectedHeight();
+                _v$71 !== _p$.e && setAttribute(_el$60, "x", _p$.e = _v$71);
+                _v$72 !== _p$.t && setAttribute(_el$60, "y", _p$.t = _v$72);
+                _v$73 !== _p$.a && setAttribute(_el$60, "width", _p$.a = _v$73);
+                _v$74 !== _p$.o && setAttribute(_el$60, "height", _p$.o = _v$74);
                 return _p$;
               }, {
                 e: void 0,
@@ -41578,15 +41622,15 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$57;
+              return _el$60;
             })()
           }), createComponent(Show, {
             get when() {
               return doc().notes.length > 0;
             },
             get children() {
-              var _el$54 = _tmpl$5();
-              insert(_el$54, createComponent(For, {
+              var _el$57 = _tmpl$5();
+              insert(_el$57, createComponent(For, {
                 get each() {
                   return doc().notes;
                 },
@@ -41594,18 +41638,18 @@ function App() {
                   note
                 })
               }));
-              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$54.style.setProperty("transform", _$p) : _el$54.style.removeProperty("transform"));
-              return _el$54;
+              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$57.style.setProperty("transform", _$p) : _el$57.style.removeProperty("transform"));
+              return _el$57;
             }
           }), (() => {
-            var _el$55 = _tmpl$3();
-            _el$55.style.setProperty("opacity", "0.075");
+            var _el$58 = _tmpl$3();
+            _el$58.style.setProperty("opacity", "0.075");
             createRenderEffect((_p$) => {
-              var _v$53 = styles.now, _v$54 = projectedWidth() * timeScale(), _v$55 = dimensions2().height, _v$56 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
-              _v$53 !== _p$.e && setAttribute(_el$55, "class", _p$.e = _v$53);
-              _v$54 !== _p$.t && setAttribute(_el$55, "width", _p$.t = _v$54);
-              _v$55 !== _p$.a && setAttribute(_el$55, "height", _p$.a = _v$55);
-              _v$56 !== _p$.o && ((_p$.o = _v$56) != null ? _el$55.style.setProperty("transform", _v$56) : _el$55.style.removeProperty("transform"));
+              var _v$63 = styles.now, _v$64 = projectedWidth() * timeScale(), _v$65 = dimensions2().height, _v$66 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
+              _v$63 !== _p$.e && setAttribute(_el$58, "class", _p$.e = _v$63);
+              _v$64 !== _p$.t && setAttribute(_el$58, "width", _p$.t = _v$64);
+              _v$65 !== _p$.a && setAttribute(_el$58, "height", _p$.a = _v$65);
+              _v$66 !== _p$.o && ((_p$.o = _v$66) != null ? _el$58.style.setProperty("transform", _v$66) : _el$58.style.removeProperty("transform"));
               return _p$;
             }, {
               e: void 0,
@@ -41613,7 +41657,7 @@ function App() {
               a: void 0,
               o: void 0
             });
-            return _el$55;
+            return _el$58;
           })(), createComponent(Ruler, {
             loop,
             setLoop
@@ -41621,8 +41665,8 @@ function App() {
         }
       })
     }));
-    createRenderEffect(() => className(_el$52, styles.main));
-    return _el$52;
+    createRenderEffect(() => className(_el$55, styles.main));
+    return _el$55;
   })()];
 }
 delegateEvents(["pointerdown", "click", "dblclick"]);
