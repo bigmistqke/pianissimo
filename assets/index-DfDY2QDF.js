@@ -39742,7 +39742,7 @@ function deserializeDate(serialized) {
   return `${year}-${month}-${date}-${hours}-${minutes}-${seconds}-${milliseconds}`;
 }
 const repo = new Repo({
-  network: [new BrowserWebSocketClientAdapter("ws://167.99.210.141")],
+  network: [new BrowserWebSocketClientAdapter("wss://sync.cyberspatialstudies.org")],
   storage: new IndexedDBStorageAdapter()
 });
 const {
