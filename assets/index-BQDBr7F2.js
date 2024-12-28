@@ -9731,32 +9731,32 @@ const get = () => {
     return id;
 };
 
-const main = "_main_1wfpx_61";
-const piano = "_piano_1wfpx_66";
-const note = "_note_1wfpx_72";
-const selected = "_selected_1wfpx_74";
-const now$1 = "_now_1wfpx_79";
-const hud = "_hud_1wfpx_86";
-const topHudContainer = "_topHudContainer_1wfpx_99";
-const bottomHudContainer = "_bottomHudContainer_1wfpx_100";
-const topRightHud = "_topRightHud_1wfpx_110";
-const topLeftHud = "_topLeftHud_1wfpx_111";
-const bottomLeftHud = "_bottomLeftHud_1wfpx_112";
-const listContainer = "_listContainer_1wfpx_121";
-const list = "_list_1wfpx_121";
-const bottomRightHud = "_bottomRightHud_1wfpx_161";
-const contentHide = "_contentHide_1wfpx_1";
-const contentShow = "_contentShow_1wfpx_1";
-const current = "_current_1wfpx_258";
-const button = "_button_1wfpx_348";
-const active = "_active_1wfpx_363";
-const horizontal = "_horizontal_1wfpx_385";
-const trigger = "_trigger_1wfpx_404";
-const numberButton = "_numberButton_1wfpx_410";
-const textContainer = "_textContainer_1wfpx_425";
-const numberButtonLabel = "_numberButtonLabel_1wfpx_429";
-const numberButtonValue = "_numberButtonValue_1wfpx_436";
-const buttonContainer = "_buttonContainer_1wfpx_452";
+const main = "_main_2qy5n_61";
+const piano = "_piano_2qy5n_66";
+const note = "_note_2qy5n_72";
+const selected = "_selected_2qy5n_74";
+const now$1 = "_now_2qy5n_79";
+const hud = "_hud_2qy5n_86";
+const topHudContainer = "_topHudContainer_2qy5n_99";
+const bottomHudContainer = "_bottomHudContainer_2qy5n_100";
+const topRightHud = "_topRightHud_2qy5n_110";
+const topLeftHud = "_topLeftHud_2qy5n_111";
+const bottomLeftHud = "_bottomLeftHud_2qy5n_112";
+const listContainer = "_listContainer_2qy5n_121";
+const list = "_list_2qy5n_121";
+const bottomRightHud = "_bottomRightHud_2qy5n_161";
+const contentHide = "_contentHide_2qy5n_1";
+const contentShow = "_contentShow_2qy5n_1";
+const current = "_current_2qy5n_258";
+const button = "_button_2qy5n_348";
+const active = "_active_2qy5n_363";
+const horizontal = "_horizontal_2qy5n_385";
+const trigger = "_trigger_2qy5n_404";
+const numberButton = "_numberButton_2qy5n_410";
+const textContainer = "_textContainer_2qy5n_425";
+const numberButtonLabel = "_numberButtonLabel_2qy5n_429";
+const numberButtonValue = "_numberButtonValue_2qy5n_436";
+const buttonContainer = "_buttonContainer_2qy5n_452";
 const styles = {
 	main: main,
 	piano: piano,
@@ -9772,20 +9772,20 @@ const styles = {
 	listContainer: listContainer,
 	list: list,
 	bottomRightHud: bottomRightHud,
-	"dropdown-menu__trigger": "_dropdown-menu__trigger_1wfpx_222",
-	"dropdown-menu__content": "_dropdown-menu__content_1wfpx_237",
-	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_1wfpx_241",
+	"dropdown-menu__trigger": "_dropdown-menu__trigger_2qy5n_222",
+	"dropdown-menu__content": "_dropdown-menu__content_2qy5n_237",
+	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_2qy5n_241",
 	contentHide: contentHide,
 	contentShow: contentShow,
-	"dropdown-menu__item": "_dropdown-menu__item_1wfpx_258",
+	"dropdown-menu__item": "_dropdown-menu__item_2qy5n_258",
 	current: current,
-	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_1wfpx_262",
-	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_1wfpx_263",
-	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_1wfpx_264",
-	"dropdown-menu__group-label": "_dropdown-menu__group-label_1wfpx_294",
-	"dropdown-menu__separator": "_dropdown-menu__separator_1wfpx_299",
-	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_1wfpx_304",
-	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_1wfpx_313",
+	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_2qy5n_262",
+	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_2qy5n_263",
+	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_2qy5n_264",
+	"dropdown-menu__group-label": "_dropdown-menu__group-label_2qy5n_294",
+	"dropdown-menu__separator": "_dropdown-menu__separator_2qy5n_299",
+	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_2qy5n_304",
+	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_2qy5n_313",
 	button: button,
 	active: active,
 	horizontal: horizontal,
@@ -41214,6 +41214,15 @@ function TopRightHud() {
   })();
 }
 function BottomLeftHud() {
+  const [fullscreen, setFullscreen] = createSignal(false);
+  const root = document.body;
+  createEffect(() => {
+    if (fullscreen()) {
+      root.requestFullscreen();
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+  });
   return (() => {
     var _el$42 = _tmpl$15(), _el$43 = _el$42.firstChild;
     insert(_el$43, createComponent(DropdownMenu, {
@@ -41300,6 +41309,16 @@ function BottomLeftHud() {
                       createRenderEffect(() => className(_el$46, styles["dropdown-menu__item-right-slot"]));
                       return _el$46;
                     })()];
+                  }
+                }), createComponent(DropdownMenu.Item, {
+                  as: Button,
+                  closeOnSelect: false,
+                  get ["class"]() {
+                    return styles["dropdown-menu__item"];
+                  },
+                  onClick: () => setFullscreen((fullscreen2) => !fullscreen2),
+                  get children() {
+                    return [createMemo(() => fullscreen() ? "Close" : "Open"), " Fullscreen"];
                   }
                 })];
               }
