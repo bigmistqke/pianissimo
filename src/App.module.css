@@ -140,7 +140,7 @@ body {
     width: var(--height-hud);
     height: var(--height-hud);
 
-    &:not(:first-child) {
+    &:not(:first-child):not(:hover) {
       &::before {
         position: absolute;
         top: 0px;
@@ -353,6 +353,7 @@ body {
     color 0.125s;
   cursor: pointer;
   box-sizing: border-box;
+  outline: none;
   border: unset;
   background: unset;
   color: unset;
@@ -361,17 +362,10 @@ body {
   &:focus-visible {
     color: var(--color-focus);
 
-    &.active::after,
-    &:hover::after {
-      position: absolute;
-      top: 0px;
-      left: 0px;
-      opacity: 0.5;
-      background: radial-gradient(rgba(255, 0, 0, 0) 25%, var(--color-focus-stroke) 100%);
-      width: 100%;
-      height: 100%;
-      content: '';
+    &.active {
+      background: var(--color-focus-stroke) !important;
     }
+
     &::before {
       position: absolute;
       top: 0px;
@@ -397,7 +391,25 @@ body {
   }
 
   &:hover {
-    background: var(--color-hud-stroke);
+    border-radius: 2px;
+
+    &::before {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      box-sizing: border-box;
+      border: 1px solid var(--color-text);
+      border-radius: 2px;
+      width: 100%;
+      height: 100%;
+      content: '';
+    }
+    &:not(.horizontal) + .button::before {
+      border-top: none;
+    }
+    &.horizontal + .button::before {
+      border-left: none;
+    }
   }
 
   &[disabled] {
