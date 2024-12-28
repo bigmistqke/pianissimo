@@ -39744,7 +39744,7 @@ function deserializeDate(serialized) {
   return `${year}-${month}-${date}-${hours}-${minutes}-${seconds}-${milliseconds}`;
 }
 const repo = new Repo({
-  network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
+  network: [new BrowserWebSocketClientAdapter("ws://167.99.210.141")],
   storage: new IndexedDBStorageAdapter()
 });
 const {
@@ -39878,7 +39878,7 @@ function playNote(note, delay = 0) {
     // velocity
     delay,
     // delay
-    note.duration / VELOCITY,
+    note.duration / (doc().bpm / 60),
     // duration
     0,
     // (optional - specify channel for tinysynth to use)
