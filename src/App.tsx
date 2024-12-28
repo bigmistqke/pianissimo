@@ -720,6 +720,21 @@ function PianoUnderlay() {
   )
 }
 
+function Hud() {
+  return (
+    <div class={styles.hud}>
+      <div class={styles.topHudContainer}>
+        <TopLeftHud />
+        <TopRightHud />
+      </div>
+      <div class={styles.bottomHudContainer}>
+        <BottomLeftHud />
+        <BottomRightHud />
+      </div>
+    </div>
+  )
+}
+
 function TopLeftHud() {
   return (
     <div
@@ -729,7 +744,7 @@ function TopLeftHud() {
         gap: '5px'
       }}
     >
-      <div>
+      <div class={styles.list}>
         <ActionButton
           onClick={() => {
             const selection = doc().notes?.filter(
@@ -779,7 +794,7 @@ function TopLeftHud() {
 function TopRightHud() {
   return (
     <div class={styles.topRightHud}>
-      <div>
+      <div class={styles.list}>
         <Button
           class={mode() === 'note' ? styles.active : undefined}
           onClick={() => setMode('note')}
@@ -814,112 +829,106 @@ function TopRightHud() {
           const clipboardAndPresence = () =>
             hasClipboardAndPresence() && ([clipboard()!, selectionPresence()!] as const)
           return (
-            <div
-              style={{
-                display: 'grid',
-                'grid-template-rows': `${projectedHeight() * 2 - 2}px`
-              }}
-            >
-              <ActionButton
-                disabled={!hasClipboardAndPresence()}
-                class={clsx(mode() === 'stretch' && styles.active)}
-                onClick={() => {
-                  const _clipboardAndPresence = clipboardAndPresence()
-                  if (!_clipboardAndPresence) return
-                  pasteNotes(..._clipboardAndPresence)
-                }}
-              >
-                <IconGrommetIconsCopy />
-              </ActionButton>
-              <ActionButton
-                disabled={selectedNotes().length === 0}
-                class={clsx(mode() === 'stretch' && styles.active)}
-                onClick={copyNotes}
-              >
-                <IconGrommetIconsClipboard />
-              </ActionButton>
+            <div class={styles.listContainer}>
+              <div class={styles.list}>
+                <ActionButton
+                  disabled={!hasClipboardAndPresence()}
+                  class={clsx(mode() === 'stretch' && styles.active)}
+                  onClick={() => {
+                    const _clipboardAndPresence = clipboardAndPresence()
+                    if (!_clipboardAndPresence) return
+                    pasteNotes(..._clipboardAndPresence)
+                  }}
+                >
+                  <IconGrommetIconsCopy />
+                </ActionButton>
+                <ActionButton
+                  disabled={selectedNotes().length === 0}
+                  class={clsx(mode() === 'stretch' && styles.active)}
+                  onClick={copyNotes}
+                >
+                  <IconGrommetIconsClipboard />
+                </ActionButton>
+
+                <ActionButton
+                  disabled={selectedNotes().length === 0}
+                  onClick={() => {
+                    const cutLine = selectionArea()?.start.x
+
+                    if (!cutLine) {
+                      console.error('Attempting to slice without slice-line')
+                      return
+                    }
+
+                    const newNotes = selectedNotes()
+                      .filter(note => note.time < selectionArea()!.start.x)
+                      .map(note => {
+                        return {
+                          id: zeptoid(),
+                          active: true,
+                          duration: note.duration - (cutLine - note.time),
+                          pitch: note.pitch,
+                          time: cutLine,
+                          velocity: note.velocity
+                        } satisfies NoteData
+                      })
+
+                    setDoc(doc => doc.notes.push(...newNotes))
+                    setSelectedNotes(notes => [...notes, ...newNotes])
+
+                    setDoc(doc => {
+                      doc.notes.forEach(note => {
+                        if (isNoteSelected(note) && note.time < cutLine) {
+                          note.duration = cutLine - note.time
+                        }
+                      })
+                    })
+                  }}
+                >
+                  <IconGrommetIconsCut />
+                </ActionButton>
+                <ActionButton
+                  disabled={selectedNotes().length === 0}
+                  onClick={() => {
+                    setDoc(doc => {
+                      for (let index = doc.notes.length - 1; index >= 0; index--) {
+                        if (isNoteSelected(doc.notes[index])) {
+                          doc.notes.splice(index, 1)
+                        }
+                      }
+                    })
+                    setSelectedNotes([])
+                  }}
+                >
+                  <IconGrommetIconsErase />
+                </ActionButton>
+                <ActionButton
+                  disabled={selectedNotes().length === 0}
+                  onClick={() => {
+                    let inactiveSelectedNotes = 0
+                    selectedNotes().forEach(note => {
+                      if (!note.active) {
+                        inactiveSelectedNotes++
+                      }
+                    })
+
+                    const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
+
+                    setDoc(doc => {
+                      doc.notes.forEach(note => {
+                        if (isNoteSelected(note)) {
+                          note.active = shouldActivate
+                        }
+                      })
+                    })
+                  }}
+                >
+                  <IconGrommetIconsDisabledOutline />
+                </ActionButton>
+              </div>
             </div>
           )
         }}
-      </Show>
-      <Show when={mode() === 'select'}>
-        <div>
-          <ActionButton
-            disabled={selectedNotes().length === 0}
-            onClick={() => {
-              const cutLine = selectionArea()?.start.x
-
-              if (!cutLine) {
-                console.error('Attempting to slice without slice-line')
-                return
-              }
-
-              const newNotes = selectedNotes()
-                .filter(note => note.time < selectionArea()!.start.x)
-                .map(note => {
-                  return {
-                    id: zeptoid(),
-                    active: true,
-                    duration: note.duration - (cutLine - note.time),
-                    pitch: note.pitch,
-                    time: cutLine,
-                    velocity: note.velocity
-                  } satisfies NoteData
-                })
-
-              setDoc(doc => doc.notes.push(...newNotes))
-              setSelectedNotes(notes => [...notes, ...newNotes])
-
-              setDoc(doc => {
-                doc.notes.forEach(note => {
-                  if (isNoteSelected(note) && note.time < cutLine) {
-                    note.duration = cutLine - note.time
-                  }
-                })
-              })
-            }}
-          >
-            <IconGrommetIconsCut />
-          </ActionButton>
-          <ActionButton
-            disabled={selectedNotes().length === 0}
-            onClick={() => {
-              setDoc(doc => {
-                for (let index = doc.notes.length - 1; index >= 0; index--) {
-                  if (isNoteSelected(doc.notes[index])) {
-                    doc.notes.splice(index, 1)
-                  }
-                }
-              })
-              setSelectedNotes([])
-            }}
-          >
-            <IconGrommetIconsErase />
-          </ActionButton>
-          <ActionButton
-            disabled={selectedNotes().length === 0}
-            onClick={() => {
-              let inactiveSelectedNotes = 0
-              selectedNotes().forEach(note => {
-                if (!note.active) {
-                  inactiveSelectedNotes++
-                }
-              })
-
-              const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
-
-              setDoc(doc => {
-                doc.notes.forEach(note => {
-                  if (isNoteSelected(note)) {
-                    note.active = shouldActivate
-                  }
-                })
-              })
-            }}
-          >
-            <IconGrommetIconsDisabledOutline />
-          </ActionButton>
-        </div>
       </Show>
     </div>
   )
@@ -928,7 +937,7 @@ function TopRightHud() {
 function BottomLeftHud() {
   return (
     <div class={styles.bottomLeftHud}>
-      <div>
+      <div class={styles.list}>
         <DropdownMenu>
           <DropdownMenu.Trigger as={Button}>
             <IconGrommetIconsMenu />
@@ -1196,10 +1205,7 @@ function App() {
     <>
       <Piano />
       <div class={styles.main}>
-        <TopLeftHud />
-        <TopRightHud />
-        <BottomLeftHud />
-        <BottomRightHud />
+        <Hud />
         <svg
           style={{ width: '100%', height: '100%', overflow: 'hidden' }}
           ref={element => {

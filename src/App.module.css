@@ -30,11 +30,12 @@ body {
   --height-hud: 40px;
   --width: 60px;
   --width-piano: 60px;
+  --gap: 5px;
 
   margin: 0px;
   background: var(--color-background);
-  width: 100vw;
-  height: 100vh;
+  width: 100svw;
+  height: 100svh;
   overscroll-behavior-x: none;
   overscroll-behavior-y: none;
 
@@ -47,12 +48,12 @@ body {
 }
 
 :global(#root) {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
   display: flex;
   width: 100%;
+  width: 100%;
   height: 100%;
+  height: 100%;
+  overflow: hidden;
   overflow: hidden;
   touch-action: none;
 }
@@ -82,67 +83,86 @@ body {
 
 /* Hud */
 
+.hud {
+  display: flex;
+  position: absolute;
+  top: var(--height);
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.topHudContainer,
+.bottomHudContainer {
+  display: flex;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.bottomHudContainer {
+  flex-shrink: 0;
+  align-items: end;
+}
+
 .topRightHud,
 .topLeftHud,
 .bottomLeftHud {
   display: flex;
-  position: absolute;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--gap);
+  margin: var(--gap);
+  pointer-events: all;
+}
+
+.listContainer {
+  display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin: 10px;
+  flex-wrap: wrap;
+  gap: var(--gap);
+}
 
-  & > div {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--color-hud-stroke);
-    border-radius: 3px;
-    overflow: hidden;
-    color: var(--color-text);
-    text-align: center;
+.list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-hud-stroke);
+  border-radius: 3px;
+  overflow: hidden;
+  color: var(--color-text);
+  text-align: center;
 
-    & > button {
-      background: var(--color-hud);
-      width: var(--height-hud);
-      height: var(--height-hud);
+  & > button {
+    background: var(--color-hud);
+    width: var(--height-hud);
+    height: var(--height-hud);
 
-      &:not(:first-child) {
-        &::before {
-          position: absolute;
-          top: 0px;
-          left: 0px;
-          box-sizing: border-box;
-          border-top: 1px solid var(--color-hud-stroke);
-          width: 100%;
-          height: 100%;
-          content: '';
-        }
+    &:not(:first-child) {
+      &::before {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        box-sizing: border-box;
+        border-top: 1px solid var(--color-hud-stroke);
+        width: 100%;
+        height: 100%;
+        content: '';
       }
     }
   }
 }
 
-.topLeftHud {
-  top: 0px;
-  left: 0px;
-}
-
 .topRightHud {
-  top: var(--height);
-  right: 0px;
-}
-
-.bottomLeftHud {
-  bottom: 0px;
-  left: 0px;
+  direction: rtl;
 }
 
 .bottomRightHud {
   display: flex;
-  position: fixed;
-  right: 0px;
-  bottom: 0px;
-  gap: 5px;
-  margin: 10px;
+  gap: var(--gap);
+  margin: var(--gap);
+  pointer-events: all;
 
   & > div {
     display: flex;
@@ -173,20 +193,25 @@ body {
   }
 }
 
-@media screen and (max-height: 400px) {
-  .bottomRightHud,
-  .topRightHud,
-  .bottomLeftHud,
-  .topLeftHud {
-    gap: 0px;
-    margin: 0px;
-
-    & > div {
-      border: none;
-      border-radius: 0px;
-    }
+@media screen and (max-width: 800px) {
+  .piano {
+    width: 40px !important;
   }
+}
 
+@media screen and (max-width: 600px) {
+  .piano {
+    width: 20px !important;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .piano {
+    display: none;
+  }
+}
+
+@media screen and (max-height: 400px) {
   .piano {
     display: none;
   }
@@ -321,13 +346,15 @@ body {
 /* Utilities */
 
 .button {
-  all: unset;
   position: relative;
   transition:
     background 0.125s,
     color 0.125s;
   cursor: pointer;
   box-sizing: border-box;
+  border: unset;
+  background: unset;
+  color: unset;
   font-family: inherit;
 
   &:focus-visible {
@@ -370,8 +397,8 @@ body {
   }
 
   &[disabled] {
-    opacity: 0.5;
     pointer-events: none;
+    color: var(--color-hud-stroke);
   }
 
   &.trigger {
@@ -430,7 +457,7 @@ body {
       display: flex;
       position: relative;
       box-sizing: border-box;
-      padding: 0px 5px;
+      padding: 0px var(--gap);
       /* Optical Padding */
       padding-bottom: 2px;
       width: var(--height-hud);
