@@ -17,6 +17,7 @@ declare global {
   const IconGrommetIconsFormNextLink: typeof import('~icons/grommet-icons/form-next-link.jsx')['default']
   const IconGrommetIconsFormPreviousLink: typeof import('~icons/grommet-icons/form-previous-link.jsx')['default']
   const IconGrommetIconsHamburger: (typeof import('~icons/grommet-icons/hamburger.jsx'))['default']
+  const IconGrommetIconsLock: typeof import('~icons/grommet-icons/lock.jsx')['default']
   const IconGrommetIconsMenu: typeof import('~icons/grommet-icons/menu.jsx')['default']
   const IconGrommetIconsMusic: typeof import('~icons/grommet-icons/music.jsx')['default']
   const IconGrommetIconsPan: typeof import('~icons/grommet-icons/pan.jsx')['default']

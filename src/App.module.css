@@ -76,7 +76,7 @@ body {
     fill: var(--color-note-selected);
   }
   &.inactive {
-    opacity: 0.5;
+    opacity: 0.25;
   }
 }
 
@@ -218,6 +218,12 @@ body {
 @media screen and (max-height: 400px) {
   .piano {
     display: none;
+  }
+}
+
+@media screen and (pointer: coarse) {
+  .desktop {
+    display: none !important;
   }
 }
 

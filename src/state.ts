@@ -11,6 +11,7 @@ import {
   createSelector,
   createSignal
 } from 'solid-js'
+import type { DOMElement } from 'solid-js/jsx-runtime'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import { Output, WebMidi } from 'webmidi'
@@ -131,6 +132,7 @@ export const [selectedNotes, setSelectedNotes] = createSignal<Array<NoteData>>([
 export const [selectionArea, setSelectionArea] = createSignal<SelectionArea>()
 export const [selectionPresence, setSelectionPresence] = createSignal<Vector>()
 export const [clipboard, setClipboard] = createSignal<Array<NoteData>>()
+export const [selectionLocked, setSelectionLocked] = createSignal<boolean>(false)
 
 // Play-related state
 export const [playing, setPlaying] = createSignal(false)
@@ -142,8 +144,9 @@ export const [volume, setVolume] = createSignal(10)
 
 // Projection
 export const [origin, setOrigin] = createSignal<Vector>({ x: 0, y: 6 * HEIGHT * 12 })
-export const [zoom, setZoom] = createSignal({ x: 1, y: 1 })
-
+const [_zoom, setZoom] = createSignal({ x: 100, y: 100 })
+export const zoom = createMemo(() => ({ x: _zoom().x / 100, y: _zoom().y / 100 }))
+export { setZoom }
 export const projectedWidth = () => WIDTH * zoom().x
 export const projectedHeight = () => HEIGHT * zoom().y
 export const projectedOrigin = createMemo(() => {
@@ -359,10 +362,7 @@ export async function handleSnip(event: PointerEvent & { currentTarget: SVGEleme
   setSelectionPresence()
 }
 
-export async function handleSelectionArea(
-  event: PointerEvent & { currentTarget: SVGElement },
-  callback?: () => void
-) {
+export async function handleSelectionArea(event: PointerEvent & { currentTarget: SVGElement }) {
   const offset = event.currentTarget.getBoundingClientRect().left
   const position = {
     x: event.clientX - projectedOrigin().x - offset,
@@ -395,7 +395,6 @@ export async function handleSelectionArea(
     selectNotesFromSelectionArea(area)
     setSelectionArea(area)
     setSelectionPresence(newPosition)
-    callback?.()
   })
 }
 
@@ -405,6 +404,116 @@ export async function handlePan(event: PointerEvent) {
     setOrigin({
       x: initialOrigin.x + delta.x / zoom().x,
       y: initialOrigin.y + delta.y / zoom().y
+    })
+  })
+}
+
+export async function handleDragSelectedNotes(event: PointerEvent) {
+  event.stopPropagation()
+  event.preventDefault()
+
+  selectedNotes().sort((a, b) => (a.time < b.time ? -1 : 1))
+
+  if (selectedNotes().length > 0) {
+    const offset = selectedNotes()[0].time % timeScale()
+    const initialNotes = Object.fromEntries(
+      selectedNotes().map(note => [
+        note.id,
+        {
+          time: note.time,
+          pitch: note.pitch
+        }
+      ])
+    )
+
+    let previous = 0
+    const { delta } = await pointerHelper(event, ({ delta }) => {
+      let time = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
+
+      if (time === timeScale() * -1) {
+        time = 0
+      } else if (time < timeScale() * -1) {
+        time = time + timeScale()
+      }
+
+      const hasChanged = previous !== time
+      previous = time
+
+      setDoc(doc => {
+        doc.notes.forEach(note => {
+          if (isNoteSelected(note)) {
+            note.time = initialNotes[note.id].time + time - offset
+            note.pitch =
+              initialNotes[note.id].pitch -
+              Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
+            if (hasChanged) {
+              playNote(note)
+            }
+          }
+        })
+      })
+      markOverlappingNotes(...selectedNotes())
+    })
+    if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) {
+      sortNotes()
+    }
+    clipOverlappingNotes(...selectedNotes())
+  }
+}
+
+export async function handleStretchSelectedNotes(
+  event: PointerEvent & {
+    currentTarget: SVGElement
+    target: DOMElement
+  }
+) {
+  event.stopPropagation()
+  event.preventDefault()
+
+  const initialSelectedNotes = Object.fromEntries(
+    selectedNotes().map(note => [note.id, { ...note }])
+  )
+
+  await pointerHelper(event, ({ delta }) => {
+    batch(() => {
+      const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
+      setDoc(doc => {
+        doc.notes.forEach(note => {
+          if (!isNoteSelected(note)) return
+          const duration = initialSelectedNotes[note.id].duration + deltaX
+          if (duration > timeScale()) {
+            note.duration = duration
+          } else {
+            note.time = initialSelectedNotes[note.id].time
+            note.duration = timeScale()
+          }
+        })
+      })
+      markOverlappingNotes(...selectedNotes())
+    })
+  })
+
+  clipOverlappingNotes(...selectedNotes())
+  if (selectedNotes().length === 1) {
+    setSelectedNotes([])
+  }
+}
+
+export async function handleVelocitySelectedNotes(event: PointerEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+
+  const initialNotes = Object.fromEntries(selectedNotes().map(note => [note.id, { ...note }]))
+  await pointerHelper(event, ({ delta }) => {
+    setDoc(doc => {
+      doc.notes.forEach(note => {
+        if (!note.active) {
+          note.active = true
+        }
+        if (note.id in initialNotes) {
+          note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100))
+        }
+      })
     })
   })
 }

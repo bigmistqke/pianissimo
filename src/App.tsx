@@ -3,7 +3,6 @@ import clsx from 'clsx'
 import MidiWriter from 'midi-writer-js'
 import {
   Accessor,
-  batch,
   ComponentProps,
   createContext,
   createEffect,
@@ -32,10 +31,14 @@ import {
   doc,
   filterNote,
   handleCreateNote,
+  handleDragSelectedNotes,
   handleErase,
   handlePan,
   handleSelectionArea,
   handleSnip,
+  handleStretchSelectedNotes,
+  handleVelocitySelectedNotes,
+  HEIGHT,
   internalTimeOffset,
   isNotePlaying,
   isNoteSelected,
@@ -60,6 +63,7 @@ import {
   selectedMidiOutputs,
   selectedNotes,
   selectionArea,
+  selectionLocked,
   selectionPresence,
   setDimensions,
   setDoc,
@@ -73,6 +77,7 @@ import {
   setSelectedMidiOutputs,
   setSelectedNotes,
   setSelectionArea,
+  setSelectionLocked,
   setSelectionPresence,
   setTimeScale,
   setVolume,
@@ -89,10 +94,6 @@ import { Loop, NoteData } from './types'
 import { downloadDataUri } from './utils/download-data-uri'
 import { mod } from './utils/mod'
 import { pointerHelper } from './utils/pointer-helper'
-
-function Button(props: ComponentProps<'button'>) {
-  return <button {...props} class={clsx(props.class, styles.button)} />
-}
 
 function createMidiDataUri(notes: Array<NoteData>) {
   const track = new MidiWriter.Track()
@@ -111,6 +112,10 @@ function createMidiDataUri(notes: Array<NoteData>) {
 
   const write = new MidiWriter.Writer(track)
   return write.dataUri()
+}
+
+function Button(props: ComponentProps<'button'>) {
+  return <button {...props} class={clsx(props.class, styles.button)} />
 }
 
 function ActionButton(
@@ -196,106 +201,7 @@ function NumberButton(props: {
 }
 
 function Note(props: { note: NoteData }) {
-  async function handleSelect(event: PointerEvent) {
-    if (isNoteSelected(props.note)) {
-      event.stopPropagation()
-      event.preventDefault()
-
-      selectedNotes().sort((a, b) => (a.time < b.time ? -1 : 1))
-
-      if (selectedNotes().length > 0) {
-        const offset = selectedNotes()[0].time % timeScale()
-        const initialNotes = Object.fromEntries(
-          selectedNotes().map(note => [
-            note.id,
-            {
-              time: note.time,
-              pitch: note.pitch
-            }
-          ])
-        )
-
-        let previous = 0
-        const { delta } = await pointerHelper(event, ({ delta }) => {
-          let time = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
-
-          if (time === timeScale() * -1) {
-            time = 0
-          } else if (time < timeScale() * -1) {
-            time = time + timeScale()
-          }
-
-          const hasChanged = previous !== time
-          previous = time
-
-          setDoc(doc => {
-            doc.notes.forEach(note => {
-              if (isNoteSelected(note)) {
-                note.time = initialNotes[note.id].time + time - offset
-                note.pitch =
-                  initialNotes[note.id].pitch -
-                  Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
-                if (hasChanged) {
-                  playNote(note)
-                }
-              }
-            })
-          })
-          markOverlappingNotes(...selectedNotes())
-        })
-        if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) {
-          sortNotes()
-        }
-        clipOverlappingNotes(...selectedNotes())
-      }
-    }
-  }
-
-  async function handleStretch(
-    event: PointerEvent & {
-      currentTarget: SVGRectElement
-      target: DOMElement
-    }
-  ) {
-    event.stopPropagation()
-    event.preventDefault()
-
-    if (!isNoteSelected(props.note)) {
-      setSelectedNotes([props.note])
-    }
-
-    const initialSelectedNotes = Object.fromEntries(
-      selectedNotes().map(note => [note.id, { ...note }])
-    )
-
-    console.log(initialSelectedNotes.length)
-
-    await pointerHelper(event, ({ delta }) => {
-      batch(() => {
-        const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
-        setDoc(doc => {
-          doc.notes.forEach(note => {
-            if (!isNoteSelected(note)) return
-            const duration = initialSelectedNotes[note.id].duration + deltaX
-            if (duration > timeScale()) {
-              note.duration = duration
-            } else {
-              note.time = initialSelectedNotes[note.id].time
-              note.duration = timeScale()
-            }
-          })
-        })
-        markOverlappingNotes(...selectedNotes())
-      })
-    })
-
-    clipOverlappingNotes(...selectedNotes())
-    if (selectedNotes().length === 1) {
-      setSelectedNotes([])
-    }
-  }
-
-  async function handleNote(event: PointerEvent) {
+  async function handleDragNote(event: PointerEvent) {
     event.stopPropagation()
     event.preventDefault()
     const initialTime = props.note.time
@@ -331,29 +237,55 @@ function Note(props: { note: NoteData }) {
     clipOverlappingNotes(props.note)
   }
 
-  async function handleVelocity(event: PointerEvent) {
+  async function handleDeleteNote(event: PointerEvent) {
     event.preventDefault()
     event.stopPropagation()
-
-    let initiallySelected = !!selectedNotes().find(filterNote(props.note))
-    if (!initiallySelected) {
-      setSelectedNotes([props.note])
-    }
-    const initialNotes = Object.fromEntries(selectedNotes().map(note => [note.id, { ...note }]))
-    await pointerHelper(event, ({ delta }) => {
-      setDoc(doc => {
-        doc.notes.forEach(note => {
-          if (!note.active) {
-            note.active = true
-          }
-          if (note.id in initialNotes) {
-            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100))
-          }
-        })
-      })
+    setSelectedNotes([props.note])
+    await pointerHelper(event)
+    setSelectedNotes([])
+    setDoc(doc => {
+      const index = doc.notes.findIndex(note => note.id === props.note.id)
+      doc.notes.splice(index, 1)
     })
-    if (!initiallySelected) {
-      setSelectedNotes([])
+  }
+
+  async function handlePointerDown(
+    event: PointerEvent & { currentTarget: SVGElement; target: Element }
+  ) {
+    let initiallySelected = isNoteSelected(props.note)
+    switch (mode()) {
+      case 'select':
+        if (selectionLocked()) break
+        if (initiallySelected) {
+          await handleDragSelectedNotes(event)
+        }
+        break
+      case 'stretch':
+        if (selectionLocked()) break
+        if (!initiallySelected) {
+          setSelectedNotes([props.note])
+        }
+        await handleStretchSelectedNotes(event)
+        if (!initiallySelected) {
+          setSelectedNotes([])
+        }
+        break
+      case 'note':
+        await handleDragNote(event)
+        break
+      case 'velocity':
+        if (selectionLocked()) break
+        if (!initiallySelected) {
+          setSelectedNotes([props.note])
+        }
+        await handleVelocitySelectedNotes(event)
+        if (!initiallySelected && !selectionLocked()) {
+          setSelectedNotes([])
+        }
+        break
+      case 'erase':
+        handleDeleteNote(event)
+        break
     }
   }
 
@@ -365,90 +297,64 @@ function Note(props: { note: NoteData }) {
     props.note.time + props.note.duration > selectionArea()!.start.x
 
   return (
-    <>
-      <Show
-        when={shouldSnip()}
-        fallback={
-          <rect
-            class={clsx(
-              styles.note,
-              isNoteSelected(props.note)
-                ? mode() !== 'erase' && mode() !== 'snip'
-                  ? styles.selected
-                  : mode() === 'erase'
-                    ? styles.inactive
-                    : undefined
-                : isNotePlaying(props.note)
-                  ? styles.selected
+    <Show
+      when={shouldSnip()}
+      fallback={
+        <rect
+          class={clsx(
+            styles.note,
+            isNoteSelected(props.note)
+              ? mode() !== 'erase' && mode() !== 'snip'
+                ? styles.selected
+                : mode() === 'erase'
+                  ? styles.inactive
                   : undefined
-            )}
-            x={props.note.time * projectedWidth() + MARGIN}
-            y={-props.note.pitch * projectedHeight() + MARGIN}
-            width={(props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2}
-            height={projectedHeight() - MARGIN * 2}
-            opacity={
-              !props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25
+              : isNotePlaying(props.note)
+                ? styles.selected
+                : undefined
+          )}
+          x={props.note.time * projectedWidth() + MARGIN}
+          y={-props.note.pitch * projectedHeight() + MARGIN}
+          width={(props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2}
+          height={projectedHeight() - MARGIN * 2}
+          opacity={props.note.active ? props.note.velocity * 0.5 + 0.5 : 0.25}
+          onDblClick={() => {
+            if (mode() === 'note') {
+              setDoc(doc => {
+                const index = doc.notes.findIndex(filterNote(props.note))
+                if (index !== -1) doc.notes.splice(index, 1)
+              })
             }
-            onDblClick={() => {
-              if (mode() === 'note') {
-                setDoc(doc => {
-                  const index = doc.notes.findIndex(filterNote(props.note))
-                  if (index !== -1) doc.notes.splice(index, 1)
-                })
-              }
-            }}
-            onPointerDown={async event => {
-              switch (mode()) {
-                case 'select':
-                  return handleSelect(event)
-                case 'stretch':
-                  return handleStretch(event)
-                case 'note':
-                  return handleNote(event)
-                case 'velocity':
-                  return handleVelocity(event)
-                case 'erase':
-                  event.preventDefault()
-                  event.stopPropagation()
-                  setSelectedNotes([props.note])
-                  await pointerHelper(event)
-                  setSelectedNotes([])
-                  setDoc(doc => {
-                    const index = doc.notes.findIndex(note => note.id === props.note.id)
-                    doc.notes.splice(index, 1)
-                  })
-              }
-            }}
-          />
-        }
-      >
-        {_ => {
-          const startDuration = () => selectionArea()!.start.x - props.note.time
-          const endDuration = () => props.note.time + props.note.duration - selectionArea()!.start.x
-          return (
-            <>
-              <rect
-                class={clsx(styles.note)}
-                x={props.note.time * projectedWidth() + MARGIN}
-                y={-props.note.pitch * projectedHeight() + MARGIN}
-                width={startDuration() * projectedWidth() - MARGIN * 2}
-                height={projectedHeight() - MARGIN * 2}
-                opacity={props.note.velocity * 0.75 + 0.25}
-              />
-
-              <rect
-                class={clsx(styles.note)}
-                x={(props.note.time + startDuration()) * projectedWidth() + MARGIN}
-                y={-props.note.pitch * projectedHeight() + MARGIN}
-                width={endDuration() * projectedWidth() - MARGIN * 2}
-                height={projectedHeight() - MARGIN * 2}
-                opacity={props.note.velocity * 0.75 + 0.25}
-              />
-            </>
-          )
-        }}
-      </Show>
-    </>
+          }}
+          onPointerDown={handlePointerDown}
+        />
+      }
+    >
+      {_ => {
+        const startDuration = () => selectionArea()!.start.x - props.note.time
+        const endDuration = () => props.note.time + props.note.duration - selectionArea()!.start.x
+        return (
+          <>
+            <rect
+              class={clsx(styles.note)}
+              x={props.note.time * projectedWidth() + MARGIN}
+              y={-props.note.pitch * projectedHeight() + MARGIN}
+              width={startDuration() * projectedWidth() - MARGIN * 2}
+              height={projectedHeight() - MARGIN * 2}
+              opacity={props.note.velocity * 0.5 + 0.5}
+            />
+            <rect
+              class={clsx(styles.note)}
+              x={(props.note.time + startDuration()) * projectedWidth() + MARGIN}
+              y={-props.note.pitch * projectedHeight() + MARGIN}
+              width={endDuration() * projectedWidth() - MARGIN * 2}
+              height={projectedHeight() - MARGIN * 2}
+              opacity={props.note.velocity * 0.5 + 0.5}
+            />
+          </>
+        )
+      }}
+    </Show>
   )
 }
 
@@ -655,7 +561,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         x={0}
         y={0}
         width={dimensions().width}
-        height={projectedHeight()}
+        height={HEIGHT}
         fill="var(--color-piano-black)"
         onPointerDown={handleCreateLoop}
       />
@@ -665,7 +571,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
             x={loop().time * projectedWidth()}
             y={0}
             width={loop().duration * projectedWidth()}
-            height={projectedHeight()}
+            height={HEIGHT}
             fill={selected() || trigger() ? 'var(--color-loop-selected)' : 'var(--color-loop)'}
             style={{ transform: `translateX(${projectedOrigin().x}px)`, transition: 'fill 0.25s' }}
             onPointerDown={event => handleAdjustLoop(event, loop())}
@@ -676,7 +582,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
       <rect
         class={styles.now}
         width={projectedWidth() * timeScale()}
-        height={projectedHeight()}
+        height={HEIGHT}
         style={{
           opacity: 0.5,
           transform: `translateX(${
@@ -684,19 +590,13 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           }px)`
         }}
       />
-      <line
-        x1={0}
-        x2={dimensions().width}
-        y1={projectedHeight()}
-        y2={projectedHeight()}
-        stroke="var(--color-stroke)"
-      />
+      <line x1={0} x2={dimensions().width} y1={HEIGHT} y2={HEIGHT} stroke="var(--color-stroke)" />
       <g style={{ transform: `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)` }}>
         <Index each={new Array(Math.floor(dimensions().width / projectedWidth() / 8) + 2)}>
           {(_, index) => (
             <line
               y1={0}
-              y2={projectedHeight()}
+              y2={HEIGHT}
               x1={index * projectedWidth() * 8}
               x2={index * projectedWidth() * 8}
               stroke="var(--color-stroke)"
@@ -710,7 +610,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           {(_, index) => (
             <line
               y1={0}
-              y2={projectedHeight()}
+              y2={HEIGHT}
               x1={index * projectedWidth()}
               x2={index * projectedWidth()}
               stroke="var(--color-stroke)"
@@ -836,6 +736,15 @@ function TopLeftHud() {
         >
           <IconGrommetIconsDuplicate />
         </ActionButton>
+        <Button
+          class={mode() === 'loop' ? styles.active : undefined}
+          onClick={() => setMode('loop')}
+        >
+          <IconGrommetIconsCycle style={{ 'margin-top': '3px' }} />
+        </Button>
+        <Button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
+          <IconGrommetIconsPan />
+        </Button>
       </div>
     </div>
   )
@@ -852,6 +761,18 @@ function TopRightHud() {
           <IconGrommetIconsMusic />
         </Button>
         <Button
+          class={mode() === 'stretch' ? styles.active : undefined}
+          onClick={() => setMode('stretch')}
+        >
+          <IconGrommetIconsShift />
+        </Button>
+        <Button
+          class={mode() === 'velocity' ? styles.active : undefined}
+          onClick={() => setMode('velocity')}
+        >
+          <IconGrommetIconsVolumeControl />
+        </Button>
+        <Button
           class={mode() === 'erase' ? styles.active : undefined}
           onClick={() => setMode('erase')}
         >
@@ -864,31 +785,10 @@ function TopRightHud() {
           <IconGrommetIconsCut />
         </Button>
         <Button
-          class={mode() === 'stretch' ? styles.active : undefined}
-          onClick={() => setMode('stretch')}
-        >
-          <IconGrommetIconsShift />
-        </Button>
-        <Button
-          class={mode() === 'velocity' ? styles.active : undefined}
-          onClick={() => setMode('velocity')}
-        >
-          <IconGrommetIconsVolumeControl />
-        </Button>
-        <ActionButton
-          class={clsx(mode() === 'stretch' && styles.active)}
-          onClick={() => setMode('loop')}
-        >
-          <IconGrommetIconsCycle style={{ 'margin-top': '3px' }} />
-        </ActionButton>
-        <Button
           class={mode() === 'select' ? styles.active : undefined}
           onClick={() => setMode('select')}
         >
           <IconGrommetIconsSelect />
-        </Button>
-        <Button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
-          <IconGrommetIconsPan />
         </Button>
       </div>
       <Show when={mode() === 'select'}>
@@ -899,9 +799,16 @@ function TopRightHud() {
           return (
             <div class={styles.listContainer}>
               <div class={styles.list}>
+                <Button
+                  disabled={selectedNotes().length === 0}
+                  class={selectionLocked() ? styles.active : undefined}
+                  onClick={() => setSelectionLocked(locked => !locked)}
+                >
+                  <IconGrommetIconsLock />
+                </Button>
                 <ActionButton
                   disabled={!hasClipboardAndPresence()}
-                  class={clsx(mode() === 'stretch' && styles.active)}
+                  class={mode() === 'stretch' ? styles.active : undefined}
                   onClick={() => {
                     const _clipboardAndPresence = clipboardAndPresence()
                     if (!_clipboardAndPresence) return
@@ -912,91 +819,64 @@ function TopRightHud() {
                 </ActionButton>
                 <ActionButton
                   disabled={selectedNotes().length === 0}
-                  class={clsx(mode() === 'stretch' && styles.active)}
+                  class={mode() === 'stretch' ? styles.active : undefined}
                   onClick={copyNotes}
                 >
                   <IconGrommetIconsClipboard />
                 </ActionButton>
-
-                {/* <ActionButton
-                  disabled={selectedNotes().length === 0}
-                  onClick={() => {
-                    const cutLine = selectionArea()?.start.x
-
-                    if (!cutLine) {
-                      console.error('Attempting to slice without slice-line')
-                      return
-                    }
-
-                    const newNotes = selectedNotes()
-                      .filter(note => note.time < selectionArea()!.start.x)
-                      .map(note => {
-                        return {
-                          id: zeptoid(),
-                          active: true,
-                          duration: note.duration - (cutLine - note.time),
-                          pitch: note.pitch,
-                          time: cutLine,
-                          velocity: note.velocity
-                        } satisfies NoteData
-                      })
-
-                    setDoc(doc => doc.notes.push(...newNotes))
-                    setSelectedNotes(notes => [...notes, ...newNotes])
-
-                    setDoc(doc => {
-                      doc.notes.forEach(note => {
-                        if (isNoteSelected(note) && note.time < cutLine) {
-                          note.duration = cutLine - note.time
-                        }
-                      })
-                    })
-                  }}
-                >
-                  <IconGrommetIconsCut />
-                </ActionButton> */}
-                {/* <ActionButton
-                  disabled={selectedNotes().length === 0}
-                  onClick={() => {
-                    setDoc(doc => {
-                      for (let index = doc.notes.length - 1; index >= 0; index--) {
-                        if (isNoteSelected(doc.notes[index])) {
-                          doc.notes.splice(index, 1)
-                        }
-                      }
-                    })
-                    setSelectedNotes([])
-                  }}
-                >
-                  <IconGrommetIconsErase />
-                </ActionButton>
-                <ActionButton
-                  disabled={selectedNotes().length === 0}
-                  onClick={() => {
-                    let inactiveSelectedNotes = 0
-                    selectedNotes().forEach(note => {
-                      if (!note.active) {
-                        inactiveSelectedNotes++
-                      }
-                    })
-
-                    const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
-
-                    setDoc(doc => {
-                      doc.notes.forEach(note => {
-                        if (isNoteSelected(note)) {
-                          note.active = shouldActivate
-                        }
-                      })
-                    })
-                  }}
-                >
-                  <IconGrommetIconsDisabledOutline />
-                </ActionButton> */}
               </div>
             </div>
           )
         }}
+      </Show>
+      <Show when={mode() === 'velocity'}>
+        <div class={styles.listContainer}>
+          <div class={styles.list}>
+            <Button
+              disabled={selectedNotes().length === 0}
+              class={selectionLocked() ? styles.active : undefined}
+              onClick={() => setSelectionLocked(locked => !locked)}
+            >
+              <IconGrommetIconsLock />
+            </Button>
+            <ActionButton
+              disabled={selectedNotes().length === 0}
+              onClick={() => {
+                let inactiveSelectedNotes = 0
+                selectedNotes().forEach(note => {
+                  if (!note.active) {
+                    inactiveSelectedNotes++
+                  }
+                })
+
+                const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
+
+                setDoc(doc => {
+                  doc.notes.forEach(note => {
+                    if (isNoteSelected(note)) {
+                      note.active = shouldActivate
+                    }
+                  })
+                })
+              }}
+            >
+              <IconGrommetIconsDisabledOutline />
+            </ActionButton>
+          </div>
+        </div>
+      </Show>
+      <Show when={mode() === 'stretch'}>
+        <div class={styles.listContainer}>
+          <div class={styles.list}>
+            <Button
+              disabled={selectedNotes().length === 0}
+              class={selectionLocked() ? styles.active : undefined}
+              onClick={() => setSelectionLocked(locked => !locked)}
+            >
+              <IconGrommetIconsLock />
+            </Button>
+          </div>
+        </div>
       </Show>
     </div>
   )
@@ -1112,29 +992,30 @@ function BottomLeftHud() {
 }
 
 function BottomRightHud() {
+  createEffect(() => console.log(zoom().x, zoom().y))
   return (
     <div class={styles.bottomRightHud}>
-      <div>
+      <div class={styles.desktop}>
         <NumberButton
           label="zoom time"
           value={zoom().x}
-          decrement={() => setZoom(zoom => ({ ...zoom, x: zoom.x + 0.1 }))}
-          increment={() => setZoom(zoom => ({ ...zoom, x: zoom.x - 0.1 }))}
-          canDecrement={zoom().x > 0}
-          canIncrement={zoom().x < 10}
+          decrement={() => setZoom(zoom => ({ ...zoom, x: zoom.x - 10 }))}
+          increment={() => setZoom(zoom => ({ ...zoom, x: zoom.x + 10 }))}
+          canDecrement={zoom().x > 0.1}
+          canIncrement={zoom().x < 1}
         />
       </div>
-      <div>
+      <div class={styles.desktop}>
         <NumberButton
           label="zoom pitch"
           value={zoom().y}
-          decrement={() => setZoom(zoom => ({ ...zoom, y: zoom.y + 0.1 }))}
-          increment={() => setZoom(zoom => ({ ...zoom, y: zoom.y - 0.1 }))}
-          canDecrement={zoom().y > 0}
-          canIncrement={zoom().y < 10}
+          decrement={() => setZoom(zoom => ({ ...zoom, y: zoom.y - 10 }))}
+          increment={() => setZoom(zoom => ({ ...zoom, y: zoom.y + 10 }))}
+          canDecrement={zoom().y > 0.1}
+          canIncrement={zoom().y < 1}
         />
       </div>
-      <div>
+      <div class={styles.desktop}>
         <NumberButton
           label="volume"
           value={volume()}
@@ -1220,32 +1101,11 @@ function useDimensions() {
 }
 
 function App() {
-  // Reset selection-presence after switching mode from select-mode
-  createEffect(() => {
-    /* if (mode() !== 'select') {
-      setSelectionPresence()
-      setSelectionArea()
-    } */
-  })
-
-  /* // Play notes when they are selected/change pitch
-  createEffect(
-    mapArray(
-      () => doc().notes,
-      note => {
-        createEffect(
-          on(
-            () => isNoteSelected(note),
-            selected => selected && playNote({ ...note, duration: Math.min(1, note.duration) })
-          )
-        )
-      }
-    )
-  ) */
+  // Reset selectionLocked when mode changes
+  createEffect(on(mode, () => setSelectionLocked(false)))
 
   // Audio Loop
   let lastVelocity = doc().bpm / 60 // Track the last velocity to adjust time offset
-
   createEffect(
     on(playing, playing => {
       if (!playing || !audioContext) return
@@ -1342,7 +1202,7 @@ function App() {
               onCleanup(() => observer.disconnect())
             })
           }}
-          onDblClick={() => setSelectedNotes([])}
+          onDblClick={() => !selectionLocked() && setSelectedNotes([])}
           onWheel={event =>
             setOrigin(origin => ({
               x: origin.x - event.deltaX / zoom().x,
@@ -1350,40 +1210,53 @@ function App() {
             }))
           }
           onPointerDown={async event => {
-            switch (mode()) {
-              case 'note':
-                handleCreateNote(event)
-                break
-              case 'stretch':
-              case 'select':
-                await handleSelectionArea(event)
-                setSelectionArea()
-                break
-              case 'velocity':
-                await handleSelectionArea(event)
-                setSelectionArea()
-                setSelectionPresence()
-                break
-              case 'loop':
-                await handleSelectionArea(event)
-                const area = selectionArea()
-                if (!area) {
-                  return
-                }
-                setLoop({
-                  time: area.start.x,
-                  duration: area.end.x - area.start.x
-                })
-                break
-              case 'erase':
-                handleErase(event)
-                break
-              case 'snip':
-                handleSnip(event)
-                break
-              case 'pan':
-                handlePan(event)
-                break
+            if (selectionLocked()) {
+              switch (mode()) {
+                case 'stretch':
+                  await handleStretchSelectedNotes(event)
+                  break
+                case 'velocity':
+                  await handleVelocitySelectedNotes(event)
+                  break
+                case 'select':
+                  await handleDragSelectedNotes(event)
+              }
+            } else {
+              switch (mode()) {
+                case 'note':
+                  handleCreateNote(event)
+                  break
+                case 'stretch':
+                case 'select':
+                  await handleSelectionArea(event)
+                  setSelectionArea()
+                  break
+                case 'velocity':
+                  await handleSelectionArea(event)
+                  setSelectionArea()
+                  setSelectionPresence()
+                  break
+                case 'loop':
+                  await handleSelectionArea(event)
+                  const area = selectionArea()
+                  if (!area) {
+                    return
+                  }
+                  setLoop({
+                    time: area.start.x,
+                    duration: area.end.x - area.start.x
+                  })
+                  break
+                case 'erase':
+                  handleErase(event)
+                  break
+                case 'snip':
+                  handleSnip(event)
+                  break
+                case 'pan':
+                  handlePan(event)
+                  break
+              }
             }
           }}
         >
