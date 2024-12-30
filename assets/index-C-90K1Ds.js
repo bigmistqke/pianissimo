@@ -39817,6 +39817,7 @@ const projectedOrigin = createMemo(() => {
     y: origin().y * zoom().y
   };
 });
+const timeScaleWidth = () => projectedWidth() * timeScale();
 const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
   createSelector(
     selectedNotes,
@@ -39833,7 +39834,7 @@ const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
 ]);
 function normalizeVector(value) {
   return {
-    x: Math.floor(value.x / projectedWidth() / timeScale()) * timeScale(),
+    x: Math.floor(value.x / timeScaleWidth()) * timeScale(),
     y: Math.floor(value.y / projectedHeight())
   };
 }
@@ -39918,7 +39919,7 @@ async function handleCreateNote(event) {
     active: true,
     duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / projectedHeight()) + 1,
-    time: Math.floor(absolutePosition.x / projectedWidth() / timeScale()) * timeScale(),
+    time: Math.floor(absolutePosition.x / timeScaleWidth()) * timeScale(),
     velocity: 1
   };
   setDoc((doc2) => {
@@ -39929,7 +39930,7 @@ async function handleCreateNote(event) {
   const offset = absolutePosition.x - initialTime * projectedWidth();
   setSelectedNotes([note]);
   await pointerHelper(event, ({ delta }) => {
-    const deltaX = Math.floor((offset + delta.x) / projectedWidth() / timeScale()) * timeScale();
+    const deltaX = Math.floor((offset + delta.x) / timeScaleWidth()) * timeScale();
     if (deltaX < 0) {
       setDoc((doc2) => {
         const _note = doc2.notes.find(filterNote(note));
@@ -40033,6 +40034,7 @@ async function handleSelectionArea(event) {
     setSelectionArea(area);
     setSelectionPresence(newPosition);
   });
+  return selectionArea();
 }
 async function handlePan(event) {
   const initialOrigin = { ...origin() };
@@ -40058,30 +40060,23 @@ async function handleDragSelectedNotes(event) {
         }
       ])
     );
-    let previous = 0;
-    const { delta } = await pointerHelper(event, ({ delta: delta2 }) => {
-      let time = Math.floor(delta2.x / projectedWidth() / timeScale()) * timeScale();
+    await pointerHelper(event, ({ delta: delta2 }) => {
+      let time = Math.floor(delta2.x / timeScaleWidth()) * timeScale();
       if (time === timeScale() * -1) {
         time = 0;
       } else if (time < timeScale() * -1) {
         time = time + timeScale();
       }
-      const hasChanged = previous !== time;
-      previous = time;
       setDoc((doc2) => {
         doc2.notes.forEach((note) => {
           if (isNoteSelected(note)) {
             note.time = initialNotes[note.id].time + time - offset;
             note.pitch = initialNotes[note.id].pitch - Math.floor((delta2.y + projectedHeight() / 2) / projectedHeight());
-            if (hasChanged) {
-              playNote(note);
-            }
           }
         });
       });
       markOverlappingNotes(...selectedNotes());
     });
-    if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) ;
     clipOverlappingNotes(...selectedNotes());
   }
 }
@@ -40093,7 +40088,9 @@ async function handleStretchSelectedNotes(event) {
   );
   await pointerHelper(event, ({ delta }) => {
     batch(() => {
-      const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale();
+      let deltaX = Math.floor(
+        delta.x < 0 ? (delta.x + timeScaleWidth() * 0.5) / timeScaleWidth() : delta.x / timeScaleWidth()
+      ) * timeScale();
       setDoc((doc2) => {
         doc2.notes.forEach((note) => {
           if (!isNoteSelected(note)) return;
@@ -40417,7 +40414,7 @@ const IconGrommetIconsPause = (props = {}) => (() => {
   return _el$;
 })();
 
-var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg>`), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div></div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div><div>`), _tmpl$16 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$17 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$18 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$19 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
+var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg>`), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div></div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div><div>`), _tmpl$16 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$17 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$18 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$19 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
 function createMidiDataUri(notes) {
   const track = new MidiWriter.Track();
   const division = 8;
@@ -40522,7 +40519,6 @@ function Note(props) {
     event.preventDefault();
     const initialTime = props.note.time;
     const initialPitch = props.note.pitch;
-    let previousPitch = initialPitch;
     setSelectedNotes([props.note]);
     await pointerHelper(event, ({
       delta
@@ -40534,10 +40530,6 @@ function Note(props) {
         if (!note) return;
         note.time = time;
         note.pitch = pitch;
-        if (previousPitch !== pitch) {
-          playNote(note);
-          previousPitch = pitch;
-        }
       });
       markOverlappingNotes(props.note);
     });
@@ -40743,17 +40735,15 @@ function PlayingNotes() {
         return (() => {
           var _el$20 = _tmpl$7();
           createRenderEffect((_p$) => {
-            var _v$29 = index * projectedHeight(), _v$30 = projectedWidth(), _v$31 = projectedHeight(), _v$32 = isPitchPlaying(-(index + Math.floor(-projectedOrigin().y / projectedHeight()))) ? "var(--color-note-selected)" : "none";
+            var _v$29 = index * projectedHeight(), _v$30 = projectedHeight(), _v$31 = isPitchPlaying(-(index + Math.floor(-projectedOrigin().y / projectedHeight()))) ? "var(--color-note-selected)" : "none";
             _v$29 !== _p$.e && setAttribute(_el$20, "y", _p$.e = _v$29);
-            _v$30 !== _p$.t && setAttribute(_el$20, "width", _p$.t = _v$30);
-            _v$31 !== _p$.a && setAttribute(_el$20, "height", _p$.a = _v$31);
-            _v$32 !== _p$.o && ((_p$.o = _v$32) != null ? _el$20.style.setProperty("fill", _v$32) : _el$20.style.removeProperty("fill"));
+            _v$30 !== _p$.t && setAttribute(_el$20, "height", _p$.t = _v$30);
+            _v$31 !== _p$.a && ((_p$.a = _v$31) != null ? _el$20.style.setProperty("fill", _v$31) : _el$20.style.removeProperty("fill"));
             return _p$;
           }, {
             e: void 0,
             t: void 0,
-            a: void 0,
-            o: void 0
+            a: void 0
           });
           return _el$20;
         })();
@@ -40873,11 +40863,11 @@ function Ruler(props) {
       setAttribute(_el$26, "height", HEIGHT);
       _el$26.style.setProperty("transition", "fill 0.25s");
       createRenderEffect((_p$) => {
-        var _v$36 = loop2().time * projectedWidth(), _v$37 = loop2().duration * projectedWidth(), _v$38 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$39 = `translateX(${projectedOrigin().x}px)`;
-        _v$36 !== _p$.e && setAttribute(_el$26, "x", _p$.e = _v$36);
-        _v$37 !== _p$.t && setAttribute(_el$26, "width", _p$.t = _v$37);
-        _v$38 !== _p$.a && setAttribute(_el$26, "fill", _p$.a = _v$38);
-        _v$39 !== _p$.o && ((_p$.o = _v$39) != null ? _el$26.style.setProperty("transform", _v$39) : _el$26.style.removeProperty("transform"));
+        var _v$35 = loop2().time * projectedWidth(), _v$36 = loop2().duration * projectedWidth(), _v$37 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$38 = `translateX(${projectedOrigin().x}px)`;
+        _v$35 !== _p$.e && setAttribute(_el$26, "x", _p$.e = _v$35);
+        _v$36 !== _p$.t && setAttribute(_el$26, "width", _p$.t = _v$36);
+        _v$37 !== _p$.a && setAttribute(_el$26, "fill", _p$.a = _v$37);
+        _v$38 !== _p$.o && ((_p$.o = _v$38) != null ? _el$26.style.setProperty("transform", _v$38) : _el$26.style.removeProperty("transform"));
         return _p$;
       }, {
         e: void 0,
@@ -40892,10 +40882,10 @@ function Ruler(props) {
     setAttribute(_el$22, "height", HEIGHT);
     _el$22.style.setProperty("opacity", "0.5");
     createRenderEffect((_p$) => {
-      var _v$33 = styles.now, _v$34 = projectedWidth() * timeScale(), _v$35 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
-      _v$33 !== _p$.e && setAttribute(_el$22, "class", _p$.e = _v$33);
-      _v$34 !== _p$.t && setAttribute(_el$22, "width", _p$.t = _v$34);
-      _v$35 !== _p$.a && ((_p$.a = _v$35) != null ? _el$22.style.setProperty("transform", _v$35) : _el$22.style.removeProperty("transform"));
+      var _v$32 = styles.now, _v$33 = timeScaleWidth(), _v$34 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()}px)`;
+      _v$32 !== _p$.e && setAttribute(_el$22, "class", _p$.e = _v$32);
+      _v$33 !== _p$.t && setAttribute(_el$22, "width", _p$.t = _v$33);
+      _v$34 !== _p$.a && ((_p$.a = _v$34) != null ? _el$22.style.setProperty("transform", _v$34) : _el$22.style.removeProperty("transform"));
       return _p$;
     }, {
       e: void 0,
@@ -40919,9 +40909,9 @@ function Ruler(props) {
         var _el$27 = _tmpl$11();
         setAttribute(_el$27, "y2", HEIGHT);
         createRenderEffect((_p$) => {
-          var _v$40 = index * projectedWidth() * 8, _v$41 = index * projectedWidth() * 8;
-          _v$40 !== _p$.e && setAttribute(_el$27, "x1", _p$.e = _v$40);
-          _v$41 !== _p$.t && setAttribute(_el$27, "x2", _p$.t = _v$41);
+          var _v$39 = index * projectedWidth() * 8, _v$40 = index * projectedWidth() * 8;
+          _v$39 !== _p$.e && setAttribute(_el$27, "x1", _p$.e = _v$39);
+          _v$40 !== _p$.t && setAttribute(_el$27, "x2", _p$.t = _v$40);
           return _p$;
         }, {
           e: void 0,
@@ -40942,9 +40932,9 @@ function Ruler(props) {
         var _el$28 = _tmpl$12();
         setAttribute(_el$28, "y2", HEIGHT);
         createRenderEffect((_p$) => {
-          var _v$42 = index * projectedWidth(), _v$43 = index * projectedWidth();
-          _v$42 !== _p$.e && setAttribute(_el$28, "x1", _p$.e = _v$42);
-          _v$43 !== _p$.t && setAttribute(_el$28, "x2", _p$.t = _v$43);
+          var _v$41 = index * projectedWidth(), _v$42 = index * projectedWidth();
+          _v$41 !== _p$.e && setAttribute(_el$28, "x1", _p$.e = _v$41);
+          _v$42 !== _p$.t && setAttribute(_el$28, "x2", _p$.t = _v$42);
           return _p$;
         }, {
           e: void 0,
@@ -40963,15 +40953,15 @@ function Grid() {
     var _el$29 = _tmpl$5();
     insert(_el$29, createComponent(Index, {
       get each() {
-        return new Array(Math.floor(dimensions2().width / projectedWidth() / timeScale()) + 2);
+        return new Array(Math.floor(dimensions2().width / timeScaleWidth()) + 2);
       },
       children: (_, index) => (() => {
         var _el$31 = _tmpl$13();
         createRenderEffect((_p$) => {
-          var _v$44 = dimensions2().height, _v$45 = index * timeScale() * projectedWidth(), _v$46 = index * timeScale() * projectedWidth();
-          _v$44 !== _p$.e && setAttribute(_el$31, "y2", _p$.e = _v$44);
-          _v$45 !== _p$.t && setAttribute(_el$31, "x1", _p$.t = _v$45);
-          _v$46 !== _p$.a && setAttribute(_el$31, "x2", _p$.a = _v$46);
+          var _v$43 = dimensions2().height, _v$44 = index * timeScaleWidth(), _v$45 = index * timeScaleWidth();
+          _v$43 !== _p$.e && setAttribute(_el$31, "y2", _p$.e = _v$43);
+          _v$44 !== _p$.t && setAttribute(_el$31, "x1", _p$.t = _v$44);
+          _v$45 !== _p$.a && setAttribute(_el$31, "x2", _p$.a = _v$45);
           return _p$;
         }, {
           e: void 0,
@@ -40981,7 +40971,7 @@ function Grid() {
         return _el$31;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * timeScale())}px)`) != null ? _el$29.style.setProperty("transform", _$p) : _el$29.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % timeScaleWidth()}px)`) != null ? _el$29.style.setProperty("transform", _$p) : _el$29.style.removeProperty("transform"));
     return _el$29;
   })(), (() => {
     var _el$30 = _tmpl$5();
@@ -40992,10 +40982,10 @@ function Grid() {
       children: (_, index) => (() => {
         var _el$32 = _tmpl$11();
         createRenderEffect((_p$) => {
-          var _v$47 = dimensions2().height, _v$48 = index * projectedWidth() * 8, _v$49 = index * projectedWidth() * 8;
-          _v$47 !== _p$.e && setAttribute(_el$32, "y2", _p$.e = _v$47);
-          _v$48 !== _p$.t && setAttribute(_el$32, "x1", _p$.t = _v$48);
-          _v$49 !== _p$.a && setAttribute(_el$32, "x2", _p$.a = _v$49);
+          var _v$46 = dimensions2().height, _v$47 = index * projectedWidth() * 8, _v$48 = index * projectedWidth() * 8;
+          _v$46 !== _p$.e && setAttribute(_el$32, "y2", _p$.e = _v$46);
+          _v$47 !== _p$.t && setAttribute(_el$32, "x1", _p$.t = _v$47);
+          _v$48 !== _p$.a && setAttribute(_el$32, "x2", _p$.a = _v$48);
           return _p$;
         }, {
           e: void 0,
@@ -41021,11 +41011,11 @@ function PianoUnderlay() {
         var _el$34 = _tmpl$3();
         _el$34.style.setProperty("pointer-events", "none");
         createRenderEffect((_p$) => {
-          var _v$50 = index * projectedHeight(), _v$51 = dimensions2().width, _v$52 = projectedHeight(), _v$53 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
-          _v$50 !== _p$.e && setAttribute(_el$34, "y", _p$.e = _v$50);
-          _v$51 !== _p$.t && setAttribute(_el$34, "width", _p$.t = _v$51);
-          _v$52 !== _p$.a && setAttribute(_el$34, "height", _p$.a = _v$52);
-          _v$53 !== _p$.o && ((_p$.o = _v$53) != null ? _el$34.style.setProperty("fill", _v$53) : _el$34.style.removeProperty("fill"));
+          var _v$49 = index * projectedHeight(), _v$50 = dimensions2().width, _v$51 = projectedHeight(), _v$52 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
+          _v$49 !== _p$.e && setAttribute(_el$34, "y", _p$.e = _v$49);
+          _v$50 !== _p$.t && setAttribute(_el$34, "width", _p$.t = _v$50);
+          _v$51 !== _p$.a && setAttribute(_el$34, "height", _p$.a = _v$51);
+          _v$52 !== _p$.o && ((_p$.o = _v$52) != null ? _el$34.style.setProperty("fill", _v$52) : _el$34.style.removeProperty("fill"));
           return _p$;
         }, {
           e: void 0,
@@ -41048,10 +41038,10 @@ function Hud() {
     insert(_el$37, createComponent(BottomLeftHud, {}), null);
     insert(_el$37, createComponent(BottomRightHud, {}), null);
     createRenderEffect((_p$) => {
-      var _v$54 = styles.hud, _v$55 = styles.topHudContainer, _v$56 = styles.bottomHudContainer;
-      _v$54 !== _p$.e && className(_el$35, _p$.e = _v$54);
-      _v$55 !== _p$.t && className(_el$36, _p$.t = _v$55);
-      _v$56 !== _p$.a && className(_el$37, _p$.a = _v$56);
+      var _v$53 = styles.hud, _v$54 = styles.topHudContainer, _v$55 = styles.bottomHudContainer;
+      _v$53 !== _p$.e && className(_el$35, _p$.e = _v$53);
+      _v$54 !== _p$.t && className(_el$36, _p$.t = _v$54);
+      _v$55 !== _p$.a && className(_el$37, _p$.a = _v$55);
       return _p$;
     }, {
       e: void 0,
@@ -41105,10 +41095,10 @@ function TopLeftHud() {
       }
     }), null);
     createRenderEffect((_p$) => {
-      var _v$57 = styles.topLeftHud, _v$58 = `${projectedHeight()}px`, _v$59 = styles.list;
-      _v$57 !== _p$.e && className(_el$38, _p$.e = _v$57);
-      _v$58 !== _p$.t && ((_p$.t = _v$58) != null ? _el$38.style.setProperty("top", _v$58) : _el$38.style.removeProperty("top"));
-      _v$59 !== _p$.a && className(_el$39, _p$.a = _v$59);
+      var _v$56 = styles.topLeftHud, _v$57 = `${projectedHeight()}px`, _v$58 = styles.list;
+      _v$56 !== _p$.e && className(_el$38, _p$.e = _v$56);
+      _v$57 !== _p$.t && ((_p$.t = _v$57) != null ? _el$38.style.setProperty("top", _v$57) : _el$38.style.removeProperty("top"));
+      _v$58 !== _p$.a && className(_el$39, _p$.a = _v$58);
       return _p$;
     }, {
       e: void 0,
@@ -41225,9 +41215,9 @@ function TopRightHud() {
             }
           }), null);
           createRenderEffect((_p$) => {
-            var _v$66 = styles.listContainer, _v$67 = styles.list;
-            _v$66 !== _p$.e && className(_el$46, _p$.e = _v$66);
-            _v$67 !== _p$.t && className(_el$47, _p$.t = _v$67);
+            var _v$65 = styles.listContainer, _v$66 = styles.list;
+            _v$65 !== _p$.e && className(_el$46, _p$.e = _v$65);
+            _v$66 !== _p$.t && className(_el$47, _p$.t = _v$66);
             return _p$;
           }, {
             e: void 0,
@@ -41280,9 +41270,9 @@ function TopRightHud() {
           }
         }), null);
         createRenderEffect((_p$) => {
-          var _v$60 = styles.listContainer, _v$61 = styles.list;
-          _v$60 !== _p$.e && className(_el$42, _p$.e = _v$60);
-          _v$61 !== _p$.t && className(_el$43, _p$.t = _v$61);
+          var _v$59 = styles.listContainer, _v$60 = styles.list;
+          _v$59 !== _p$.e && className(_el$42, _p$.e = _v$59);
+          _v$60 !== _p$.t && className(_el$43, _p$.t = _v$60);
           return _p$;
         }, {
           e: void 0,
@@ -41310,9 +41300,9 @@ function TopRightHud() {
           }
         }));
         createRenderEffect((_p$) => {
-          var _v$62 = styles.listContainer, _v$63 = styles.list;
-          _v$62 !== _p$.e && className(_el$44, _p$.e = _v$62);
-          _v$63 !== _p$.t && className(_el$45, _p$.t = _v$63);
+          var _v$61 = styles.listContainer, _v$62 = styles.list;
+          _v$61 !== _p$.e && className(_el$44, _p$.e = _v$61);
+          _v$62 !== _p$.t && className(_el$45, _p$.t = _v$62);
           return _p$;
         }, {
           e: void 0,
@@ -41322,9 +41312,9 @@ function TopRightHud() {
       }
     }), null);
     createRenderEffect((_p$) => {
-      var _v$64 = styles.topRightHud, _v$65 = styles.list;
-      _v$64 !== _p$.e && className(_el$40, _p$.e = _v$64);
-      _v$65 !== _p$.t && className(_el$41, _p$.t = _v$65);
+      var _v$63 = styles.topRightHud, _v$64 = styles.list;
+      _v$63 !== _p$.e && className(_el$40, _p$.e = _v$63);
+      _v$64 !== _p$.t && className(_el$41, _p$.t = _v$64);
       return _p$;
     }, {
       e: void 0,
@@ -41479,9 +41469,9 @@ function BottomLeftHud() {
       }
     }));
     createRenderEffect((_p$) => {
-      var _v$68 = styles.bottomLeftHud, _v$69 = styles.list;
-      _v$68 !== _p$.e && className(_el$48, _p$.e = _v$68);
-      _v$69 !== _p$.t && className(_el$49, _p$.t = _v$69);
+      var _v$67 = styles.bottomLeftHud, _v$68 = styles.list;
+      _v$67 !== _p$.e && className(_el$48, _p$.e = _v$67);
+      _v$68 !== _p$.t && className(_el$49, _p$.t = _v$68);
       return _p$;
     }, {
       e: void 0,
@@ -41624,11 +41614,11 @@ function BottomRightHud() {
       }
     }), null);
     createRenderEffect((_p$) => {
-      var _v$70 = styles.bottomRightHud, _v$71 = styles.desktop, _v$72 = styles.desktop, _v$73 = styles.desktop;
-      _v$70 !== _p$.e && className(_el$50, _p$.e = _v$70);
-      _v$71 !== _p$.t && className(_el$51, _p$.t = _v$71);
-      _v$72 !== _p$.a && className(_el$52, _p$.a = _v$72);
-      _v$73 !== _p$.o && className(_el$53, _p$.o = _v$73);
+      var _v$69 = styles.bottomRightHud, _v$70 = styles.desktop, _v$71 = styles.desktop, _v$72 = styles.desktop;
+      _v$69 !== _p$.e && className(_el$50, _p$.e = _v$69);
+      _v$70 !== _p$.t && className(_el$51, _p$.t = _v$70);
+      _v$71 !== _p$.a && className(_el$52, _p$.a = _v$71);
+      _v$72 !== _p$.o && className(_el$53, _p$.o = _v$72);
       return _p$;
     }, {
       e: void 0,
@@ -41643,12 +41633,58 @@ const dimensionsContext = createContext();
 function useDimensions() {
   const context = useContext(dimensionsContext);
   if (!context) {
-    throw `PianoContext is undefined.`;
+    throw `DimensionsContext is undefined.`;
   }
   return context;
 }
 function App() {
   createEffect(on(mode, () => setSelectionLocked(false)));
+  async function handlePointerDown(event) {
+    if (selectionLocked()) {
+      switch (mode()) {
+        case "stretch":
+          await handleStretchSelectedNotes(event);
+          break;
+        case "velocity":
+          await handleVelocitySelectedNotes(event);
+          break;
+        case "select":
+          await handleDragSelectedNotes(event);
+      }
+    } else {
+      switch (mode()) {
+        case "note":
+          handleCreateNote(event);
+          break;
+        case "stretch":
+        case "select":
+          await handleSelectionArea(event);
+          setSelectionArea();
+          break;
+        case "velocity":
+          await handleSelectionArea(event);
+          setSelectionArea();
+          setSelectionPresence();
+          break;
+        case "loop":
+          const area = await handleSelectionArea(event);
+          setLoop({
+            time: area.start.x,
+            duration: area.end.x - area.start.x
+          });
+          break;
+        case "erase":
+          handleErase(event);
+          break;
+        case "snip":
+          handleSnip(event);
+          break;
+        case "pan":
+          handlePan(event);
+          break;
+      }
+    }
+  }
   let lastVelocity = doc().bpm / 60;
   createEffect(on(playing, (playing2) => {
     if (!playing2 || !audioContext) return;
@@ -41718,56 +41754,7 @@ function App() {
   return [createComponent(Piano, {}), (() => {
     var _el$58 = _tmpl$17(), _el$59 = _el$58.firstChild;
     insert(_el$58, createComponent(Hud, {}), _el$59);
-    _el$59.$$pointerdown = async (event) => {
-      if (selectionLocked()) {
-        switch (mode()) {
-          case "stretch":
-            await handleStretchSelectedNotes(event);
-            break;
-          case "velocity":
-            await handleVelocitySelectedNotes(event);
-            break;
-          case "select":
-            await handleDragSelectedNotes(event);
-        }
-      } else {
-        switch (mode()) {
-          case "note":
-            handleCreateNote(event);
-            break;
-          case "stretch":
-          case "select":
-            await handleSelectionArea(event);
-            setSelectionArea();
-            break;
-          case "velocity":
-            await handleSelectionArea(event);
-            setSelectionArea();
-            setSelectionPresence();
-            break;
-          case "loop":
-            await handleSelectionArea(event);
-            const area = selectionArea();
-            if (!area) {
-              return;
-            }
-            setLoop({
-              time: area.start.x,
-              duration: area.end.x - area.start.x
-            });
-            break;
-          case "erase":
-            handleErase(event);
-            break;
-          case "snip":
-            handleSnip(event);
-            break;
-          case "pan":
-            handlePan(event);
-            break;
-        }
-      }
-    };
+    _el$59.$$pointerdown = handlePointerDown;
     _el$59.addEventListener("wheel", (event) => setOrigin((origin) => ({
       x: origin.x - event.deltaX / zoom().x,
       y: origin.y - event.deltaY / zoom().y * (2 / 3)
@@ -41799,11 +41786,11 @@ function App() {
             children: (area) => (() => {
               var _el$62 = _tmpl$18();
               createRenderEffect((_p$) => {
-                var _v$78 = area().start.x * projectedWidth() + projectedOrigin().x, _v$79 = area().start.y * projectedHeight() + projectedOrigin().y, _v$80 = (area().end.x - area().start.x) * projectedWidth(), _v$81 = (area().end.y - area().start.y) * projectedHeight();
-                _v$78 !== _p$.e && setAttribute(_el$62, "x", _p$.e = _v$78);
-                _v$79 !== _p$.t && setAttribute(_el$62, "y", _p$.t = _v$79);
-                _v$80 !== _p$.a && setAttribute(_el$62, "width", _p$.a = _v$80);
-                _v$81 !== _p$.o && setAttribute(_el$62, "height", _p$.o = _v$81);
+                var _v$77 = area().start.x * projectedWidth() + projectedOrigin().x, _v$78 = area().start.y * projectedHeight() + projectedOrigin().y, _v$79 = (area().end.x - area().start.x) * projectedWidth(), _v$80 = (area().end.y - area().start.y) * projectedHeight();
+                _v$77 !== _p$.e && setAttribute(_el$62, "x", _p$.e = _v$77);
+                _v$78 !== _p$.t && setAttribute(_el$62, "y", _p$.t = _v$78);
+                _v$79 !== _p$.a && setAttribute(_el$62, "width", _p$.a = _v$79);
+                _v$80 !== _p$.o && setAttribute(_el$62, "height", _p$.o = _v$80);
                 return _p$;
               }, {
                 e: void 0,
@@ -41820,11 +41807,11 @@ function App() {
             children: (presence) => (() => {
               var _el$63 = _tmpl$19();
               createRenderEffect((_p$) => {
-                var _v$82 = presence().x * projectedWidth() + projectedOrigin().x, _v$83 = presence().y * projectedHeight() + projectedOrigin().y, _v$84 = projectedWidth() * timeScale(), _v$85 = projectedHeight();
-                _v$82 !== _p$.e && setAttribute(_el$63, "x", _p$.e = _v$82);
-                _v$83 !== _p$.t && setAttribute(_el$63, "y", _p$.t = _v$83);
-                _v$84 !== _p$.a && setAttribute(_el$63, "width", _p$.a = _v$84);
-                _v$85 !== _p$.o && setAttribute(_el$63, "height", _p$.o = _v$85);
+                var _v$81 = presence().x * projectedWidth() + projectedOrigin().x, _v$82 = presence().y * projectedHeight() + projectedOrigin().y, _v$83 = timeScaleWidth(), _v$84 = projectedHeight();
+                _v$81 !== _p$.e && setAttribute(_el$63, "x", _p$.e = _v$81);
+                _v$82 !== _p$.t && setAttribute(_el$63, "y", _p$.t = _v$82);
+                _v$83 !== _p$.a && setAttribute(_el$63, "width", _p$.a = _v$83);
+                _v$84 !== _p$.o && setAttribute(_el$63, "height", _p$.o = _v$84);
                 return _p$;
               }, {
                 e: void 0,
@@ -41855,11 +41842,11 @@ function App() {
             var _el$61 = _tmpl$3();
             _el$61.style.setProperty("opacity", "0.075");
             createRenderEffect((_p$) => {
-              var _v$74 = styles.now, _v$75 = projectedWidth() * timeScale(), _v$76 = dimensions2().height, _v$77 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
-              _v$74 !== _p$.e && setAttribute(_el$61, "class", _p$.e = _v$74);
-              _v$75 !== _p$.t && setAttribute(_el$61, "width", _p$.t = _v$75);
-              _v$76 !== _p$.a && setAttribute(_el$61, "height", _p$.a = _v$76);
-              _v$77 !== _p$.o && ((_p$.o = _v$77) != null ? _el$61.style.setProperty("transform", _v$77) : _el$61.style.removeProperty("transform"));
+              var _v$73 = styles.now, _v$74 = timeScaleWidth(), _v$75 = dimensions2().height, _v$76 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()}px)`;
+              _v$73 !== _p$.e && setAttribute(_el$61, "class", _p$.e = _v$73);
+              _v$74 !== _p$.t && setAttribute(_el$61, "width", _p$.t = _v$74);
+              _v$75 !== _p$.a && setAttribute(_el$61, "height", _p$.a = _v$75);
+              _v$76 !== _p$.o && ((_p$.o = _v$76) != null ? _el$61.style.setProperty("transform", _v$76) : _el$61.style.removeProperty("transform"));
               return _p$;
             }, {
               e: void 0,
