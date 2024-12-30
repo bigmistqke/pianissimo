@@ -306,7 +306,63 @@ export async function handleCreateNote(event: PointerEvent) {
   clipOverlappingNotes(note)
 }
 
-export async function handleSelectionBox(event: PointerEvent & { currentTarget: SVGElement }) {
+export async function handleErase(event: PointerEvent & { currentTarget: SVGElement }) {
+  await handleSelectionArea(event)
+  setDoc(doc => {
+    for (let index = doc.notes.length - 1; index >= 0; index--) {
+      if (isNoteSelected(doc.notes[index])) {
+        doc.notes.splice(index, 1)
+      }
+    }
+  })
+  setSelectedNotes([])
+  setSelectionArea()
+  setSelectionPresence()
+}
+
+export async function handleSnip(event: PointerEvent & { currentTarget: SVGElement }) {
+  await handleSelectionArea(event)
+
+  const cutLine = selectionArea()?.start.x
+
+  if (!cutLine) {
+    console.error('Attempting to slice without slice-line')
+    return
+  }
+
+  const newNotes = selectedNotes()
+    .filter(note => note.time < selectionArea()!.start.x)
+    .map(note => {
+      return {
+        id: zeptoid(),
+        active: true,
+        duration: note.duration - (cutLine - note.time),
+        pitch: note.pitch,
+        time: cutLine,
+        velocity: note.velocity
+      } satisfies NoteData
+    })
+
+  setDoc(doc => doc.notes.push(...newNotes))
+  setSelectedNotes(notes => [...notes, ...newNotes])
+
+  setDoc(doc => {
+    doc.notes.forEach(note => {
+      if (isNoteSelected(note) && note.time < cutLine) {
+        note.duration = cutLine - note.time
+      }
+    })
+  })
+
+  setSelectedNotes([])
+  setSelectionArea()
+  setSelectionPresence()
+}
+
+export async function handleSelectionArea(
+  event: PointerEvent & { currentTarget: SVGElement },
+  callback?: () => void
+) {
   const offset = event.currentTarget.getBoundingClientRect().left
   const position = {
     x: event.clientX - projectedOrigin().x - offset,
@@ -339,6 +395,7 @@ export async function handleSelectionBox(event: PointerEvent & { currentTarget: 
     selectNotesFromSelectionArea(area)
     setSelectionArea(area)
     setSelectionPresence(newPosition)
+    callback?.()
   })
 }
 
@@ -480,14 +537,6 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
       }
       break
     }
-  })
-
-  // Remove temporary values
-  setDoc(doc => {
-    doc.notes.forEach(note => {
-      delete note._duration
-      delete note._remove
-    })
   })
 }
 

@@ -10,7 +10,6 @@ import {
   createSignal,
   For,
   Index,
-  mapArray,
   on,
   onCleanup,
   onMount,
@@ -33,8 +32,10 @@ import {
   doc,
   filterNote,
   handleCreateNote,
+  handleErase,
   handlePan,
-  handleSelectionBox,
+  handleSelectionArea,
+  handleSnip,
   internalTimeOffset,
   isNotePlaying,
   isNoteSelected,
@@ -331,6 +332,9 @@ function Note(props: { note: NoteData }) {
   }
 
   async function handleVelocity(event: PointerEvent) {
+    event.preventDefault()
+    event.stopPropagation()
+
     let initiallySelected = !!selectedNotes().find(filterNote(props.note))
     if (!initiallySelected) {
       setSelectedNotes([props.note])
@@ -353,38 +357,98 @@ function Note(props: { note: NoteData }) {
     }
   }
 
+  const shouldSnip = () =>
+    mode() === 'snip' &&
+    isNoteSelected(props.note) &&
+    selectionArea() &&
+    props.note.time < selectionArea()!.start.x &&
+    props.note.time + props.note.duration > selectionArea()!.start.x
+
   return (
-    <rect
-      class={clsx(
-        styles.note,
-        (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected
-      )}
-      x={props.note.time * projectedWidth() + MARGIN}
-      y={-props.note.pitch * projectedHeight() + MARGIN}
-      width={(props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2}
-      height={projectedHeight() - MARGIN * 2}
-      opacity={!props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25}
-      onDblClick={() => {
-        if (mode() === 'note') {
-          setDoc(doc => {
-            const index = doc.notes.findIndex(filterNote(props.note))
-            if (index !== -1) doc.notes.splice(index, 1)
-          })
+    <>
+      <Show
+        when={shouldSnip()}
+        fallback={
+          <rect
+            class={clsx(
+              styles.note,
+              isNoteSelected(props.note)
+                ? mode() !== 'erase' && mode() !== 'snip'
+                  ? styles.selected
+                  : mode() === 'erase'
+                    ? styles.inactive
+                    : undefined
+                : isNotePlaying(props.note)
+                  ? styles.selected
+                  : undefined
+            )}
+            x={props.note.time * projectedWidth() + MARGIN}
+            y={-props.note.pitch * projectedHeight() + MARGIN}
+            width={(props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2}
+            height={projectedHeight() - MARGIN * 2}
+            opacity={
+              !props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25
+            }
+            onDblClick={() => {
+              if (mode() === 'note') {
+                setDoc(doc => {
+                  const index = doc.notes.findIndex(filterNote(props.note))
+                  if (index !== -1) doc.notes.splice(index, 1)
+                })
+              }
+            }}
+            onPointerDown={async event => {
+              switch (mode()) {
+                case 'select':
+                  return handleSelect(event)
+                case 'stretch':
+                  return handleStretch(event)
+                case 'note':
+                  return handleNote(event)
+                case 'velocity':
+                  return handleVelocity(event)
+                case 'erase':
+                  event.preventDefault()
+                  event.stopPropagation()
+                  setSelectedNotes([props.note])
+                  await pointerHelper(event)
+                  setSelectedNotes([])
+                  setDoc(doc => {
+                    const index = doc.notes.findIndex(note => note.id === props.note.id)
+                    doc.notes.splice(index, 1)
+                  })
+              }
+            }}
+          />
         }
-      }}
-      onPointerDown={async event => {
-        switch (mode()) {
-          case 'select':
-            return await handleSelect(event)
-          case 'stretch':
-            return handleStretch(event)
-          case 'note':
-            return handleNote(event)
-          case 'velocity':
-            return handleVelocity(event)
-        }
-      }}
-    />
+      >
+        {_ => {
+          const startDuration = () => selectionArea()!.start.x - props.note.time
+          const endDuration = () => props.note.time + props.note.duration - selectionArea()!.start.x
+          return (
+            <>
+              <rect
+                class={clsx(styles.note)}
+                x={props.note.time * projectedWidth() + MARGIN}
+                y={-props.note.pitch * projectedHeight() + MARGIN}
+                width={startDuration() * projectedWidth() - MARGIN * 2}
+                height={projectedHeight() - MARGIN * 2}
+                opacity={props.note.velocity * 0.75 + 0.25}
+              />
+
+              <rect
+                class={clsx(styles.note)}
+                x={(props.note.time + startDuration()) * projectedWidth() + MARGIN}
+                y={-props.note.pitch * projectedHeight() + MARGIN}
+                width={endDuration() * projectedWidth() - MARGIN * 2}
+                height={projectedHeight() - MARGIN * 2}
+                opacity={props.note.velocity * 0.75 + 0.25}
+              />
+            </>
+          )
+        }}
+      </Show>
+    </>
   )
 }
 
@@ -772,25 +836,6 @@ function TopLeftHud() {
         >
           <IconGrommetIconsDuplicate />
         </ActionButton>
-        <Show when={mode() === 'select'}>
-          <ActionButton
-            disabled={selectionArea() === undefined}
-            class={clsx(mode() === 'stretch' && styles.active)}
-            onClick={() => {
-              const area = selectionArea()
-              if (!area) {
-                console.error('Trying to ')
-                return
-              }
-              setLoop({
-                time: area.start.x,
-                duration: area.end.x - area.start.x
-              })
-            }}
-          >
-            <IconGrommetIconsCycle style={{ 'margin-top': '3px' }} />
-          </ActionButton>
-        </Show>
       </div>
     </div>
   )
@@ -807,10 +852,16 @@ function TopRightHud() {
           <IconGrommetIconsMusic />
         </Button>
         <Button
-          class={mode() === 'select' ? styles.active : undefined}
-          onClick={() => setMode('select')}
+          class={mode() === 'erase' ? styles.active : undefined}
+          onClick={() => setMode('erase')}
         >
-          <IconGrommetIconsSelect />
+          <IconGrommetIconsErase />
+        </Button>
+        <Button
+          class={mode() === 'snip' ? styles.active : undefined}
+          onClick={() => setMode('snip')}
+        >
+          <IconGrommetIconsCut />
         </Button>
         <Button
           class={mode() === 'stretch' ? styles.active : undefined}
@@ -823,6 +874,18 @@ function TopRightHud() {
           onClick={() => setMode('velocity')}
         >
           <IconGrommetIconsVolumeControl />
+        </Button>
+        <ActionButton
+          class={clsx(mode() === 'stretch' && styles.active)}
+          onClick={() => setMode('loop')}
+        >
+          <IconGrommetIconsCycle style={{ 'margin-top': '3px' }} />
+        </ActionButton>
+        <Button
+          class={mode() === 'select' ? styles.active : undefined}
+          onClick={() => setMode('select')}
+        >
+          <IconGrommetIconsSelect />
         </Button>
         <Button class={mode() === 'pan' ? styles.active : undefined} onClick={() => setMode('pan')}>
           <IconGrommetIconsPan />
@@ -855,7 +918,7 @@ function TopRightHud() {
                   <IconGrommetIconsClipboard />
                 </ActionButton>
 
-                <ActionButton
+                {/* <ActionButton
                   disabled={selectedNotes().length === 0}
                   onClick={() => {
                     const cutLine = selectionArea()?.start.x
@@ -891,8 +954,8 @@ function TopRightHud() {
                   }}
                 >
                   <IconGrommetIconsCut />
-                </ActionButton>
-                <ActionButton
+                </ActionButton> */}
+                {/* <ActionButton
                   disabled={selectedNotes().length === 0}
                   onClick={() => {
                     setDoc(doc => {
@@ -929,7 +992,7 @@ function TopRightHud() {
                   }}
                 >
                   <IconGrommetIconsDisabledOutline />
-                </ActionButton>
+                </ActionButton> */}
               </div>
             </div>
           )
@@ -1159,13 +1222,13 @@ function useDimensions() {
 function App() {
   // Reset selection-presence after switching mode from select-mode
   createEffect(() => {
-    if (mode() !== 'select') {
+    /* if (mode() !== 'select') {
       setSelectionPresence()
       setSelectionArea()
-    }
+    } */
   })
 
-  // Play notes when they are selected/change pitch
+  /* // Play notes when they are selected/change pitch
   createEffect(
     mapArray(
       () => doc().notes,
@@ -1178,7 +1241,7 @@ function App() {
         )
       }
     )
-  )
+  ) */
 
   // Audio Loop
   let lastVelocity = doc().bpm / 60 // Track the last velocity to adjust time offset
@@ -1291,11 +1354,36 @@ function App() {
               case 'note':
                 handleCreateNote(event)
                 break
+              case 'stretch':
               case 'select':
-                handleSelectionBox(event)
+                await handleSelectionArea(event)
+                setSelectionArea()
+                break
+              case 'velocity':
+                await handleSelectionArea(event)
+                setSelectionArea()
+                setSelectionPresence()
+                break
+              case 'loop':
+                await handleSelectionArea(event)
+                const area = selectionArea()
+                if (!area) {
+                  return
+                }
+                setLoop({
+                  time: area.start.x,
+                  duration: area.end.x - area.start.x
+                })
+                break
+              case 'erase':
+                handleErase(event)
+                break
+              case 'snip':
+                handleSnip(event)
                 break
               case 'pan':
                 handlePan(event)
+                break
             }
           }}
         >
@@ -1305,7 +1393,7 @@ function App() {
                 <PianoUnderlay />
                 <Grid />
                 {/* Selection Area */}
-                <Show when={mode() === 'select' && selectionArea()}>
+                <Show when={selectionArea()}>
                   {area => (
                     <rect
                       x={area().start.x * projectedWidth() + projectedOrigin().x}
@@ -1318,7 +1406,7 @@ function App() {
                   )}
                 </Show>
                 {/* Selection Presence */}
-                <Show when={mode() === 'select' && selectionPresence()}>
+                <Show when={selectionPresence()}>
                   {presence => (
                     <rect
                       x={presence().x * projectedWidth() + projectedOrigin().x}

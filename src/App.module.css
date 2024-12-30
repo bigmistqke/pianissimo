@@ -75,6 +75,9 @@ body {
   &.selected {
     fill: var(--color-note-selected);
   }
+  &.inactive {
+    opacity: 0.5;
+  }
 }
 
 .now {

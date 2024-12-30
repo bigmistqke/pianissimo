@@ -20,7 +20,7 @@ export interface Loop {
   time: number
   duration: number
 }
-export type Mode = 'note' | 'select' | 'pan' | 'stretch' | 'velocity'
+export type Mode = 'erase' | 'loop' | 'note' | 'pan' | 'select' | 'snip' | 'stretch' | 'velocity'
 
 export interface SharedState {
   notes: Array<NoteData>
