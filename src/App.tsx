@@ -82,8 +82,8 @@ import {
   setTimeScale,
   setVolume,
   setZoom,
-  sortNotes,
   timeScale,
+  timeScaleWidth,
   togglePlaying,
   url,
   urls,
@@ -206,7 +206,6 @@ function Note(props: { note: NoteData }) {
     event.preventDefault()
     const initialTime = props.note.time
     const initialPitch = props.note.pitch
-    let previousTime = initialTime
     let previousPitch = initialPitch
     setSelectedNotes([props.note])
     await pointerHelper(event, ({ delta }) => {
@@ -221,13 +220,7 @@ function Note(props: { note: NoteData }) {
         note.pitch = pitch
 
         if (previousPitch !== pitch) {
-          playNote(note)
           previousPitch = pitch
-        }
-
-        if (previousTime !== time) {
-          sortNotes()
-          previousTime = time
         }
       })
 
@@ -423,8 +416,6 @@ function PlayingNotes() {
           return (
             <rect
               y={index * projectedHeight()}
-              x={0}
-              width={projectedWidth()}
               height={projectedHeight()}
               opacity={0.8}
               style={{
@@ -581,12 +572,12 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
       {/* Now Indicator */}
       <rect
         class={styles.now}
-        width={projectedWidth() * timeScale()}
+        width={timeScaleWidth()}
         height={HEIGHT}
         style={{
           opacity: 0.5,
           transform: `translateX(${
-            projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()
+            projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()
           }px)`
         }}
       />
@@ -629,18 +620,16 @@ function Grid() {
     <>
       <g
         style={{
-          transform: `translateX(${projectedOrigin().x % (projectedWidth() * timeScale())}px)`
+          transform: `translateX(${projectedOrigin().x % timeScaleWidth()}px)`
         }}
       >
-        <Index
-          each={new Array(Math.floor(dimensions().width / projectedWidth() / timeScale()) + 2)}
-        >
+        <Index each={new Array(Math.floor(dimensions().width / timeScaleWidth()) + 2)}>
           {(_, index) => (
             <line
               y1={0}
               y2={dimensions().height}
-              x1={index * timeScale() * projectedWidth()}
-              x2={index * timeScale() * projectedWidth()}
+              x1={index * timeScaleWidth()}
+              x2={index * timeScaleWidth()}
               stroke="var(--color-stroke-secondary)"
             />
           )}
@@ -1095,7 +1084,7 @@ const dimensionsContext = createContext<Accessor<DOMRect>>()
 function useDimensions() {
   const context = useContext(dimensionsContext)
   if (!context) {
-    throw `PianoContext is undefined.`
+    throw `DimensionsContext is undefined.`
   }
   return context
 }
@@ -1103,6 +1092,53 @@ function useDimensions() {
 function App() {
   // Reset selectionLocked when mode changes
   createEffect(on(mode, () => setSelectionLocked(false)))
+
+  async function handlePointerDown(event: PointerEvent & { currentTarget: SVGElement }) {
+    if (selectionLocked()) {
+      switch (mode()) {
+        case 'stretch':
+          await handleStretchSelectedNotes(event)
+          break
+        case 'velocity':
+          await handleVelocitySelectedNotes(event)
+          break
+        case 'select':
+          await handleDragSelectedNotes(event)
+      }
+    } else {
+      switch (mode()) {
+        case 'note':
+          handleCreateNote(event)
+          break
+        case 'stretch':
+        case 'select':
+          await handleSelectionArea(event)
+          setSelectionArea()
+          break
+        case 'velocity':
+          await handleSelectionArea(event)
+          setSelectionArea()
+          setSelectionPresence()
+          break
+        case 'loop':
+          const area = await handleSelectionArea(event)
+          setLoop({
+            time: area.start.x,
+            duration: area.end.x - area.start.x
+          })
+          break
+        case 'erase':
+          handleErase(event)
+          break
+        case 'snip':
+          handleSnip(event)
+          break
+        case 'pan':
+          handlePan(event)
+          break
+      }
+    }
+  }
 
   // Audio Loop
   let lastVelocity = doc().bpm / 60 // Track the last velocity to adjust time offset
@@ -1209,56 +1245,7 @@ function App() {
               y: origin.y - (event.deltaY / zoom().y) * (2 / 3)
             }))
           }
-          onPointerDown={async event => {
-            if (selectionLocked()) {
-              switch (mode()) {
-                case 'stretch':
-                  await handleStretchSelectedNotes(event)
-                  break
-                case 'velocity':
-                  await handleVelocitySelectedNotes(event)
-                  break
-                case 'select':
-                  await handleDragSelectedNotes(event)
-              }
-            } else {
-              switch (mode()) {
-                case 'note':
-                  handleCreateNote(event)
-                  break
-                case 'stretch':
-                case 'select':
-                  await handleSelectionArea(event)
-                  setSelectionArea()
-                  break
-                case 'velocity':
-                  await handleSelectionArea(event)
-                  setSelectionArea()
-                  setSelectionPresence()
-                  break
-                case 'loop':
-                  await handleSelectionArea(event)
-                  const area = selectionArea()
-                  if (!area) {
-                    return
-                  }
-                  setLoop({
-                    time: area.start.x,
-                    duration: area.end.x - area.start.x
-                  })
-                  break
-                case 'erase':
-                  handleErase(event)
-                  break
-                case 'snip':
-                  handleSnip(event)
-                  break
-                case 'pan':
-                  handlePan(event)
-                  break
-              }
-            }
-          }}
+          onPointerDown={handlePointerDown}
         >
           <Show when={dimensions()}>
             {dimensions => (
@@ -1284,7 +1271,7 @@ function App() {
                     <rect
                       x={presence().x * projectedWidth() + projectedOrigin().x}
                       y={presence().y * projectedHeight() + projectedOrigin().y}
-                      width={projectedWidth() * timeScale()}
+                      width={timeScaleWidth()}
                       height={projectedHeight()}
                       opacity={0.8}
                       fill="var(--color-selection-area)"
@@ -1304,13 +1291,12 @@ function App() {
                 {/* Now Underlay */}
                 <rect
                   class={styles.now}
-                  width={projectedWidth() * timeScale()}
+                  width={timeScaleWidth()}
                   height={dimensions().height}
                   style={{
                     opacity: 0.075,
                     transform: `translateX(${
-                      projectedOrigin().x +
-                      Math.floor(now() / timeScale()) * projectedWidth() * timeScale()
+                      projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()
                     }px)`
                   }}
                 />

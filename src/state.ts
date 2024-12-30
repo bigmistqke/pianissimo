@@ -11,7 +11,6 @@ import {
   createSelector,
   createSignal
 } from 'solid-js'
-import type { DOMElement } from 'solid-js/jsx-runtime'
 import { createStore, produce } from 'solid-js/store'
 import Instruments from 'webaudio-instruments'
 import { Output, WebMidi } from 'webmidi'
@@ -155,6 +154,7 @@ export const projectedOrigin = createMemo(() => {
     y: origin().y * zoom().y
   }
 })
+export const timeScaleWidth = () => projectedWidth() * timeScale()
 
 // Selectors
 
@@ -177,7 +177,7 @@ export const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => 
 
 function normalizeVector(value: Vector) {
   return {
-    x: Math.floor(value.x / projectedWidth() / timeScale()) * timeScale(),
+    x: Math.floor(value.x / timeScaleWidth()) * timeScale(),
     y: Math.floor(value.y / projectedHeight())
   }
 }
@@ -264,7 +264,7 @@ export async function handleCreateNote(event: PointerEvent) {
     active: true,
     duration: timeScale(),
     pitch: Math.floor(-absolutePosition.y / projectedHeight()) + 1,
-    time: Math.floor(absolutePosition.x / projectedWidth() / timeScale()) * timeScale(),
+    time: Math.floor(absolutePosition.x / timeScaleWidth()) * timeScale(),
     velocity: 1
   }
 
@@ -280,7 +280,7 @@ export async function handleCreateNote(event: PointerEvent) {
   setSelectedNotes([note])
 
   await pointerHelper(event, ({ delta }) => {
-    const deltaX = Math.floor((offset + delta.x) / projectedWidth() / timeScale()) * timeScale()
+    const deltaX = Math.floor((offset + delta.x) / timeScaleWidth()) * timeScale()
     if (deltaX < 0) {
       setDoc(doc => {
         const _note = doc.notes.find(filterNote(note))
@@ -396,6 +396,8 @@ export async function handleSelectionArea(event: PointerEvent & { currentTarget:
     setSelectionArea(area)
     setSelectionPresence(newPosition)
   })
+
+  return selectionArea()!
 }
 
 export async function handlePan(event: PointerEvent) {
@@ -425,19 +427,14 @@ export async function handleDragSelectedNotes(event: PointerEvent) {
         }
       ])
     )
-
-    let previous = 0
     const { delta } = await pointerHelper(event, ({ delta }) => {
-      let time = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
+      let time = Math.floor(delta.x / timeScaleWidth()) * timeScale()
 
       if (time === timeScale() * -1) {
         time = 0
       } else if (time < timeScale() * -1) {
         time = time + timeScale()
       }
-
-      const hasChanged = previous !== time
-      previous = time
 
       setDoc(doc => {
         doc.notes.forEach(note => {
@@ -446,17 +443,12 @@ export async function handleDragSelectedNotes(event: PointerEvent) {
             note.pitch =
               initialNotes[note.id].pitch -
               Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
-            if (hasChanged) {
-              playNote(note)
-            }
           }
         })
       })
       markOverlappingNotes(...selectedNotes())
     })
-    if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) {
-      sortNotes()
-    }
+
     clipOverlappingNotes(...selectedNotes())
   }
 }
@@ -464,7 +456,6 @@ export async function handleDragSelectedNotes(event: PointerEvent) {
 export async function handleStretchSelectedNotes(
   event: PointerEvent & {
     currentTarget: SVGElement
-    target: DOMElement
   }
 ) {
   event.stopPropagation()
@@ -476,7 +467,12 @@ export async function handleStretchSelectedNotes(
 
   await pointerHelper(event, ({ delta }) => {
     batch(() => {
-      const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale()
+      let deltaX =
+        Math.floor(
+          delta.x < 0
+            ? (delta.x + timeScaleWidth() * 0.5) / timeScaleWidth()
+            : delta.x / timeScaleWidth()
+        ) * timeScale()
       setDoc(doc => {
         doc.notes.forEach(note => {
           if (!isNoteSelected(note)) return
@@ -516,10 +512,6 @@ export async function handleVelocitySelectedNotes(event: PointerEvent) {
       })
     })
   })
-}
-
-export function sortNotes() {
-  // setNotes(produce(notes => notes.sort((a, b) => (a.time < b.time ? -1 : 1))))
 }
 
 export function copyNotes() {
