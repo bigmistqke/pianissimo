@@ -39722,29 +39722,6 @@ const HEIGHT = 20;
 const WIDTH = 60;
 const MARGIN = 2;
 const VELOCITY = 4;
-function serializeDate() {
-  const now2 = /* @__PURE__ */ new Date();
-  const year = now2.getFullYear();
-  const month = now2.getMonth() + 1;
-  const date = now2.getDate();
-  const hours = now2.getHours();
-  const minutes = now2.getMinutes();
-  const seconds = now2.getSeconds();
-  const milliSeconds = now2.getMilliseconds();
-  const serialized = `${year}${month.toString().padStart(2, "0")}${date.toString().padStart(2, "0")}${hours.toString().padStart(2, "0")}${minutes.toString().padStart(2, "0")}${seconds.toString().padStart(2, "0")}${milliSeconds.toString().padStart(4, "0")}`;
-  return Number(serialized);
-}
-function deserializeDate(serialized) {
-  const str = serialized.toString();
-  const year = str.slice(0, 4);
-  const month = str.slice(4, 6);
-  const date = str.slice(6, 8);
-  const hours = str.slice(8, 10);
-  const minutes = str.slice(10, 12);
-  const seconds = str.slice(12, 14);
-  const milliseconds = str.slice(14, 18);
-  return `${year}-${month}-${date}-${hours}-${minutes}-${seconds}-${milliseconds}`;
-}
 const repo = new Repo({
   network: [new BrowserWebSocketClientAdapter("wss://sync.cyberspatialstudies.org")],
   storage: new IndexedDBStorageAdapter()
@@ -39753,7 +39730,7 @@ const {
   document: doc,
   setDocument: setDoc,
   newDocument: newDoc,
-  url,
+  handleUrl,
   openUrl
 } = createRoot(
   () => createDocumentStore({
@@ -39769,26 +39746,32 @@ const {
     }
   })
 );
-const [urls, setUrls] = makePersisted(createSignal({}));
+const [savedDocumentUrls, setSavedDocumentUrls] = makePersisted(
+  createSignal({})
+);
 createRoot(() => {
   createEffect(() => {
-    document.location.hash = url();
+    document.location.hash = handleUrl();
   });
   createEffect(() => {
     if (doc().date && doc().notes.length > 0) {
-      setUrls((urls2) => ({
-        ...urls2,
-        [url()]: doc().date
+      setSavedDocumentUrls((urls) => ({
+        ...urls,
+        [handleUrl()]: doc().date
       }));
     }
   });
 });
-const [midiOutputEnabled, setMidiOutputEnabled] = createSignal(false);
-const [midiOutputs] = createResource(midiOutputEnabled, async () => {
-  await wm.enable();
-  return wm.outputs;
-});
-const [selectedMidiOutputs, setSelectedMidiOutputs] = createSignal([]);
+function serializeDate() {
+  return Number(
+    (/* @__PURE__ */ new Date()).toISOString().replace(/[-:TZ]/g, "").slice(0, 17).padEnd(18, "0")
+    // Add zeros for milliseconds
+  );
+}
+function deserializeDate(serialized) {
+  const str = serialized.toString().padStart(18, "0");
+  return `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6, 8)}-${str.slice(8, 10)}-${str.slice(10, 12)}-${str.slice(12, 14)}-${str.slice(14)}`;
+}
 let audioContext;
 let player;
 let playedNotes = /* @__PURE__ */ new Set();
@@ -39807,17 +39790,20 @@ const [now, setNow] = createSignal(0);
 const [loop, setLoop] = createStore({ time: 0, duration: 4 });
 const [volume, setVolume] = createSignal(10);
 const [origin, setOrigin] = createSignal({ x: 0, y: 6 * HEIGHT * 12 });
-const [_zoom, setZoom] = createSignal({ x: 100, y: 100 });
+const [_zoom, _setZoom] = createSignal({ x: 100, y: 100 });
 const zoom = createMemo(() => ({ x: _zoom().x / 100, y: _zoom().y / 100 }));
+const setZoom = _setZoom;
 const projectedWidth = () => WIDTH * zoom().x;
 const projectedHeight = () => HEIGHT * zoom().y;
-const projectedOrigin = createMemo(() => {
-  return {
-    x: WIDTH + origin().x * zoom().x,
-    y: origin().y * zoom().y
-  };
-});
+const projectedOriginX = () => WIDTH + origin().x * zoom().x;
+const projectedOriginY = () => origin().y * zoom().y;
 const timeScaleWidth = () => projectedWidth() * timeScale();
+const [midiOutputEnabled, setMidiOutputEnabled] = createSignal(false);
+const [midiOutputs] = createResource(midiOutputEnabled, async () => {
+  await wm.enable();
+  return wm.outputs;
+});
+const [selectedMidiOutputs, setSelectedMidiOutputs] = createSignal([]);
 const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
   createSelector(
     selectedNotes,
@@ -39911,8 +39897,8 @@ function playNote(note, delay = 0) {
 }
 async function handleCreateNote(event) {
   const absolutePosition = {
-    x: event.layerX - projectedOrigin().x,
-    y: event.layerY - projectedOrigin().y
+    x: event.layerX - projectedOriginX(),
+    y: event.layerY - projectedOriginY()
   };
   const note = {
     id: get(),
@@ -40003,8 +39989,8 @@ async function handleSnip(event) {
 async function handleSelectionArea(event) {
   const offset = event.currentTarget.getBoundingClientRect().left;
   const position = {
-    x: event.clientX - projectedOrigin().x - offset,
-    y: event.clientY - projectedOrigin().y
+    x: event.clientX - projectedOriginX() - offset,
+    y: event.clientY - projectedOriginY()
   };
   const normalizedPosition = normalizeVector(position);
   setSelectionArea({
@@ -40060,8 +40046,8 @@ async function handleDragSelectedNotes(event) {
         }
       ])
     );
-    await pointerHelper(event, ({ delta: delta2 }) => {
-      let time = Math.floor(delta2.x / timeScaleWidth()) * timeScale();
+    await pointerHelper(event, ({ delta }) => {
+      let time = Math.floor(delta.x / timeScaleWidth()) * timeScale();
       if (time === timeScale() * -1) {
         time = 0;
       } else if (time < timeScale() * -1) {
@@ -40071,7 +40057,7 @@ async function handleDragSelectedNotes(event) {
         doc2.notes.forEach((note) => {
           if (isNoteSelected(note)) {
             note.time = initialNotes[note.id].time + time - offset;
-            note.pitch = initialNotes[note.id].pitch - Math.floor((delta2.y + projectedHeight() / 2) / projectedHeight());
+            note.pitch = initialNotes[note.id].pitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight());
           }
         });
       });
@@ -40700,7 +40686,7 @@ function Piano() {
               children: (_, index) => (() => {
                 var _el$18 = _tmpl$6();
                 createRenderEffect((_p$) => {
-                  var _v$26 = index * projectedHeight(), _v$27 = `${projectedHeight()}px`, _v$28 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)";
+                  var _v$26 = index * projectedHeight(), _v$27 = `${projectedHeight()}px`, _v$28 = KEY_COLORS[mod(index + Math.floor(-projectedOriginY() / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)";
                   _v$26 !== _p$.e && setAttribute(_el$18, "y", _p$.e = _v$26);
                   _v$27 !== _p$.t && ((_p$.t = _v$27) != null ? _el$18.style.setProperty("height", _v$27) : _el$18.style.removeProperty("height"));
                   _v$28 !== _p$.a && ((_p$.a = _v$28) != null ? _el$18.style.setProperty("fill", _v$28) : _el$18.style.removeProperty("fill"));
@@ -40713,7 +40699,7 @@ function Piano() {
                 return _el$18;
               })()
             }));
-            createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$17.style.setProperty("transform", _$p) : _el$17.style.removeProperty("transform"));
+            createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOriginY(), projectedHeight()) * -1}px)`) != null ? _el$17.style.setProperty("transform", _$p) : _el$17.style.removeProperty("transform"));
             return _el$17;
           })()];
         }
@@ -40735,7 +40721,7 @@ function PlayingNotes() {
         return (() => {
           var _el$20 = _tmpl$7();
           createRenderEffect((_p$) => {
-            var _v$29 = index * projectedHeight(), _v$30 = projectedHeight(), _v$31 = isPitchPlaying(-(index + Math.floor(-projectedOrigin().y / projectedHeight()))) ? "var(--color-note-selected)" : "none";
+            var _v$29 = index * projectedHeight(), _v$30 = projectedHeight(), _v$31 = isPitchPlaying(-(index + Math.floor(-projectedOriginY() / projectedHeight()))) ? "var(--color-note-selected)" : "none";
             _v$29 !== _p$.e && setAttribute(_el$20, "y", _p$.e = _v$29);
             _v$30 !== _p$.t && setAttribute(_el$20, "height", _p$.t = _v$30);
             _v$31 !== _p$.a && ((_p$.a = _v$31) != null ? _el$20.style.setProperty("fill", _v$31) : _el$20.style.removeProperty("fill"));
@@ -40749,7 +40735,7 @@ function PlayingNotes() {
         })();
       }
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$19.style.setProperty("transform", _$p) : _el$19.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOriginY(), projectedHeight()) * -1}px)`) != null ? _el$19.style.setProperty("transform", _$p) : _el$19.style.removeProperty("transform"));
     return _el$19;
   })();
 }
@@ -40760,8 +40746,8 @@ function Ruler(props) {
   function handleCreateLoop(event) {
     event.stopPropagation();
     const absolutePosition = {
-      x: event.layerX - projectedOrigin().x,
-      y: event.layerY - projectedOrigin().y
+      x: event.layerX - projectedOriginX(),
+      y: event.layerY - projectedOriginY()
     };
     const loop2 = {
       time: Math.floor(absolutePosition.x / projectedWidth()),
@@ -40797,7 +40783,7 @@ function Ruler(props) {
     const initialTime = loop2.time;
     const initialDuration = loop2.duration;
     if (event.clientX < left + projectedWidth() / 3) {
-      const offset = event.clientX - initialTime * projectedWidth() - projectedOrigin().x;
+      const offset = event.clientX - initialTime * projectedWidth() - projectedOriginX();
       await pointerHelper(event, ({
         delta
       }) => {
@@ -40814,7 +40800,7 @@ function Ruler(props) {
       await pointerHelper(event, ({
         delta
       }) => {
-        const duration = Math.floor((event.clientX - projectedOrigin().x + delta.x) / projectedWidth()) - initialTime;
+        const duration = Math.floor((event.clientX - projectedOriginX() + delta.x) / projectedWidth()) - initialTime;
         if (duration > 0) {
           props.setLoop("duration", duration);
         } else if (duration < 0) {
@@ -40863,7 +40849,7 @@ function Ruler(props) {
       setAttribute(_el$26, "height", HEIGHT);
       _el$26.style.setProperty("transition", "fill 0.25s");
       createRenderEffect((_p$) => {
-        var _v$35 = loop2().time * projectedWidth(), _v$36 = loop2().duration * projectedWidth(), _v$37 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$38 = `translateX(${projectedOrigin().x}px)`;
+        var _v$35 = loop2().time * projectedWidth(), _v$36 = loop2().duration * projectedWidth(), _v$37 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$38 = `translateX(${projectedOriginX()}px)`;
         _v$35 !== _p$.e && setAttribute(_el$26, "x", _p$.e = _v$35);
         _v$36 !== _p$.t && setAttribute(_el$26, "width", _p$.t = _v$36);
         _v$37 !== _p$.a && setAttribute(_el$26, "fill", _p$.a = _v$37);
@@ -40882,7 +40868,7 @@ function Ruler(props) {
     setAttribute(_el$22, "height", HEIGHT);
     _el$22.style.setProperty("opacity", "0.5");
     createRenderEffect((_p$) => {
-      var _v$32 = styles.now, _v$33 = timeScaleWidth(), _v$34 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()}px)`;
+      var _v$32 = styles.now, _v$33 = timeScaleWidth(), _v$34 = `translateX(${projectedOriginX() + Math.floor(now() / timeScale()) * timeScaleWidth()}px)`;
       _v$32 !== _p$.e && setAttribute(_el$22, "class", _p$.e = _v$32);
       _v$33 !== _p$.t && setAttribute(_el$22, "width", _p$.t = _v$33);
       _v$34 !== _p$.a && ((_p$.a = _v$34) != null ? _el$22.style.setProperty("transform", _v$34) : _el$22.style.removeProperty("transform"));
@@ -40920,7 +40906,7 @@ function Ruler(props) {
         return _el$27;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$24.style.setProperty("transform", _$p) : _el$24.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOriginX() % (projectedWidth() * 8)}px)`) != null ? _el$24.style.setProperty("transform", _$p) : _el$24.style.removeProperty("transform"));
     return _el$24;
   })(), (() => {
     var _el$25 = _tmpl$5();
@@ -40943,7 +40929,7 @@ function Ruler(props) {
         return _el$28;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % projectedWidth()}px)`) != null ? _el$25.style.setProperty("transform", _$p) : _el$25.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOriginX() % projectedWidth()}px)`) != null ? _el$25.style.setProperty("transform", _$p) : _el$25.style.removeProperty("transform"));
     return _el$25;
   })()];
 }
@@ -40971,7 +40957,7 @@ function Grid() {
         return _el$31;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % timeScaleWidth()}px)`) != null ? _el$29.style.setProperty("transform", _$p) : _el$29.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOriginX() % timeScaleWidth()}px)`) != null ? _el$29.style.setProperty("transform", _$p) : _el$29.style.removeProperty("transform"));
     return _el$29;
   })(), (() => {
     var _el$30 = _tmpl$5();
@@ -40995,7 +40981,7 @@ function Grid() {
         return _el$32;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$30.style.setProperty("transform", _$p) : _el$30.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOriginX() % (projectedWidth() * 8)}px)`) != null ? _el$30.style.setProperty("transform", _$p) : _el$30.style.removeProperty("transform"));
     return _el$30;
   })()];
 }
@@ -41011,7 +40997,7 @@ function PianoUnderlay() {
         var _el$34 = _tmpl$3();
         _el$34.style.setProperty("pointer-events", "none");
         createRenderEffect((_p$) => {
-          var _v$49 = index * projectedHeight(), _v$50 = dimensions2().width, _v$51 = projectedHeight(), _v$52 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
+          var _v$49 = index * projectedHeight(), _v$50 = dimensions2().width, _v$51 = projectedHeight(), _v$52 = KEY_COLORS[mod(index + Math.floor(-projectedOriginY() / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
           _v$49 !== _p$.e && setAttribute(_el$34, "y", _p$.e = _v$49);
           _v$50 !== _p$.t && setAttribute(_el$34, "width", _p$.t = _v$50);
           _v$51 !== _p$.a && setAttribute(_el$34, "height", _p$.a = _v$51);
@@ -41026,7 +41012,7 @@ function PianoUnderlay() {
         return _el$34;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-projectedOrigin().y, projectedHeight())}px)`) != null ? _el$33.style.setProperty("transform", _$p) : _el$33.style.removeProperty("transform"));
+    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-projectedOriginY(), projectedHeight())}px)`) != null ? _el$33.style.setProperty("transform", _$p) : _el$33.style.removeProperty("transform"));
     return _el$33;
   })();
 }
@@ -41376,12 +41362,12 @@ function BottomLeftHud() {
                           get children() {
                             return createComponent(For, {
                               get each() {
-                                return Object.entries(urls()).sort(([, a], [, b]) => a - b > 0 ? -1 : 1);
+                                return Object.entries(savedDocumentUrls()).sort(([, a], [, b]) => a - b > 0 ? -1 : 1);
                               },
                               children: ([_url, date]) => createComponent(DropdownMenu.Item, {
                                 as: Button,
                                 get ["class"]() {
-                                  return clsx(styles["dropdown-menu__item"], url() === _url && styles.selected);
+                                  return clsx(styles["dropdown-menu__item"], handleUrl() === _url && styles.selected);
                                 },
                                 onClick: () => openUrl(_url),
                                 get children() {
@@ -41786,7 +41772,7 @@ function App() {
             children: (area) => (() => {
               var _el$62 = _tmpl$18();
               createRenderEffect((_p$) => {
-                var _v$77 = area().start.x * projectedWidth() + projectedOrigin().x, _v$78 = area().start.y * projectedHeight() + projectedOrigin().y, _v$79 = (area().end.x - area().start.x) * projectedWidth(), _v$80 = (area().end.y - area().start.y) * projectedHeight();
+                var _v$77 = area().start.x * projectedWidth() + projectedOriginX(), _v$78 = area().start.y * projectedHeight() + projectedOriginY(), _v$79 = (area().end.x - area().start.x) * projectedWidth(), _v$80 = (area().end.y - area().start.y) * projectedHeight();
                 _v$77 !== _p$.e && setAttribute(_el$62, "x", _p$.e = _v$77);
                 _v$78 !== _p$.t && setAttribute(_el$62, "y", _p$.t = _v$78);
                 _v$79 !== _p$.a && setAttribute(_el$62, "width", _p$.a = _v$79);
@@ -41807,7 +41793,7 @@ function App() {
             children: (presence) => (() => {
               var _el$63 = _tmpl$19();
               createRenderEffect((_p$) => {
-                var _v$81 = presence().x * projectedWidth() + projectedOrigin().x, _v$82 = presence().y * projectedHeight() + projectedOrigin().y, _v$83 = timeScaleWidth(), _v$84 = projectedHeight();
+                var _v$81 = presence().x * projectedWidth() + projectedOriginX(), _v$82 = presence().y * projectedHeight() + projectedOriginY(), _v$83 = timeScaleWidth(), _v$84 = projectedHeight();
                 _v$81 !== _p$.e && setAttribute(_el$63, "x", _p$.e = _v$81);
                 _v$82 !== _p$.t && setAttribute(_el$63, "y", _p$.t = _v$82);
                 _v$83 !== _p$.a && setAttribute(_el$63, "width", _p$.a = _v$83);
@@ -41835,14 +41821,14 @@ function App() {
                   note
                 })
               }));
-              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$60.style.setProperty("transform", _$p) : _el$60.style.removeProperty("transform"));
+              createRenderEffect((_$p) => (_$p = `translate(${projectedOriginX()}px, ${projectedOriginY()}px)`) != null ? _el$60.style.setProperty("transform", _$p) : _el$60.style.removeProperty("transform"));
               return _el$60;
             }
           }), (() => {
             var _el$61 = _tmpl$3();
             _el$61.style.setProperty("opacity", "0.075");
             createRenderEffect((_p$) => {
-              var _v$73 = styles.now, _v$74 = timeScaleWidth(), _v$75 = dimensions2().height, _v$76 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()}px)`;
+              var _v$73 = styles.now, _v$74 = timeScaleWidth(), _v$75 = dimensions2().height, _v$76 = `translateX(${projectedOriginX() + Math.floor(now() / timeScale()) * timeScaleWidth()}px)`;
               _v$73 !== _p$.e && setAttribute(_el$61, "class", _p$.e = _v$73);
               _v$74 !== _p$.t && setAttribute(_el$61, "width", _p$.t = _v$74);
               _v$75 !== _p$.a && setAttribute(_el$61, "height", _p$.a = _v$75);
