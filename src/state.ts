@@ -19,7 +19,11 @@ import { Loop, Mode, NoteData, SelectionArea, SharedState, Vector } from './type
 import { createDocumentStore } from './utils/create-document-store'
 import { pointerHelper } from './utils/pointer-helper'
 
-// Constants
+/**********************************************************************************/
+/*                                                                                */
+/*                                    Constants                                   */
+/*                                                                                */
+/**********************************************************************************/
 
 export const KEY_COLORS = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1].reverse()
 export const HEIGHT = 20
@@ -27,45 +31,16 @@ export const WIDTH = 60
 export const MARGIN = 2
 export const VELOCITY = 4
 
-// Utils
-
-function serializeDate(): number {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1 // Months are zero-based
-  const date = now.getDate()
-  const hours = now.getHours()
-  const minutes = now.getMinutes()
-  const seconds = now.getSeconds()
-  const milliSeconds = now.getMilliseconds()
-
-  // Format as YYYYMMDDHHMMSS (padded with zeros)
-  const serialized = `${year}${month.toString().padStart(2, '0')}${date.toString().padStart(2, '0')}${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}${seconds.toString().padStart(2, '0')}${milliSeconds.toString().padStart(4, '0')}`
-  return Number(serialized) // Convert to a number
-}
-
-// Deserialize the number back to a readable string
-export function deserializeDate(serialized: number): string {
-  const str = serialized.toString()
-  const year = str.slice(0, 4)
-  const month = str.slice(4, 6)
-  const date = str.slice(6, 8)
-  const hours = str.slice(8, 10)
-  const minutes = str.slice(10, 12)
-  const seconds = str.slice(12, 14)
-  const milliseconds = str.slice(14, 18)
-
-  // Format as YYYY-MM-DD-HH-MM-SS
-  return `${year}-${month}-${date}-${hours}-${minutes}-${seconds}-${milliseconds}`
-}
-
-// Initialise automerge-state
+/**********************************************************************************/
+/*                                                                                */
+/*                                 Automerge State                                */
+/*                                                                                */
+/**********************************************************************************/
 
 export const repo = new Repo({
   network: [new BrowserWebSocketClientAdapter('wss://sync.cyberspatialstudies.org')],
   storage: new IndexedDBStorageAdapter()
 })
-
 export const {
   document: doc,
   setDocument: setDoc,
@@ -86,18 +61,18 @@ export const {
     }
   })
 )
+export const [savedDocumentUrls, setSavedDocumentUrls] = makePersisted(
+  createSignal<Record<string, number>>({})
+)
 
-const [urls, setUrls] = makePersisted(createSignal<Record<string, number>>({}))
-
-export { urls }
-
+// Set hash to current handle-url and save it to local-storage.
 createRoot(() => {
   createEffect(() => {
     document.location.hash = url()
   })
   createEffect(() => {
     if (doc().date && doc().notes.length > 0) {
-      setUrls(urls => ({
+      setSavedDocumentUrls(urls => ({
         ...urls,
         [url()]: doc().date
       }))
@@ -105,16 +80,26 @@ createRoot(() => {
   })
 })
 
-// WebMidi
+// Utils
+export function serializeDate(): number {
+  return Number(
+    new Date()
+      .toISOString()
+      .replace(/[-:TZ]/g, '')
+      .slice(0, 17)
+      .padEnd(18, '0') // Add zeros for milliseconds
+  )
+}
+export function deserializeDate(serialized: number): string {
+  const str = serialized.toString().padStart(18, '0')
+  return `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6, 8)}-${str.slice(8, 10)}-${str.slice(10, 12)}-${str.slice(12, 14)}-${str.slice(14)}`
+}
 
-export const [midiOutputEnabled, setMidiOutputEnabled] = createSignal(false)
-export const [midiOutputs] = createResource(midiOutputEnabled, async () => {
-  await WebMidi.enable()
-  return WebMidi.outputs
-})
-export const [selectedMidiOutputs, setSelectedMidiOutputs] = createSignal<Array<Output>>([])
-
-// Initialise local state
+/**********************************************************************************/
+/*                                                                                */
+/*                                      State                                     */
+/*                                                                                */
+/**********************************************************************************/
 
 export let audioContext: AudioContext | undefined
 export let player: Instruments | undefined
@@ -122,8 +107,6 @@ export let playedNotes = new Set<NoteData>()
 
 export const [mode, setMode] = createSignal<Mode>('note')
 export const [dimensions, setDimensions] = createSignal<DOMRect>()
-
-// Grid size
 export const [timeScale, setTimeScale] = createSignal(1)
 
 // Select-related state
@@ -141,22 +124,31 @@ export const [now, setNow] = createSignal(0)
 export const [loop, setLoop] = createStore<Loop>({ time: 0, duration: 4 })
 export const [volume, setVolume] = createSignal(10)
 
-// Projection
+// Projection state
 export const [origin, setOrigin] = createSignal<Vector>({ x: 0, y: 6 * HEIGHT * 12 })
-const [_zoom, setZoom] = createSignal({ x: 100, y: 100 })
+const [_zoom, _setZoom] = createSignal({ x: 100, y: 100 })
 export const zoom = createMemo(() => ({ x: _zoom().x / 100, y: _zoom().y / 100 }))
-export { setZoom }
+export const setZoom = _setZoom
+
 export const projectedWidth = () => WIDTH * zoom().x
 export const projectedHeight = () => HEIGHT * zoom().y
-export const projectedOrigin = createMemo(() => {
-  return {
-    x: WIDTH + origin().x * zoom().x,
-    y: origin().y * zoom().y
-  }
-})
+export const projectedOriginX = () => WIDTH + origin().x * zoom().x
+export const projectedOriginY = () => origin().y * zoom().y
 export const timeScaleWidth = () => projectedWidth() * timeScale()
 
-// Selectors
+// WebMidi state
+export const [midiOutputEnabled, setMidiOutputEnabled] = createSignal(false)
+export const [midiOutputs] = createResource(midiOutputEnabled, async () => {
+  await WebMidi.enable()
+  return WebMidi.outputs
+})
+export const [selectedMidiOutputs, setSelectedMidiOutputs] = createSignal<Array<Output>>([])
+
+/**********************************************************************************/
+/*                                                                                */
+/*                                    Selectors                                   */
+/*                                                                                */
+/**********************************************************************************/
 
 export const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => [
   createSelector(
@@ -173,7 +165,11 @@ export const [isNoteSelected, isNotePlaying, isPitchPlaying] = createRoot(() => 
   )
 ])
 
-// Actions
+/**********************************************************************************/
+/*                                                                                */
+/*                                     Actions                                    */
+/*                                                                                */
+/**********************************************************************************/
 
 function normalizeVector(value: Vector) {
   return {
@@ -255,8 +251,8 @@ export function playNote(note: NoteData, delay = 0) {
 
 export async function handleCreateNote(event: PointerEvent) {
   const absolutePosition = {
-    x: event.layerX - projectedOrigin().x,
-    y: event.layerY - projectedOrigin().y
+    x: event.layerX - projectedOriginX(),
+    y: event.layerY - projectedOriginY()
   }
 
   const note: NoteData = {
@@ -365,8 +361,8 @@ export async function handleSnip(event: PointerEvent & { currentTarget: SVGEleme
 export async function handleSelectionArea(event: PointerEvent & { currentTarget: SVGElement }) {
   const offset = event.currentTarget.getBoundingClientRect().left
   const position = {
-    x: event.clientX - projectedOrigin().x - offset,
-    y: event.clientY - projectedOrigin().y
+    x: event.clientX - projectedOriginX() - offset,
+    y: event.clientY - projectedOriginY()
   }
   const normalizedPosition = normalizeVector(position)
   setSelectionArea({
@@ -427,7 +423,7 @@ export async function handleDragSelectedNotes(event: PointerEvent) {
         }
       ])
     )
-    const { delta } = await pointerHelper(event, ({ delta }) => {
+    await pointerHelper(event, ({ delta }) => {
       let time = Math.floor(delta.x / timeScaleWidth()) * timeScale()
 
       if (time === timeScale() * -1) {

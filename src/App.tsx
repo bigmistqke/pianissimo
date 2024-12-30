@@ -58,8 +58,10 @@ import {
   playing,
   playNote,
   projectedHeight,
-  projectedOrigin,
+  projectedOriginX,
+  projectedOriginY,
   projectedWidth,
+  savedDocumentUrls,
   selectedMidiOutputs,
   selectedNotes,
   selectionArea,
@@ -86,7 +88,6 @@ import {
   timeScaleWidth,
   togglePlaying,
   url,
-  urls,
   volume,
   zoom
 } from './state'
@@ -377,7 +378,7 @@ function Piano() {
             <PlayingNotes />
             <g
               style={{
-                transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`
+                transform: `translateY(${mod(-projectedOriginY(), projectedHeight()) * -1}px)`
               }}
             >
               <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
@@ -389,7 +390,7 @@ function Piano() {
                       height: `${projectedHeight()}px`,
                       fill: KEY_COLORS[
                         mod(
-                          index + Math.floor(-projectedOrigin().y / projectedHeight()),
+                          index + Math.floor(-projectedOriginY() / projectedHeight()),
                           KEY_COLORS.length
                         )
                       ]
@@ -410,7 +411,7 @@ function Piano() {
 function PlayingNotes() {
   const dimensions = useDimensions()
   return (
-    <g style={{ transform: `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)` }}>
+    <g style={{ transform: `translateY(${mod(-projectedOriginY(), projectedHeight()) * -1}px)` }}>
       <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
         {(_, index) => {
           return (
@@ -419,9 +420,7 @@ function PlayingNotes() {
               height={projectedHeight()}
               opacity={0.8}
               style={{
-                fill: isPitchPlaying(
-                  -(index + Math.floor(-projectedOrigin().y / projectedHeight()))
-                )
+                fill: isPitchPlaying(-(index + Math.floor(-projectedOriginY() / projectedHeight())))
                   ? 'var(--color-note-selected)'
                   : 'none'
               }}
@@ -443,8 +442,8 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     event.stopPropagation()
 
     const absolutePosition = {
-      x: event.layerX - projectedOrigin().x,
-      y: event.layerY - projectedOrigin().y
+      x: event.layerX - projectedOriginX(),
+      y: event.layerY - projectedOriginY()
     }
 
     const loop = {
@@ -490,7 +489,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     const initialDuration = loop.duration
 
     if (event.clientX < left + projectedWidth() / 3) {
-      const offset = event.clientX - initialTime * projectedWidth() - projectedOrigin().x
+      const offset = event.clientX - initialTime * projectedWidth() - projectedOriginX()
 
       await pointerHelper(event, ({ delta }) => {
         const deltaX = Math.floor((delta.x + offset) / projectedWidth())
@@ -505,7 +504,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
     } else if (event.clientX > left + width - projectedWidth() / 3) {
       await pointerHelper(event, ({ delta }) => {
         const duration =
-          Math.floor((event.clientX - projectedOrigin().x + delta.x) / projectedWidth()) -
+          Math.floor((event.clientX - projectedOriginX() + delta.x) / projectedWidth()) -
           initialTime
 
         if (duration > 0) {
@@ -564,7 +563,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
             width={loop().duration * projectedWidth()}
             height={HEIGHT}
             fill={selected() || trigger() ? 'var(--color-loop-selected)' : 'var(--color-loop)'}
-            style={{ transform: `translateX(${projectedOrigin().x}px)`, transition: 'fill 0.25s' }}
+            style={{ transform: `translateX(${projectedOriginX()}px)`, transition: 'fill 0.25s' }}
             onPointerDown={event => handleAdjustLoop(event, loop())}
           />
         )}
@@ -577,12 +576,12 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
         style={{
           opacity: 0.5,
           transform: `translateX(${
-            projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()
+            projectedOriginX() + Math.floor(now() / timeScale()) * timeScaleWidth()
           }px)`
         }}
       />
       <line x1={0} x2={dimensions().width} y1={HEIGHT} y2={HEIGHT} stroke="var(--color-stroke)" />
-      <g style={{ transform: `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)` }}>
+      <g style={{ transform: `translateX(${projectedOriginX() % (projectedWidth() * 8)}px)` }}>
         <Index each={new Array(Math.floor(dimensions().width / projectedWidth() / 8) + 2)}>
           {(_, index) => (
             <line
@@ -596,7 +595,7 @@ function Ruler(props: { setLoop: SetStoreFunction<Loop>; loop: Loop }) {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${projectedOrigin().x % projectedWidth()}px)` }}>
+      <g style={{ transform: `translateX(${projectedOriginX() % projectedWidth()}px)` }}>
         <Index each={new Array(Math.floor(dimensions().width / projectedWidth()) + 2)}>
           {(_, index) => (
             <line
@@ -620,7 +619,7 @@ function Grid() {
     <>
       <g
         style={{
-          transform: `translateX(${projectedOrigin().x % timeScaleWidth()}px)`
+          transform: `translateX(${projectedOriginX() % timeScaleWidth()}px)`
         }}
       >
         <Index each={new Array(Math.floor(dimensions().width / timeScaleWidth()) + 2)}>
@@ -635,7 +634,7 @@ function Grid() {
           )}
         </Index>
       </g>
-      <g style={{ transform: `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)` }}>
+      <g style={{ transform: `translateX(${projectedOriginX() % (projectedWidth() * 8)}px)` }}>
         <Index each={new Array(Math.floor(dimensions().width / projectedWidth() / 8) + 2)}>
           {(_, index) => (
             <line
@@ -656,7 +655,7 @@ function Grid() {
 function PianoUnderlay() {
   const dimensions = useDimensions()
   return (
-    <g style={{ transform: `translateY(${-mod(-projectedOrigin().y, projectedHeight())}px)` }}>
+    <g style={{ transform: `translateY(${-mod(-projectedOriginY(), projectedHeight())}px)` }}>
       <Index each={new Array(Math.floor(dimensions().height / projectedHeight()) + 2)}>
         {(_, index) => (
           <rect
@@ -666,7 +665,7 @@ function PianoUnderlay() {
             style={{
               'pointer-events': 'none',
               fill: KEY_COLORS[
-                mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)
+                mod(index + Math.floor(-projectedOriginY() / projectedHeight()), KEY_COLORS.length)
               ]
                 ? 'none'
                 : 'var(--color-piano-underlay)'
@@ -901,7 +900,11 @@ function BottomLeftHud() {
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.Portal>
                   <DropdownMenu.SubContent class={styles['dropdown-menu__sub-content']}>
-                    <For each={Object.entries(urls()).sort(([, a], [, b]) => (a - b > 0 ? -1 : 1))}>
+                    <For
+                      each={Object.entries(savedDocumentUrls()).sort(([, a], [, b]) =>
+                        a - b > 0 ? -1 : 1
+                      )}
+                    >
                       {([_url, date]) => (
                         <DropdownMenu.Item
                           as={Button}
@@ -1256,8 +1259,8 @@ function App() {
                 <Show when={selectionArea()}>
                   {area => (
                     <rect
-                      x={area().start.x * projectedWidth() + projectedOrigin().x}
-                      y={area().start.y * projectedHeight() + projectedOrigin().y}
+                      x={area().start.x * projectedWidth() + projectedOriginX()}
+                      y={area().start.y * projectedHeight() + projectedOriginY()}
                       width={(area().end.x - area().start.x) * projectedWidth()}
                       height={(area().end.y - area().start.y) * projectedHeight()}
                       opacity={0.3}
@@ -1269,8 +1272,8 @@ function App() {
                 <Show when={selectionPresence()}>
                   {presence => (
                     <rect
-                      x={presence().x * projectedWidth() + projectedOrigin().x}
-                      y={presence().y * projectedHeight() + projectedOrigin().y}
+                      x={presence().x * projectedWidth() + projectedOriginX()}
+                      y={presence().y * projectedHeight() + projectedOriginY()}
                       width={timeScaleWidth()}
                       height={projectedHeight()}
                       opacity={0.8}
@@ -1282,7 +1285,7 @@ function App() {
                 <Show when={doc().notes.length > 0}>
                   <g
                     style={{
-                      transform: `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`
+                      transform: `translate(${projectedOriginX()}px, ${projectedOriginY()}px)`
                     }}
                   >
                     <For each={doc().notes}>{note => <Note note={note} />}</For>
@@ -1296,7 +1299,7 @@ function App() {
                   style={{
                     opacity: 0.075,
                     transform: `translateX(${
-                      projectedOrigin().x + Math.floor(now() / timeScale()) * timeScaleWidth()
+                      projectedOriginX() + Math.floor(now() / timeScale()) * timeScaleWidth()
                     }px)`
                   }}
                 />
