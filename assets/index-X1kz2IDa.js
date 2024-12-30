@@ -4160,7 +4160,7 @@ const computePosition = (reference, floating, options) => {
   });
 };
 
-var _tmpl$$j = /* @__PURE__ */ template(`<svg display=block viewBox="0 0 30 30"style=transform:scale(1.02)><g><path fill=none d=M23,27.8c1.1,1.2,3.4,2.2,5,2.2h2H0h2c1.7,0,3.9-1,5-2.2l6.6-7.2c0.7-0.8,2-0.8,2.7,0L23,27.8L23,27.8z></path><path stroke=none d=M23,27.8c1.1,1.2,3.4,2.2,5,2.2h2H0h2c1.7,0,3.9-1,5-2.2l6.6-7.2c0.7-0.8,2-0.8,2.7,0L23,27.8L23,27.8z>`);
+var _tmpl$$k = /* @__PURE__ */ template(`<svg display=block viewBox="0 0 30 30"style=transform:scale(1.02)><g><path fill=none d=M23,27.8c1.1,1.2,3.4,2.2,5,2.2h2H0h2c1.7,0,3.9-1,5-2.2l6.6-7.2c0.7-0.8,2-0.8,2.7,0L23,27.8L23,27.8z></path><path stroke=none d=M23,27.8c1.1,1.2,3.4,2.2,5,2.2h2H0h2c1.7,0,3.9-1,5-2.2l6.6-7.2c0.7-0.8,2-0.8,2.7,0L23,27.8L23,27.8z>`);
 var PopperContext = createContext();
 function usePopperContext() {
   const context = useContext(PopperContext);
@@ -4216,7 +4216,7 @@ function PopperArrow(props) {
     }
   }, others, {
     get children() {
-      var _el$ = _tmpl$$j(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild; _el$3.nextSibling;
+      var _el$ = _tmpl$$k(), _el$2 = _el$.firstChild, _el$3 = _el$2.firstChild; _el$3.nextSibling;
       createRenderEffect(() => setAttribute(_el$2, "transform", rotate()));
       return _el$;
     }
@@ -9731,36 +9731,39 @@ const get = () => {
     return id;
 };
 
-const main = "_main_10m9e_62";
-const piano = "_piano_10m9e_67";
-const note = "_note_10m9e_73";
-const selected = "_selected_10m9e_75";
-const now$1 = "_now_10m9e_80";
-const hud = "_hud_10m9e_87";
-const topHudContainer = "_topHudContainer_10m9e_100";
-const bottomHudContainer = "_bottomHudContainer_10m9e_101";
-const topRightHud = "_topRightHud_10m9e_111";
-const topLeftHud = "_topLeftHud_10m9e_112";
-const bottomLeftHud = "_bottomLeftHud_10m9e_113";
-const listContainer = "_listContainer_10m9e_122";
-const list = "_list_10m9e_122";
-const bottomRightHud = "_bottomRightHud_10m9e_162";
-const contentHide = "_contentHide_10m9e_1";
-const contentShow = "_contentShow_10m9e_1";
-const button = "_button_10m9e_349";
-const active = "_active_10m9e_365";
-const horizontal = "_horizontal_10m9e_380";
-const trigger = "_trigger_10m9e_420";
-const numberButton = "_numberButton_10m9e_426";
-const textContainer = "_textContainer_10m9e_441";
-const numberButtonLabel = "_numberButtonLabel_10m9e_445";
-const numberButtonValue = "_numberButtonValue_10m9e_452";
-const buttonContainer = "_buttonContainer_10m9e_468";
+const main = "_main_18j8c_62";
+const piano = "_piano_18j8c_67";
+const note = "_note_18j8c_73";
+const selected = "_selected_18j8c_75";
+const inactive = "_inactive_18j8c_78";
+const now$1 = "_now_18j8c_83";
+const hud = "_hud_18j8c_90";
+const topHudContainer = "_topHudContainer_18j8c_103";
+const bottomHudContainer = "_bottomHudContainer_18j8c_104";
+const topRightHud = "_topRightHud_18j8c_114";
+const topLeftHud = "_topLeftHud_18j8c_115";
+const bottomLeftHud = "_bottomLeftHud_18j8c_116";
+const listContainer = "_listContainer_18j8c_125";
+const list = "_list_18j8c_125";
+const bottomRightHud = "_bottomRightHud_18j8c_165";
+const desktop = "_desktop_18j8c_225";
+const contentHide = "_contentHide_18j8c_1";
+const contentShow = "_contentShow_18j8c_1";
+const button = "_button_18j8c_358";
+const active = "_active_18j8c_374";
+const horizontal = "_horizontal_18j8c_389";
+const trigger = "_trigger_18j8c_429";
+const numberButton = "_numberButton_18j8c_435";
+const textContainer = "_textContainer_18j8c_450";
+const numberButtonLabel = "_numberButtonLabel_18j8c_454";
+const numberButtonValue = "_numberButtonValue_18j8c_461";
+const buttonContainer = "_buttonContainer_18j8c_477";
 const styles = {
 	main: main,
 	piano: piano,
 	note: note,
 	selected: selected,
+	inactive: inactive,
 	now: now$1,
 	hud: hud,
 	topHudContainer: topHudContainer,
@@ -9771,19 +9774,20 @@ const styles = {
 	listContainer: listContainer,
 	list: list,
 	bottomRightHud: bottomRightHud,
-	"dropdown-menu__trigger": "_dropdown-menu__trigger_10m9e_223",
-	"dropdown-menu__content": "_dropdown-menu__content_10m9e_238",
-	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_10m9e_242",
+	desktop: desktop,
+	"dropdown-menu__trigger": "_dropdown-menu__trigger_18j8c_232",
+	"dropdown-menu__content": "_dropdown-menu__content_18j8c_247",
+	"dropdown-menu__sub-content": "_dropdown-menu__sub-content_18j8c_251",
 	contentHide: contentHide,
 	contentShow: contentShow,
-	"dropdown-menu__item": "_dropdown-menu__item_10m9e_259",
-	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_10m9e_263",
-	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_10m9e_264",
-	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_10m9e_265",
-	"dropdown-menu__group-label": "_dropdown-menu__group-label_10m9e_295",
-	"dropdown-menu__separator": "_dropdown-menu__separator_10m9e_300",
-	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_10m9e_305",
-	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_10m9e_314",
+	"dropdown-menu__item": "_dropdown-menu__item_18j8c_268",
+	"dropdown-menu__checkbox-item": "_dropdown-menu__checkbox-item_18j8c_272",
+	"dropdown-menu__radio-item": "_dropdown-menu__radio-item_18j8c_273",
+	"dropdown-menu__sub-trigger": "_dropdown-menu__sub-trigger_18j8c_274",
+	"dropdown-menu__group-label": "_dropdown-menu__group-label_18j8c_304",
+	"dropdown-menu__separator": "_dropdown-menu__separator_18j8c_309",
+	"dropdown-menu__item-indicator": "_dropdown-menu__item-indicator_18j8c_314",
+	"dropdown-menu__item-right-slot": "_dropdown-menu__item-right-slot_18j8c_323",
 	button: button,
 	active: active,
 	horizontal: horizontal,
@@ -39795,6 +39799,7 @@ const [selectedNotes, setSelectedNotes] = createSignal([]);
 const [selectionArea, setSelectionArea] = createSignal();
 const [selectionPresence, setSelectionPresence] = createSignal();
 const [clipboard, setClipboard] = createSignal();
+const [selectionLocked, setSelectionLocked] = createSignal(false);
 const [playing, setPlaying] = createSignal(false);
 const [internalTimeOffset, setInternalTimeOffset] = createSignal(0);
 const [playingNotes, setPlayingNotes] = createStore([]);
@@ -39802,7 +39807,8 @@ const [now, setNow] = createSignal(0);
 const [loop, setLoop] = createStore({ time: 0, duration: 4 });
 const [volume, setVolume] = createSignal(10);
 const [origin, setOrigin] = createSignal({ x: 0, y: 6 * HEIGHT * 12 });
-const [zoom, setZoom] = createSignal({ x: 1, y: 1 });
+const [_zoom, setZoom] = createSignal({ x: 100, y: 100 });
+const zoom = createMemo(() => ({ x: _zoom().x / 100, y: _zoom().y / 100 }));
 const projectedWidth = () => WIDTH * zoom().x;
 const projectedHeight = () => HEIGHT * zoom().y;
 const projectedOrigin = createMemo(() => {
@@ -39950,7 +39956,50 @@ async function handleCreateNote(event) {
   setSelectedNotes([]);
   clipOverlappingNotes(note);
 }
-async function handleSelectionBox(event) {
+async function handleErase(event) {
+  await handleSelectionArea(event);
+  setDoc((doc2) => {
+    for (let index = doc2.notes.length - 1; index >= 0; index--) {
+      if (isNoteSelected(doc2.notes[index])) {
+        doc2.notes.splice(index, 1);
+      }
+    }
+  });
+  setSelectedNotes([]);
+  setSelectionArea();
+  setSelectionPresence();
+}
+async function handleSnip(event) {
+  await handleSelectionArea(event);
+  const cutLine = selectionArea()?.start.x;
+  if (!cutLine) {
+    console.error("Attempting to slice without slice-line");
+    return;
+  }
+  const newNotes = selectedNotes().filter((note) => note.time < selectionArea().start.x).map((note) => {
+    return {
+      id: get(),
+      active: true,
+      duration: note.duration - (cutLine - note.time),
+      pitch: note.pitch,
+      time: cutLine,
+      velocity: note.velocity
+    };
+  });
+  setDoc((doc2) => doc2.notes.push(...newNotes));
+  setSelectedNotes((notes) => [...notes, ...newNotes]);
+  setDoc((doc2) => {
+    doc2.notes.forEach((note) => {
+      if (isNoteSelected(note) && note.time < cutLine) {
+        note.duration = cutLine - note.time;
+      }
+    });
+  });
+  setSelectedNotes([]);
+  setSelectionArea();
+  setSelectionPresence();
+}
+async function handleSelectionArea(event) {
   const offset = event.currentTarget.getBoundingClientRect().left;
   const position = {
     x: event.clientX - projectedOrigin().x - offset,
@@ -39991,6 +40040,94 @@ async function handlePan(event) {
     setOrigin({
       x: initialOrigin.x + delta.x / zoom().x,
       y: initialOrigin.y + delta.y / zoom().y
+    });
+  });
+}
+async function handleDragSelectedNotes(event) {
+  event.stopPropagation();
+  event.preventDefault();
+  selectedNotes().sort((a, b) => a.time < b.time ? -1 : 1);
+  if (selectedNotes().length > 0) {
+    const offset = selectedNotes()[0].time % timeScale();
+    const initialNotes = Object.fromEntries(
+      selectedNotes().map((note) => [
+        note.id,
+        {
+          time: note.time,
+          pitch: note.pitch
+        }
+      ])
+    );
+    let previous = 0;
+    const { delta } = await pointerHelper(event, ({ delta: delta2 }) => {
+      let time = Math.floor(delta2.x / projectedWidth() / timeScale()) * timeScale();
+      if (time === timeScale() * -1) {
+        time = 0;
+      } else if (time < timeScale() * -1) {
+        time = time + timeScale();
+      }
+      const hasChanged = previous !== time;
+      previous = time;
+      setDoc((doc2) => {
+        doc2.notes.forEach((note) => {
+          if (isNoteSelected(note)) {
+            note.time = initialNotes[note.id].time + time - offset;
+            note.pitch = initialNotes[note.id].pitch - Math.floor((delta2.y + projectedHeight() / 2) / projectedHeight());
+            if (hasChanged) {
+              playNote(note);
+            }
+          }
+        });
+      });
+      markOverlappingNotes(...selectedNotes());
+    });
+    if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) ;
+    clipOverlappingNotes(...selectedNotes());
+  }
+}
+async function handleStretchSelectedNotes(event) {
+  event.stopPropagation();
+  event.preventDefault();
+  const initialSelectedNotes = Object.fromEntries(
+    selectedNotes().map((note) => [note.id, { ...note }])
+  );
+  await pointerHelper(event, ({ delta }) => {
+    batch(() => {
+      const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale();
+      setDoc((doc2) => {
+        doc2.notes.forEach((note) => {
+          if (!isNoteSelected(note)) return;
+          const duration = initialSelectedNotes[note.id].duration + deltaX;
+          if (duration > timeScale()) {
+            note.duration = duration;
+          } else {
+            note.time = initialSelectedNotes[note.id].time;
+            note.duration = timeScale();
+          }
+        });
+      });
+      markOverlappingNotes(...selectedNotes());
+    });
+  });
+  clipOverlappingNotes(...selectedNotes());
+  if (selectedNotes().length === 1) {
+    setSelectedNotes([]);
+  }
+}
+async function handleVelocitySelectedNotes(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const initialNotes = Object.fromEntries(selectedNotes().map((note) => [note.id, { ...note }]));
+  await pointerHelper(event, ({ delta }) => {
+    setDoc((doc2) => {
+      doc2.notes.forEach((note) => {
+        if (!note.active) {
+          note.active = true;
+        }
+        if (note.id in initialNotes) {
+          note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100));
+        }
+      });
     });
   });
 }
@@ -40081,12 +40218,6 @@ function clipOverlappingNotes(...sources) {
       break;
     }
   });
-  setDoc((doc2) => {
-    doc2.notes.forEach((note) => {
-      delete note._duration;
-      delete note._remove;
-    });
-  });
 }
 function markOverlappingNotes(...sources) {
   sources.sort((a, b) => a.time < b.time ? -1 : 1);
@@ -40153,29 +40284,36 @@ function mod(n, m) {
   return (n % m + m) % m;
 }
 
-var _tmpl$$i = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M18 12.4H6M11.4 7L6 12.4l5.4 5.4">`);
+var _tmpl$$j = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M18 12.4H6M11.4 7L6 12.4l5.4 5.4">`);
 const IconGrommetIconsFormPreviousLink = (props = {}) => (() => {
+  var _el$ = _tmpl$$j();
+  spread(_el$, props, true, true);
+  return _el$;
+})();
+
+var _tmpl$$i = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M6 12.4h12M12.6 7l5.4 5.4l-5.4 5.4">`);
+const IconGrommetIconsFormNextLink = (props = {}) => (() => {
   var _el$ = _tmpl$$i();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$h = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M6 12.4h12M12.6 7l5.4 5.4l-5.4 5.4">`);
-const IconGrommetIconsFormNextLink = (props = {}) => (() => {
+var _tmpl$$h = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M4.5 17H1V1h16v3.5M7 7h16v16H7zm8 4v8zm-4 4h8z">`);
+const IconGrommetIconsDuplicate = (props = {}) => (() => {
   var _el$ = _tmpl$$h();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$g = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M4.5 17H1V1h16v3.5M7 7h16v16H7zm8 4v8zm-4 4h8z">`);
-const IconGrommetIconsDuplicate = (props = {}) => (() => {
+var _tmpl$$g = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M13 20c6-1 8-6 8-10m-7 6l-2 4l4 3M0 9l4-3l3 4m2 10c-6-3-7-8-5-14m16 1C16 1 10 1 6 4.006M20 2v5h-5">`);
+const IconGrommetIconsCycle = (props = {}) => (() => {
   var _el$ = _tmpl$$g();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$f = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M13 20c6-1 8-6 8-10m-7 6l-2 4l4 3M0 9l4-3l3 4m2 10c-6-3-7-8-5-14m16 1C16 1 10 1 6 4.006M20 2v5h-5">`);
-const IconGrommetIconsCycle = (props = {}) => (() => {
+var _tmpl$$f = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M8.5 5.5L12 2l3.5 3.5M22 12H2m3.5-3.5L2 12l3.5 3.5m13 0L22 12l-3.5-3.5M12 22V2M8.5 18.5L12 22l3.5-3.5">`);
+const IconGrommetIconsPan = (props = {}) => (() => {
   var _el$ = _tmpl$$f();
   spread(_el$, props, true, true);
   return _el$;
@@ -40188,57 +40326,57 @@ const IconGrommetIconsMusic = (props = {}) => (() => {
   return _el$;
 })();
 
-var _tmpl$$d = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M8 1h6zm11.188 18.472L16 22l-3.5-4.5l-3 3.5L7 7l13 6.5l-4.5 1.5zM19 4V1h-3M6 1H3v3m0 10v3h3M19 6v4zM3 12V6z">`);
-const IconGrommetIconsSelect = (props = {}) => (() => {
+var _tmpl$$d = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M12 0v24M2 12h10m10 0H12M6 8l-4 4l4 4m12-8l4 4l-4 4">`);
+const IconGrommetIconsShift = (props = {}) => (() => {
   var _el$ = _tmpl$$d();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$c = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M12 0v24M2 12h10m10 0H12M6 8l-4 4l4 4m12-8l4 4l-4 4">`);
-const IconGrommetIconsShift = (props = {}) => (() => {
+var _tmpl$$c = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M12 18a6 6 0 1 0 0-12a6 6 0 0 0 0 12ZM8 8l3 3m1 11a9.99 9.99 0 0 0 8.307-4.43A9.95 9.95 0 0 0 22 12c0-5.523-4.477-10-10-10S2 6.477 2 12">`);
+const IconGrommetIconsVolumeControl = (props = {}) => (() => {
   var _el$ = _tmpl$$c();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$b = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M12 18a6 6 0 1 0 0-12a6 6 0 0 0 0 12ZM8 8l3 3m1 11a9.99 9.99 0 0 0 8.307-4.43A9.95 9.95 0 0 0 22 12c0-5.523-4.477-10-10-10S2 6.477 2 12">`);
-const IconGrommetIconsVolumeControl = (props = {}) => (() => {
+var _tmpl$$b = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M7 21L22 6l-4-4L2 18l3 3h14M6 14l4 4">`);
+const IconGrommetIconsErase = (props = {}) => (() => {
   var _el$ = _tmpl$$b();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$a = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M8.5 5.5L12 2l3.5 3.5M22 12H2m3.5-3.5L2 12l3.5 3.5m13 0L22 12l-3.5-3.5M12 22V2M8.5 18.5L12 22l3.5-3.5">`);
-const IconGrommetIconsPan = (props = {}) => (() => {
+var _tmpl$$a = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M23 4L8 16zm0 16L8 8zM5 9a3 3 0 1 0 0-6a3 3 0 0 0 0 6Zm0 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z">`);
+const IconGrommetIconsCut = (props = {}) => (() => {
   var _el$ = _tmpl$$a();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$9 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M9 15h8zm0-4h10zm0-4h4zm7-6v6h6M6 5H2v18h16v-4m4 0H6V1h11l5 5z">`);
-const IconGrommetIconsCopy = (props = {}) => (() => {
+var _tmpl$$9 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M8 1h6zm11.188 18.472L16 22l-3.5-4.5l-3 3.5L7 7l13 6.5l-4.5 1.5zM19 4V1h-3M6 1H3v3m0 10v3h3M19 6v4zM3 12V6z">`);
+const IconGrommetIconsSelect = (props = {}) => (() => {
   var _el$ = _tmpl$$9();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$8 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M16 3h5v20H3V3h5m0-2h8v5H8z">`);
-const IconGrommetIconsClipboard = (props = {}) => (() => {
+var _tmpl$$8 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M19 23V11H5v12zm-7-8v4m5-8V7c0-3 0-6-5-6S7 4 7 7v4">`);
+const IconGrommetIconsLock = (props = {}) => (() => {
   var _el$ = _tmpl$$8();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$7 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M23 4L8 16zm0 16L8 8zM5 9a3 3 0 1 0 0-6a3 3 0 0 0 0 6Zm0 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6Z">`);
-const IconGrommetIconsCut = (props = {}) => (() => {
+var _tmpl$$7 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M9 15h8zm0-4h10zm0-4h4zm7-6v6h6M6 5H2v18h16v-4m4 0H6V1h11l5 5z">`);
+const IconGrommetIconsCopy = (props = {}) => (() => {
   var _el$ = _tmpl$$7();
   spread(_el$, props, true, true);
   return _el$;
 })();
 
-var _tmpl$$6 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M7 21L22 6l-4-4L2 18l3 3h14M6 14l4 4">`);
-const IconGrommetIconsErase = (props = {}) => (() => {
+var _tmpl$$6 = /* @__PURE__ */ template(`<svg viewBox="0 0 24 24"width=1.2em height=1.2em><path fill=none stroke=currentColor stroke-width=2 d="M16 3h5v20H3V3h5m0-2h8v5H8z">`);
+const IconGrommetIconsClipboard = (props = {}) => (() => {
   var _el$ = _tmpl$$6();
   spread(_el$, props, true, true);
   return _el$;
@@ -40379,85 +40517,7 @@ function NumberButton(props) {
   })();
 }
 function Note(props) {
-  async function handleSelect(event) {
-    if (isNoteSelected(props.note)) {
-      event.stopPropagation();
-      event.preventDefault();
-      selectedNotes().sort((a, b) => a.time < b.time ? -1 : 1);
-      if (selectedNotes().length > 0) {
-        const offset = selectedNotes()[0].time % timeScale();
-        const initialNotes = Object.fromEntries(selectedNotes().map((note) => [note.id, {
-          time: note.time,
-          pitch: note.pitch
-        }]));
-        let previous = 0;
-        const {
-          delta
-        } = await pointerHelper(event, ({
-          delta: delta2
-        }) => {
-          let time = Math.floor(delta2.x / projectedWidth() / timeScale()) * timeScale();
-          if (time === timeScale() * -1) {
-            time = 0;
-          } else if (time < timeScale() * -1) {
-            time = time + timeScale();
-          }
-          const hasChanged = previous !== time;
-          previous = time;
-          setDoc((doc2) => {
-            doc2.notes.forEach((note) => {
-              if (isNoteSelected(note)) {
-                note.time = initialNotes[note.id].time + time - offset;
-                note.pitch = initialNotes[note.id].pitch - Math.floor((delta2.y + projectedHeight() / 2) / projectedHeight());
-                if (hasChanged) {
-                  playNote(note);
-                }
-              }
-            });
-          });
-          markOverlappingNotes(...selectedNotes());
-        });
-        if (Math.floor((delta.x + projectedWidth() / 2) / projectedWidth()) !== 0) ;
-        clipOverlappingNotes(...selectedNotes());
-      }
-    }
-  }
-  async function handleStretch(event) {
-    event.stopPropagation();
-    event.preventDefault();
-    if (!isNoteSelected(props.note)) {
-      setSelectedNotes([props.note]);
-    }
-    const initialSelectedNotes = Object.fromEntries(selectedNotes().map((note) => [note.id, {
-      ...note
-    }]));
-    console.log(initialSelectedNotes.length);
-    await pointerHelper(event, ({
-      delta
-    }) => {
-      batch(() => {
-        const deltaX = Math.floor(delta.x / projectedWidth() / timeScale()) * timeScale();
-        setDoc((doc2) => {
-          doc2.notes.forEach((note) => {
-            if (!isNoteSelected(note)) return;
-            const duration = initialSelectedNotes[note.id].duration + deltaX;
-            if (duration > timeScale()) {
-              note.duration = duration;
-            } else {
-              note.time = initialSelectedNotes[note.id].time;
-              note.duration = timeScale();
-            }
-          });
-        });
-        markOverlappingNotes(...selectedNotes());
-      });
-    });
-    clipOverlappingNotes(...selectedNotes());
-    if (selectedNotes().length === 1) {
-      setSelectedNotes([]);
-    }
-  }
-  async function handleNote(event) {
+  async function handleDragNote(event) {
     event.stopPropagation();
     event.preventDefault();
     const initialTime = props.note.time;
@@ -40484,78 +40544,137 @@ function Note(props) {
     setSelectedNotes([]);
     clipOverlappingNotes(props.note);
   }
-  async function handleVelocity(event) {
-    let initiallySelected = !!selectedNotes().find(filterNote(props.note));
-    if (!initiallySelected) {
-      setSelectedNotes([props.note]);
-    }
-    const initialNotes = Object.fromEntries(selectedNotes().map((note) => [note.id, {
-      ...note
-    }]));
-    await pointerHelper(event, ({
-      delta
-    }) => {
-      setDoc((doc2) => {
-        doc2.notes.forEach((note) => {
-          if (!note.active) {
-            note.active = true;
+  const shouldSnip = () => mode() === "snip" && isNoteSelected(props.note) && selectionArea() && props.note.time < selectionArea().start.x && props.note.time + props.note.duration > selectionArea().start.x;
+  return createComponent(Show, {
+    get when() {
+      return shouldSnip();
+    },
+    get fallback() {
+      return (() => {
+        var _el$13 = _tmpl$3();
+        _el$13.$$pointerdown = async (event) => {
+          let initiallySelected = isNoteSelected(props.note);
+          switch (mode()) {
+            case "select":
+              if (selectionLocked()) break;
+              if (initiallySelected) {
+                await handleDragSelectedNotes(event);
+              }
+              break;
+            case "stretch":
+              if (selectionLocked()) break;
+              if (!initiallySelected) {
+                setSelectedNotes([props.note]);
+              }
+              await handleStretchSelectedNotes(event);
+              if (!initiallySelected) {
+                setSelectedNotes([]);
+              }
+              break;
+            case "note":
+              await handleDragNote(event);
+              break;
+            case "velocity":
+              if (selectionLocked()) break;
+              if (!initiallySelected) {
+                setSelectedNotes([props.note]);
+              }
+              await handleVelocitySelectedNotes(event);
+              if (!initiallySelected && !selectionLocked()) {
+                setSelectedNotes([]);
+              }
+              break;
+            case "erase":
+              event.preventDefault();
+              event.stopPropagation();
+              setSelectedNotes([props.note]);
+              await pointerHelper(event);
+              setSelectedNotes([]);
+              setDoc((doc2) => {
+                const index = doc2.notes.findIndex((note) => note.id === props.note.id);
+                doc2.notes.splice(index, 1);
+              });
           }
-          if (note.id in initialNotes) {
-            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100));
+        };
+        _el$13.$$dblclick = () => {
+          if (mode() === "note") {
+            setDoc((doc2) => {
+              const index = doc2.notes.findIndex(filterNote(props.note));
+              if (index !== -1) doc2.notes.splice(index, 1);
+            });
           }
+        };
+        createRenderEffect((_p$) => {
+          var _v$8 = clsx(styles.note, isNoteSelected(props.note) ? mode() !== "erase" && mode() !== "snip" ? styles.selected : mode() === "erase" ? styles.inactive : void 0 : isNotePlaying(props.note) ? styles.selected : void 0), _v$9 = props.note.time * projectedWidth() + MARGIN, _v$10 = -props.note.pitch * projectedHeight() + MARGIN, _v$11 = (props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2, _v$12 = projectedHeight() - MARGIN * 2, _v$13 = props.note.active ? props.note.velocity * 0.5 + 0.5 : 0.25;
+          _v$8 !== _p$.e && setAttribute(_el$13, "class", _p$.e = _v$8);
+          _v$9 !== _p$.t && setAttribute(_el$13, "x", _p$.t = _v$9);
+          _v$10 !== _p$.a && setAttribute(_el$13, "y", _p$.a = _v$10);
+          _v$11 !== _p$.o && setAttribute(_el$13, "width", _p$.o = _v$11);
+          _v$12 !== _p$.i && setAttribute(_el$13, "height", _p$.i = _v$12);
+          _v$13 !== _p$.n && setAttribute(_el$13, "opacity", _p$.n = _v$13);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0,
+          a: void 0,
+          o: void 0,
+          i: void 0,
+          n: void 0
         });
-      });
-    });
-    if (!initiallySelected) {
-      setSelectedNotes([]);
+        return _el$13;
+      })();
+    },
+    children: (_) => {
+      const startDuration = () => selectionArea().start.x - props.note.time;
+      const endDuration = () => props.note.time + props.note.duration - selectionArea().start.x;
+      return [(() => {
+        var _el$14 = _tmpl$3();
+        createRenderEffect((_p$) => {
+          var _v$14 = clsx(styles.note), _v$15 = props.note.time * projectedWidth() + MARGIN, _v$16 = -props.note.pitch * projectedHeight() + MARGIN, _v$17 = startDuration() * projectedWidth() - MARGIN * 2, _v$18 = projectedHeight() - MARGIN * 2, _v$19 = props.note.velocity * 0.5 + 0.5;
+          _v$14 !== _p$.e && setAttribute(_el$14, "class", _p$.e = _v$14);
+          _v$15 !== _p$.t && setAttribute(_el$14, "x", _p$.t = _v$15);
+          _v$16 !== _p$.a && setAttribute(_el$14, "y", _p$.a = _v$16);
+          _v$17 !== _p$.o && setAttribute(_el$14, "width", _p$.o = _v$17);
+          _v$18 !== _p$.i && setAttribute(_el$14, "height", _p$.i = _v$18);
+          _v$19 !== _p$.n && setAttribute(_el$14, "opacity", _p$.n = _v$19);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0,
+          a: void 0,
+          o: void 0,
+          i: void 0,
+          n: void 0
+        });
+        return _el$14;
+      })(), (() => {
+        var _el$15 = _tmpl$3();
+        createRenderEffect((_p$) => {
+          var _v$20 = clsx(styles.note), _v$21 = (props.note.time + startDuration()) * projectedWidth() + MARGIN, _v$22 = -props.note.pitch * projectedHeight() + MARGIN, _v$23 = endDuration() * projectedWidth() - MARGIN * 2, _v$24 = projectedHeight() - MARGIN * 2, _v$25 = props.note.velocity * 0.5 + 0.5;
+          _v$20 !== _p$.e && setAttribute(_el$15, "class", _p$.e = _v$20);
+          _v$21 !== _p$.t && setAttribute(_el$15, "x", _p$.t = _v$21);
+          _v$22 !== _p$.a && setAttribute(_el$15, "y", _p$.a = _v$22);
+          _v$23 !== _p$.o && setAttribute(_el$15, "width", _p$.o = _v$23);
+          _v$24 !== _p$.i && setAttribute(_el$15, "height", _p$.i = _v$24);
+          _v$25 !== _p$.n && setAttribute(_el$15, "opacity", _p$.n = _v$25);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0,
+          a: void 0,
+          o: void 0,
+          i: void 0,
+          n: void 0
+        });
+        return _el$15;
+      })()];
     }
-  }
-  return (() => {
-    var _el$13 = _tmpl$3();
-    _el$13.$$pointerdown = async (event) => {
-      switch (mode()) {
-        case "select":
-          return await handleSelect(event);
-        case "stretch":
-          return handleStretch(event);
-        case "note":
-          return handleNote(event);
-        case "velocity":
-          return handleVelocity(event);
-      }
-    };
-    _el$13.$$dblclick = () => {
-      if (mode() === "note") {
-        setDoc((doc2) => {
-          const index = doc2.notes.findIndex(filterNote(props.note));
-          if (index !== -1) doc2.notes.splice(index, 1);
-        });
-      }
-    };
-    createRenderEffect((_p$) => {
-      var _v$8 = clsx(styles.note, (isNoteSelected(props.note) || isNotePlaying(props.note)) && styles.selected), _v$9 = props.note.time * projectedWidth() + MARGIN, _v$10 = -props.note.pitch * projectedHeight() + MARGIN, _v$11 = (props.note._duration ?? props.note.duration) * projectedWidth() - MARGIN * 2, _v$12 = projectedHeight() - MARGIN * 2, _v$13 = !props.note._remove && props.note.active ? props.note.velocity * 0.75 + 0.25 : 0.25;
-      _v$8 !== _p$.e && setAttribute(_el$13, "class", _p$.e = _v$8);
-      _v$9 !== _p$.t && setAttribute(_el$13, "x", _p$.t = _v$9);
-      _v$10 !== _p$.a && setAttribute(_el$13, "y", _p$.a = _v$10);
-      _v$11 !== _p$.o && setAttribute(_el$13, "width", _p$.o = _v$11);
-      _v$12 !== _p$.i && setAttribute(_el$13, "height", _p$.i = _v$12);
-      _v$13 !== _p$.n && setAttribute(_el$13, "opacity", _p$.n = _v$13);
-      return _p$;
-    }, {
-      e: void 0,
-      t: void 0,
-      a: void 0,
-      o: void 0,
-      i: void 0,
-      n: void 0
-    });
-    return _el$13;
-  })();
+  });
 }
 function Piano() {
   const [dimensions2, setDimensions2] = createSignal();
   return (() => {
-    var _el$14 = _tmpl$4();
+    var _el$16 = _tmpl$4();
     use((element) => {
       onMount(() => {
         const observer = new ResizeObserver(() => {
@@ -40564,11 +40683,11 @@ function Piano() {
         observer.observe(element);
         onCleanup(() => observer.disconnect());
       });
-    }, _el$14);
-    _el$14.style.setProperty("width", "var(--width-piano)");
-    _el$14.style.setProperty("fill", "100%");
-    _el$14.style.setProperty("background", "var(--color-piano-white)");
-    insert(_el$14, createComponent(Show, {
+    }, _el$16);
+    _el$16.style.setProperty("width", "var(--width-piano)");
+    _el$16.style.setProperty("fill", "100%");
+    _el$16.style.setProperty("background", "var(--color-piano-white)");
+    insert(_el$16, createComponent(Show, {
       get when() {
         return dimensions2();
       },
@@ -40576,54 +40695,54 @@ function Piano() {
         value: dimensions3,
         get children() {
           return [createComponent(PlayingNotes, {}), (() => {
-            var _el$15 = _tmpl$5();
-            insert(_el$15, createComponent(Index, {
+            var _el$17 = _tmpl$5();
+            insert(_el$17, createComponent(Index, {
               get each() {
                 return new Array(Math.floor(dimensions3().height / projectedHeight()) + 2);
               },
               children: (_, index) => (() => {
-                var _el$16 = _tmpl$6();
+                var _el$18 = _tmpl$6();
                 createRenderEffect((_p$) => {
-                  var _v$14 = index * projectedHeight(), _v$15 = `${projectedHeight()}px`, _v$16 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)";
-                  _v$14 !== _p$.e && setAttribute(_el$16, "y", _p$.e = _v$14);
-                  _v$15 !== _p$.t && ((_p$.t = _v$15) != null ? _el$16.style.setProperty("height", _v$15) : _el$16.style.removeProperty("height"));
-                  _v$16 !== _p$.a && ((_p$.a = _v$16) != null ? _el$16.style.setProperty("fill", _v$16) : _el$16.style.removeProperty("fill"));
+                  var _v$26 = index * projectedHeight(), _v$27 = `${projectedHeight()}px`, _v$28 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-black)";
+                  _v$26 !== _p$.e && setAttribute(_el$18, "y", _p$.e = _v$26);
+                  _v$27 !== _p$.t && ((_p$.t = _v$27) != null ? _el$18.style.setProperty("height", _v$27) : _el$18.style.removeProperty("height"));
+                  _v$28 !== _p$.a && ((_p$.a = _v$28) != null ? _el$18.style.setProperty("fill", _v$28) : _el$18.style.removeProperty("fill"));
                   return _p$;
                 }, {
                   e: void 0,
                   t: void 0,
                   a: void 0
                 });
-                return _el$16;
+                return _el$18;
               })()
             }));
-            createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$15.style.setProperty("transform", _$p) : _el$15.style.removeProperty("transform"));
-            return _el$15;
+            createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$17.style.setProperty("transform", _$p) : _el$17.style.removeProperty("transform"));
+            return _el$17;
           })()];
         }
       })
     }));
-    createRenderEffect(() => setAttribute(_el$14, "class", styles.piano));
-    return _el$14;
+    createRenderEffect(() => setAttribute(_el$16, "class", styles.piano));
+    return _el$16;
   })();
 }
 function PlayingNotes() {
   const dimensions2 = useDimensions();
   return (() => {
-    var _el$17 = _tmpl$5();
-    insert(_el$17, createComponent(Index, {
+    var _el$19 = _tmpl$5();
+    insert(_el$19, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().height / projectedHeight()) + 2);
       },
       children: (_, index) => {
         return (() => {
-          var _el$18 = _tmpl$7();
+          var _el$20 = _tmpl$7();
           createRenderEffect((_p$) => {
-            var _v$17 = index * projectedHeight(), _v$18 = projectedWidth(), _v$19 = projectedHeight(), _v$20 = isPitchPlaying(-(index + Math.floor(-projectedOrigin().y / projectedHeight()))) ? "var(--color-note-selected)" : "none";
-            _v$17 !== _p$.e && setAttribute(_el$18, "y", _p$.e = _v$17);
-            _v$18 !== _p$.t && setAttribute(_el$18, "width", _p$.t = _v$18);
-            _v$19 !== _p$.a && setAttribute(_el$18, "height", _p$.a = _v$19);
-            _v$20 !== _p$.o && ((_p$.o = _v$20) != null ? _el$18.style.setProperty("fill", _v$20) : _el$18.style.removeProperty("fill"));
+            var _v$29 = index * projectedHeight(), _v$30 = projectedWidth(), _v$31 = projectedHeight(), _v$32 = isPitchPlaying(-(index + Math.floor(-projectedOrigin().y / projectedHeight()))) ? "var(--color-note-selected)" : "none";
+            _v$29 !== _p$.e && setAttribute(_el$20, "y", _p$.e = _v$29);
+            _v$30 !== _p$.t && setAttribute(_el$20, "width", _p$.t = _v$30);
+            _v$31 !== _p$.a && setAttribute(_el$20, "height", _p$.a = _v$31);
+            _v$32 !== _p$.o && ((_p$.o = _v$32) != null ? _el$20.style.setProperty("fill", _v$32) : _el$20.style.removeProperty("fill"));
             return _p$;
           }, {
             e: void 0,
@@ -40631,12 +40750,12 @@ function PlayingNotes() {
             a: void 0,
             o: void 0
           });
-          return _el$18;
+          return _el$20;
         })();
       }
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$17.style.setProperty("transform", _$p) : _el$17.style.removeProperty("transform"));
-    return _el$17;
+    createRenderEffect((_$p) => (_$p = `translateY(${mod(-projectedOrigin().y, projectedHeight()) * -1}px)`) != null ? _el$19.style.setProperty("transform", _$p) : _el$19.style.removeProperty("transform"));
+    return _el$19;
   })();
 }
 function Ruler(props) {
@@ -40734,193 +40853,174 @@ function Ruler(props) {
     }, 250);
   }));
   return [(() => {
-    var _el$19 = _tmpl$8();
-    _el$19.$$pointerdown = handleCreateLoop;
-    createRenderEffect((_p$) => {
-      var _v$21 = dimensions2().width, _v$22 = projectedHeight();
-      _v$21 !== _p$.e && setAttribute(_el$19, "width", _p$.e = _v$21);
-      _v$22 !== _p$.t && setAttribute(_el$19, "height", _p$.t = _v$22);
-      return _p$;
-    }, {
-      e: void 0,
-      t: void 0
-    });
-    return _el$19;
+    var _el$21 = _tmpl$8();
+    _el$21.$$pointerdown = handleCreateLoop;
+    setAttribute(_el$21, "height", HEIGHT);
+    createRenderEffect(() => setAttribute(_el$21, "width", dimensions2().width));
+    return _el$21;
   })(), createComponent(Show, {
     get when() {
       return props.loop;
     },
     children: (loop2) => (() => {
-      var _el$24 = _tmpl$10();
-      _el$24.$$pointerdown = (event) => handleAdjustLoop(event, loop2());
-      _el$24.style.setProperty("transition", "fill 0.25s");
+      var _el$26 = _tmpl$10();
+      _el$26.$$pointerdown = (event) => handleAdjustLoop(event, loop2());
+      setAttribute(_el$26, "height", HEIGHT);
+      _el$26.style.setProperty("transition", "fill 0.25s");
       createRenderEffect((_p$) => {
-        var _v$30 = loop2().time * projectedWidth(), _v$31 = loop2().duration * projectedWidth(), _v$32 = projectedHeight(), _v$33 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$34 = `translateX(${projectedOrigin().x}px)`;
-        _v$30 !== _p$.e && setAttribute(_el$24, "x", _p$.e = _v$30);
-        _v$31 !== _p$.t && setAttribute(_el$24, "width", _p$.t = _v$31);
-        _v$32 !== _p$.a && setAttribute(_el$24, "height", _p$.a = _v$32);
-        _v$33 !== _p$.o && setAttribute(_el$24, "fill", _p$.o = _v$33);
-        _v$34 !== _p$.i && ((_p$.i = _v$34) != null ? _el$24.style.setProperty("transform", _v$34) : _el$24.style.removeProperty("transform"));
+        var _v$36 = loop2().time * projectedWidth(), _v$37 = loop2().duration * projectedWidth(), _v$38 = selected() || trigger() ? "var(--color-loop-selected)" : "var(--color-loop)", _v$39 = `translateX(${projectedOrigin().x}px)`;
+        _v$36 !== _p$.e && setAttribute(_el$26, "x", _p$.e = _v$36);
+        _v$37 !== _p$.t && setAttribute(_el$26, "width", _p$.t = _v$37);
+        _v$38 !== _p$.a && setAttribute(_el$26, "fill", _p$.a = _v$38);
+        _v$39 !== _p$.o && ((_p$.o = _v$39) != null ? _el$26.style.setProperty("transform", _v$39) : _el$26.style.removeProperty("transform"));
         return _p$;
       }, {
         e: void 0,
         t: void 0,
         a: void 0,
-        o: void 0,
-        i: void 0
+        o: void 0
       });
-      return _el$24;
+      return _el$26;
     })()
   }), (() => {
-    var _el$20 = _tmpl$3();
-    _el$20.style.setProperty("opacity", "0.5");
+    var _el$22 = _tmpl$3();
+    setAttribute(_el$22, "height", HEIGHT);
+    _el$22.style.setProperty("opacity", "0.5");
     createRenderEffect((_p$) => {
-      var _v$23 = styles.now, _v$24 = projectedWidth() * timeScale(), _v$25 = projectedHeight(), _v$26 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
-      _v$23 !== _p$.e && setAttribute(_el$20, "class", _p$.e = _v$23);
-      _v$24 !== _p$.t && setAttribute(_el$20, "width", _p$.t = _v$24);
-      _v$25 !== _p$.a && setAttribute(_el$20, "height", _p$.a = _v$25);
-      _v$26 !== _p$.o && ((_p$.o = _v$26) != null ? _el$20.style.setProperty("transform", _v$26) : _el$20.style.removeProperty("transform"));
-      return _p$;
-    }, {
-      e: void 0,
-      t: void 0,
-      a: void 0,
-      o: void 0
-    });
-    return _el$20;
-  })(), (() => {
-    var _el$21 = _tmpl$9();
-    createRenderEffect((_p$) => {
-      var _v$27 = dimensions2().width, _v$28 = projectedHeight(), _v$29 = projectedHeight();
-      _v$27 !== _p$.e && setAttribute(_el$21, "x2", _p$.e = _v$27);
-      _v$28 !== _p$.t && setAttribute(_el$21, "y1", _p$.t = _v$28);
-      _v$29 !== _p$.a && setAttribute(_el$21, "y2", _p$.a = _v$29);
+      var _v$33 = styles.now, _v$34 = projectedWidth() * timeScale(), _v$35 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
+      _v$33 !== _p$.e && setAttribute(_el$22, "class", _p$.e = _v$33);
+      _v$34 !== _p$.t && setAttribute(_el$22, "width", _p$.t = _v$34);
+      _v$35 !== _p$.a && ((_p$.a = _v$35) != null ? _el$22.style.setProperty("transform", _v$35) : _el$22.style.removeProperty("transform"));
       return _p$;
     }, {
       e: void 0,
       t: void 0,
       a: void 0
     });
-    return _el$21;
+    return _el$22;
   })(), (() => {
-    var _el$22 = _tmpl$5();
-    insert(_el$22, createComponent(Index, {
+    var _el$23 = _tmpl$9();
+    setAttribute(_el$23, "y1", HEIGHT);
+    setAttribute(_el$23, "y2", HEIGHT);
+    createRenderEffect(() => setAttribute(_el$23, "x2", dimensions2().width));
+    return _el$23;
+  })(), (() => {
+    var _el$24 = _tmpl$5();
+    insert(_el$24, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / projectedWidth() / 8) + 2);
       },
       children: (_, index) => (() => {
-        var _el$25 = _tmpl$11();
+        var _el$27 = _tmpl$11();
+        setAttribute(_el$27, "y2", HEIGHT);
         createRenderEffect((_p$) => {
-          var _v$35 = projectedHeight(), _v$36 = index * projectedWidth() * 8, _v$37 = index * projectedWidth() * 8;
-          _v$35 !== _p$.e && setAttribute(_el$25, "y2", _p$.e = _v$35);
-          _v$36 !== _p$.t && setAttribute(_el$25, "x1", _p$.t = _v$36);
-          _v$37 !== _p$.a && setAttribute(_el$25, "x2", _p$.a = _v$37);
+          var _v$40 = index * projectedWidth() * 8, _v$41 = index * projectedWidth() * 8;
+          _v$40 !== _p$.e && setAttribute(_el$27, "x1", _p$.e = _v$40);
+          _v$41 !== _p$.t && setAttribute(_el$27, "x2", _p$.t = _v$41);
           return _p$;
         }, {
           e: void 0,
-          t: void 0,
-          a: void 0
+          t: void 0
         });
-        return _el$25;
+        return _el$27;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$22.style.setProperty("transform", _$p) : _el$22.style.removeProperty("transform"));
-    return _el$22;
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$24.style.setProperty("transform", _$p) : _el$24.style.removeProperty("transform"));
+    return _el$24;
   })(), (() => {
-    var _el$23 = _tmpl$5();
-    insert(_el$23, createComponent(Index, {
+    var _el$25 = _tmpl$5();
+    insert(_el$25, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / projectedWidth()) + 2);
       },
       children: (_, index) => (() => {
-        var _el$26 = _tmpl$12();
+        var _el$28 = _tmpl$12();
+        setAttribute(_el$28, "y2", HEIGHT);
         createRenderEffect((_p$) => {
-          var _v$38 = projectedHeight(), _v$39 = index * projectedWidth(), _v$40 = index * projectedWidth();
-          _v$38 !== _p$.e && setAttribute(_el$26, "y2", _p$.e = _v$38);
-          _v$39 !== _p$.t && setAttribute(_el$26, "x1", _p$.t = _v$39);
-          _v$40 !== _p$.a && setAttribute(_el$26, "x2", _p$.a = _v$40);
+          var _v$42 = index * projectedWidth(), _v$43 = index * projectedWidth();
+          _v$42 !== _p$.e && setAttribute(_el$28, "x1", _p$.e = _v$42);
+          _v$43 !== _p$.t && setAttribute(_el$28, "x2", _p$.t = _v$43);
           return _p$;
         }, {
           e: void 0,
-          t: void 0,
-          a: void 0
+          t: void 0
         });
-        return _el$26;
+        return _el$28;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % projectedWidth()}px)`) != null ? _el$23.style.setProperty("transform", _$p) : _el$23.style.removeProperty("transform"));
-    return _el$23;
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % projectedWidth()}px)`) != null ? _el$25.style.setProperty("transform", _$p) : _el$25.style.removeProperty("transform"));
+    return _el$25;
   })()];
 }
 function Grid() {
   const dimensions2 = useDimensions();
   return [(() => {
-    var _el$27 = _tmpl$5();
-    insert(_el$27, createComponent(Index, {
+    var _el$29 = _tmpl$5();
+    insert(_el$29, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / projectedWidth() / timeScale()) + 2);
       },
       children: (_, index) => (() => {
-        var _el$29 = _tmpl$13();
+        var _el$31 = _tmpl$13();
         createRenderEffect((_p$) => {
-          var _v$41 = dimensions2().height, _v$42 = index * timeScale() * projectedWidth(), _v$43 = index * timeScale() * projectedWidth();
-          _v$41 !== _p$.e && setAttribute(_el$29, "y2", _p$.e = _v$41);
-          _v$42 !== _p$.t && setAttribute(_el$29, "x1", _p$.t = _v$42);
-          _v$43 !== _p$.a && setAttribute(_el$29, "x2", _p$.a = _v$43);
+          var _v$44 = dimensions2().height, _v$45 = index * timeScale() * projectedWidth(), _v$46 = index * timeScale() * projectedWidth();
+          _v$44 !== _p$.e && setAttribute(_el$31, "y2", _p$.e = _v$44);
+          _v$45 !== _p$.t && setAttribute(_el$31, "x1", _p$.t = _v$45);
+          _v$46 !== _p$.a && setAttribute(_el$31, "x2", _p$.a = _v$46);
           return _p$;
         }, {
           e: void 0,
           t: void 0,
           a: void 0
         });
-        return _el$29;
+        return _el$31;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * timeScale())}px)`) != null ? _el$27.style.setProperty("transform", _$p) : _el$27.style.removeProperty("transform"));
-    return _el$27;
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * timeScale())}px)`) != null ? _el$29.style.setProperty("transform", _$p) : _el$29.style.removeProperty("transform"));
+    return _el$29;
   })(), (() => {
-    var _el$28 = _tmpl$5();
-    insert(_el$28, createComponent(Index, {
+    var _el$30 = _tmpl$5();
+    insert(_el$30, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().width / projectedWidth() / 8) + 2);
       },
       children: (_, index) => (() => {
-        var _el$30 = _tmpl$11();
+        var _el$32 = _tmpl$11();
         createRenderEffect((_p$) => {
-          var _v$44 = dimensions2().height, _v$45 = index * projectedWidth() * 8, _v$46 = index * projectedWidth() * 8;
-          _v$44 !== _p$.e && setAttribute(_el$30, "y2", _p$.e = _v$44);
-          _v$45 !== _p$.t && setAttribute(_el$30, "x1", _p$.t = _v$45);
-          _v$46 !== _p$.a && setAttribute(_el$30, "x2", _p$.a = _v$46);
+          var _v$47 = dimensions2().height, _v$48 = index * projectedWidth() * 8, _v$49 = index * projectedWidth() * 8;
+          _v$47 !== _p$.e && setAttribute(_el$32, "y2", _p$.e = _v$47);
+          _v$48 !== _p$.t && setAttribute(_el$32, "x1", _p$.t = _v$48);
+          _v$49 !== _p$.a && setAttribute(_el$32, "x2", _p$.a = _v$49);
           return _p$;
         }, {
           e: void 0,
           t: void 0,
           a: void 0
         });
-        return _el$30;
+        return _el$32;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$28.style.setProperty("transform", _$p) : _el$28.style.removeProperty("transform"));
-    return _el$28;
+    createRenderEffect((_$p) => (_$p = `translateX(${projectedOrigin().x % (projectedWidth() * 8)}px)`) != null ? _el$30.style.setProperty("transform", _$p) : _el$30.style.removeProperty("transform"));
+    return _el$30;
   })()];
 }
 function PianoUnderlay() {
   const dimensions2 = useDimensions();
   return (() => {
-    var _el$31 = _tmpl$5();
-    insert(_el$31, createComponent(Index, {
+    var _el$33 = _tmpl$5();
+    insert(_el$33, createComponent(Index, {
       get each() {
         return new Array(Math.floor(dimensions2().height / projectedHeight()) + 2);
       },
       children: (_, index) => (() => {
-        var _el$32 = _tmpl$3();
-        _el$32.style.setProperty("pointer-events", "none");
+        var _el$34 = _tmpl$3();
+        _el$34.style.setProperty("pointer-events", "none");
         createRenderEffect((_p$) => {
-          var _v$47 = index * projectedHeight(), _v$48 = dimensions2().width, _v$49 = projectedHeight(), _v$50 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
-          _v$47 !== _p$.e && setAttribute(_el$32, "y", _p$.e = _v$47);
-          _v$48 !== _p$.t && setAttribute(_el$32, "width", _p$.t = _v$48);
-          _v$49 !== _p$.a && setAttribute(_el$32, "height", _p$.a = _v$49);
-          _v$50 !== _p$.o && ((_p$.o = _v$50) != null ? _el$32.style.setProperty("fill", _v$50) : _el$32.style.removeProperty("fill"));
+          var _v$50 = index * projectedHeight(), _v$51 = dimensions2().width, _v$52 = projectedHeight(), _v$53 = KEY_COLORS[mod(index + Math.floor(-projectedOrigin().y / projectedHeight()), KEY_COLORS.length)] ? "none" : "var(--color-piano-underlay)";
+          _v$50 !== _p$.e && setAttribute(_el$34, "y", _p$.e = _v$50);
+          _v$51 !== _p$.t && setAttribute(_el$34, "width", _p$.t = _v$51);
+          _v$52 !== _p$.a && setAttribute(_el$34, "height", _p$.a = _v$52);
+          _v$53 !== _p$.o && ((_p$.o = _v$53) != null ? _el$34.style.setProperty("fill", _v$53) : _el$34.style.removeProperty("fill"));
           return _p$;
         }, {
           e: void 0,
@@ -40928,39 +41028,39 @@ function PianoUnderlay() {
           a: void 0,
           o: void 0
         });
-        return _el$32;
+        return _el$34;
       })()
     }));
-    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-projectedOrigin().y, projectedHeight())}px)`) != null ? _el$31.style.setProperty("transform", _$p) : _el$31.style.removeProperty("transform"));
-    return _el$31;
+    createRenderEffect((_$p) => (_$p = `translateY(${-mod(-projectedOrigin().y, projectedHeight())}px)`) != null ? _el$33.style.setProperty("transform", _$p) : _el$33.style.removeProperty("transform"));
+    return _el$33;
   })();
 }
 function Hud() {
   return (() => {
-    var _el$33 = _tmpl$14(), _el$34 = _el$33.firstChild, _el$35 = _el$34.nextSibling;
-    insert(_el$34, createComponent(TopLeftHud, {}), null);
-    insert(_el$34, createComponent(TopRightHud, {}), null);
-    insert(_el$35, createComponent(BottomLeftHud, {}), null);
-    insert(_el$35, createComponent(BottomRightHud, {}), null);
+    var _el$35 = _tmpl$14(), _el$36 = _el$35.firstChild, _el$37 = _el$36.nextSibling;
+    insert(_el$36, createComponent(TopLeftHud, {}), null);
+    insert(_el$36, createComponent(TopRightHud, {}), null);
+    insert(_el$37, createComponent(BottomLeftHud, {}), null);
+    insert(_el$37, createComponent(BottomRightHud, {}), null);
     createRenderEffect((_p$) => {
-      var _v$51 = styles.hud, _v$52 = styles.topHudContainer, _v$53 = styles.bottomHudContainer;
-      _v$51 !== _p$.e && className(_el$33, _p$.e = _v$51);
-      _v$52 !== _p$.t && className(_el$34, _p$.t = _v$52);
-      _v$53 !== _p$.a && className(_el$35, _p$.a = _v$53);
+      var _v$54 = styles.hud, _v$55 = styles.topHudContainer, _v$56 = styles.bottomHudContainer;
+      _v$54 !== _p$.e && className(_el$35, _p$.e = _v$54);
+      _v$55 !== _p$.t && className(_el$36, _p$.t = _v$55);
+      _v$56 !== _p$.a && className(_el$37, _p$.a = _v$56);
       return _p$;
     }, {
       e: void 0,
       t: void 0,
       a: void 0
     });
-    return _el$33;
+    return _el$35;
   })();
 }
 function TopLeftHud() {
   return (() => {
-    var _el$36 = _tmpl$15(), _el$37 = _el$36.firstChild;
-    _el$36.style.setProperty("gap", "5px");
-    insert(_el$37, createComponent(ActionButton, {
+    var _el$38 = _tmpl$15(), _el$39 = _el$38.firstChild;
+    _el$38.style.setProperty("gap", "5px");
+    insert(_el$39, createComponent(ActionButton, {
       onClick: () => {
         const selection = doc().notes?.filter((note) => note.time >= loop.time && note.time < loop.time + loop.duration);
         if (!selection) return;
@@ -40977,90 +41077,17 @@ function TopLeftHud() {
         return createComponent(IconGrommetIconsDuplicate, {});
       }
     }), null);
-    insert(_el$37, createComponent(Show, {
-      get when() {
-        return mode() === "select";
+    insert(_el$39, createComponent(Button, {
+      get ["class"]() {
+        return mode() === "loop" ? styles.active : void 0;
       },
+      onClick: () => setMode("loop"),
       get children() {
-        return createComponent(ActionButton, {
-          get disabled() {
-            return selectionArea() === void 0;
-          },
-          get ["class"]() {
-            return clsx(mode() === "stretch" && styles.active);
-          },
-          onClick: () => {
-            const area = selectionArea();
-            if (!area) {
-              console.error("Trying to ");
-              return;
-            }
-            setLoop({
-              time: area.start.x,
-              duration: area.end.x - area.start.x
-            });
-          },
-          get children() {
-            return createComponent(IconGrommetIconsCycle, {
-              style: {
-                "margin-top": "3px"
-              }
-            });
+        return createComponent(IconGrommetIconsCycle, {
+          style: {
+            "margin-top": "3px"
           }
         });
-      }
-    }), null);
-    createRenderEffect((_p$) => {
-      var _v$54 = styles.topLeftHud, _v$55 = `${projectedHeight()}px`, _v$56 = styles.list;
-      _v$54 !== _p$.e && className(_el$36, _p$.e = _v$54);
-      _v$55 !== _p$.t && ((_p$.t = _v$55) != null ? _el$36.style.setProperty("top", _v$55) : _el$36.style.removeProperty("top"));
-      _v$56 !== _p$.a && className(_el$37, _p$.a = _v$56);
-      return _p$;
-    }, {
-      e: void 0,
-      t: void 0,
-      a: void 0
-    });
-    return _el$36;
-  })();
-}
-function TopRightHud() {
-  return (() => {
-    var _el$38 = _tmpl$15(), _el$39 = _el$38.firstChild;
-    insert(_el$39, createComponent(Button, {
-      get ["class"]() {
-        return mode() === "note" ? styles.active : void 0;
-      },
-      onClick: () => setMode("note"),
-      get children() {
-        return createComponent(IconGrommetIconsMusic, {});
-      }
-    }), null);
-    insert(_el$39, createComponent(Button, {
-      get ["class"]() {
-        return mode() === "select" ? styles.active : void 0;
-      },
-      onClick: () => setMode("select"),
-      get children() {
-        return createComponent(IconGrommetIconsSelect, {});
-      }
-    }), null);
-    insert(_el$39, createComponent(Button, {
-      get ["class"]() {
-        return mode() === "stretch" ? styles.active : void 0;
-      },
-      onClick: () => setMode("stretch"),
-      get children() {
-        return createComponent(IconGrommetIconsShift, {});
-      }
-    }), null);
-    insert(_el$39, createComponent(Button, {
-      get ["class"]() {
-        return mode() === "velocity" ? styles.active : void 0;
-      },
-      onClick: () => setMode("velocity"),
-      get children() {
-        return createComponent(IconGrommetIconsVolumeControl, {});
       }
     }), null);
     insert(_el$39, createComponent(Button, {
@@ -41072,7 +41099,78 @@ function TopRightHud() {
         return createComponent(IconGrommetIconsPan, {});
       }
     }), null);
-    insert(_el$38, createComponent(Show, {
+    createRenderEffect((_p$) => {
+      var _v$57 = styles.topLeftHud, _v$58 = `${projectedHeight()}px`, _v$59 = styles.list;
+      _v$57 !== _p$.e && className(_el$38, _p$.e = _v$57);
+      _v$58 !== _p$.t && ((_p$.t = _v$58) != null ? _el$38.style.setProperty("top", _v$58) : _el$38.style.removeProperty("top"));
+      _v$59 !== _p$.a && className(_el$39, _p$.a = _v$59);
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0,
+      a: void 0
+    });
+    return _el$38;
+  })();
+}
+function TopRightHud() {
+  return (() => {
+    var _el$40 = _tmpl$15(), _el$41 = _el$40.firstChild;
+    insert(_el$41, createComponent(Button, {
+      get ["class"]() {
+        return mode() === "note" ? styles.active : void 0;
+      },
+      onClick: () => setMode("note"),
+      get children() {
+        return createComponent(IconGrommetIconsMusic, {});
+      }
+    }), null);
+    insert(_el$41, createComponent(Button, {
+      get ["class"]() {
+        return mode() === "stretch" ? styles.active : void 0;
+      },
+      onClick: () => setMode("stretch"),
+      get children() {
+        return createComponent(IconGrommetIconsShift, {});
+      }
+    }), null);
+    insert(_el$41, createComponent(Button, {
+      get ["class"]() {
+        return mode() === "velocity" ? styles.active : void 0;
+      },
+      onClick: () => setMode("velocity"),
+      get children() {
+        return createComponent(IconGrommetIconsVolumeControl, {});
+      }
+    }), null);
+    insert(_el$41, createComponent(Button, {
+      get ["class"]() {
+        return mode() === "erase" ? styles.active : void 0;
+      },
+      onClick: () => setMode("erase"),
+      get children() {
+        return createComponent(IconGrommetIconsErase, {});
+      }
+    }), null);
+    insert(_el$41, createComponent(Button, {
+      get ["class"]() {
+        return mode() === "snip" ? styles.active : void 0;
+      },
+      onClick: () => setMode("snip"),
+      get children() {
+        return createComponent(IconGrommetIconsCut, {});
+      }
+    }), null);
+    insert(_el$41, createComponent(Button, {
+      get ["class"]() {
+        return mode() === "select" ? styles.active : void 0;
+      },
+      onClick: () => setMode("select"),
+      get children() {
+        return createComponent(IconGrommetIconsSelect, {});
+      }
+    }), null);
+    insert(_el$40, createComponent(Show, {
       get when() {
         return mode() === "select";
       },
@@ -41080,13 +41178,25 @@ function TopRightHud() {
         const hasClipboardAndPresence = () => clipboard() && selectionPresence();
         const clipboardAndPresence = () => hasClipboardAndPresence() && [clipboard(), selectionPresence()];
         return (() => {
-          var _el$40 = _tmpl$15(), _el$41 = _el$40.firstChild;
-          insert(_el$41, createComponent(ActionButton, {
+          var _el$46 = _tmpl$15(), _el$47 = _el$46.firstChild;
+          insert(_el$47, createComponent(Button, {
+            get disabled() {
+              return selectedNotes().length === 0;
+            },
+            get ["class"]() {
+              return selectionLocked() ? styles.active : void 0;
+            },
+            onClick: () => setSelectionLocked((locked) => !locked),
+            get children() {
+              return createComponent(IconGrommetIconsLock, {});
+            }
+          }), null);
+          insert(_el$47, createComponent(ActionButton, {
             get disabled() {
               return !hasClipboardAndPresence();
             },
             get ["class"]() {
-              return clsx(mode() === "stretch" && styles.active);
+              return mode() === "stretch" ? styles.active : void 0;
             },
             onClick: () => {
               const _clipboardAndPresence = clipboardAndPresence();
@@ -41097,117 +41207,125 @@ function TopRightHud() {
               return createComponent(IconGrommetIconsCopy, {});
             }
           }), null);
-          insert(_el$41, createComponent(ActionButton, {
+          insert(_el$47, createComponent(ActionButton, {
             get disabled() {
               return selectedNotes().length === 0;
             },
             get ["class"]() {
-              return clsx(mode() === "stretch" && styles.active);
+              return mode() === "stretch" ? styles.active : void 0;
             },
             onClick: copyNotes,
             get children() {
               return createComponent(IconGrommetIconsClipboard, {});
             }
           }), null);
-          insert(_el$41, createComponent(ActionButton, {
-            get disabled() {
-              return selectedNotes().length === 0;
-            },
-            onClick: () => {
-              const cutLine = selectionArea()?.start.x;
-              if (!cutLine) {
-                console.error("Attempting to slice without slice-line");
-                return;
-              }
-              const newNotes = selectedNotes().filter((note) => note.time < selectionArea().start.x).map((note) => {
-                return {
-                  id: get(),
-                  active: true,
-                  duration: note.duration - (cutLine - note.time),
-                  pitch: note.pitch,
-                  time: cutLine,
-                  velocity: note.velocity
-                };
-              });
-              setDoc((doc2) => doc2.notes.push(...newNotes));
-              setSelectedNotes((notes) => [...notes, ...newNotes]);
-              setDoc((doc2) => {
-                doc2.notes.forEach((note) => {
-                  if (isNoteSelected(note) && note.time < cutLine) {
-                    note.duration = cutLine - note.time;
-                  }
-                });
-              });
-            },
-            get children() {
-              return createComponent(IconGrommetIconsCut, {});
-            }
-          }), null);
-          insert(_el$41, createComponent(ActionButton, {
-            get disabled() {
-              return selectedNotes().length === 0;
-            },
-            onClick: () => {
-              setDoc((doc2) => {
-                for (let index = doc2.notes.length - 1; index >= 0; index--) {
-                  if (isNoteSelected(doc2.notes[index])) {
-                    doc2.notes.splice(index, 1);
-                  }
-                }
-              });
-              setSelectedNotes([]);
-            },
-            get children() {
-              return createComponent(IconGrommetIconsErase, {});
-            }
-          }), null);
-          insert(_el$41, createComponent(ActionButton, {
-            get disabled() {
-              return selectedNotes().length === 0;
-            },
-            onClick: () => {
-              let inactiveSelectedNotes = 0;
-              selectedNotes().forEach((note) => {
-                if (!note.active) {
-                  inactiveSelectedNotes++;
-                }
-              });
-              const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2;
-              setDoc((doc2) => {
-                doc2.notes.forEach((note) => {
-                  if (isNoteSelected(note)) {
-                    note.active = shouldActivate;
-                  }
-                });
-              });
-            },
-            get children() {
-              return createComponent(IconGrommetIconsDisabledOutline, {});
-            }
-          }), null);
           createRenderEffect((_p$) => {
-            var _v$59 = styles.listContainer, _v$60 = styles.list;
-            _v$59 !== _p$.e && className(_el$40, _p$.e = _v$59);
-            _v$60 !== _p$.t && className(_el$41, _p$.t = _v$60);
+            var _v$66 = styles.listContainer, _v$67 = styles.list;
+            _v$66 !== _p$.e && className(_el$46, _p$.e = _v$66);
+            _v$67 !== _p$.t && className(_el$47, _p$.t = _v$67);
             return _p$;
           }, {
             e: void 0,
             t: void 0
           });
-          return _el$40;
+          return _el$46;
         })();
       }
     }), null);
+    insert(_el$40, createComponent(Show, {
+      get when() {
+        return mode() === "velocity";
+      },
+      get children() {
+        var _el$42 = _tmpl$15(), _el$43 = _el$42.firstChild;
+        insert(_el$43, createComponent(Button, {
+          get disabled() {
+            return selectedNotes().length === 0;
+          },
+          get ["class"]() {
+            return selectionLocked() ? styles.active : void 0;
+          },
+          onClick: () => setSelectionLocked((locked) => !locked),
+          get children() {
+            return createComponent(IconGrommetIconsLock, {});
+          }
+        }), null);
+        insert(_el$43, createComponent(ActionButton, {
+          get disabled() {
+            return selectedNotes().length === 0;
+          },
+          onClick: () => {
+            let inactiveSelectedNotes = 0;
+            selectedNotes().forEach((note) => {
+              if (!note.active) {
+                inactiveSelectedNotes++;
+              }
+            });
+            const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2;
+            setDoc((doc2) => {
+              doc2.notes.forEach((note) => {
+                if (isNoteSelected(note)) {
+                  note.active = shouldActivate;
+                }
+              });
+            });
+          },
+          get children() {
+            return createComponent(IconGrommetIconsDisabledOutline, {});
+          }
+        }), null);
+        createRenderEffect((_p$) => {
+          var _v$60 = styles.listContainer, _v$61 = styles.list;
+          _v$60 !== _p$.e && className(_el$42, _p$.e = _v$60);
+          _v$61 !== _p$.t && className(_el$43, _p$.t = _v$61);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0
+        });
+        return _el$42;
+      }
+    }), null);
+    insert(_el$40, createComponent(Show, {
+      get when() {
+        return mode() === "stretch";
+      },
+      get children() {
+        var _el$44 = _tmpl$15(), _el$45 = _el$44.firstChild;
+        insert(_el$45, createComponent(Button, {
+          get disabled() {
+            return selectedNotes().length === 0;
+          },
+          get ["class"]() {
+            return selectionLocked() ? styles.active : void 0;
+          },
+          onClick: () => setSelectionLocked((locked) => !locked),
+          get children() {
+            return createComponent(IconGrommetIconsLock, {});
+          }
+        }));
+        createRenderEffect((_p$) => {
+          var _v$62 = styles.listContainer, _v$63 = styles.list;
+          _v$62 !== _p$.e && className(_el$44, _p$.e = _v$62);
+          _v$63 !== _p$.t && className(_el$45, _p$.t = _v$63);
+          return _p$;
+        }, {
+          e: void 0,
+          t: void 0
+        });
+        return _el$44;
+      }
+    }), null);
     createRenderEffect((_p$) => {
-      var _v$57 = styles.topRightHud, _v$58 = styles.list;
-      _v$57 !== _p$.e && className(_el$38, _p$.e = _v$57);
-      _v$58 !== _p$.t && className(_el$39, _p$.t = _v$58);
+      var _v$64 = styles.topRightHud, _v$65 = styles.list;
+      _v$64 !== _p$.e && className(_el$40, _p$.e = _v$64);
+      _v$65 !== _p$.t && className(_el$41, _p$.t = _v$65);
       return _p$;
     }, {
       e: void 0,
       t: void 0
     });
-    return _el$38;
+    return _el$40;
   })();
 }
 function BottomLeftHud() {
@@ -41221,8 +41339,8 @@ function BottomLeftHud() {
     }
   });
   return (() => {
-    var _el$42 = _tmpl$15(), _el$43 = _el$42.firstChild;
-    insert(_el$43, createComponent(DropdownMenu, {
+    var _el$48 = _tmpl$15(), _el$49 = _el$48.firstChild;
+    insert(_el$49, createComponent(DropdownMenu, {
       get children() {
         return [createComponent(DropdownMenu.Trigger, {
           as: Button,
@@ -41356,61 +41474,62 @@ function BottomLeftHud() {
       }
     }));
     createRenderEffect((_p$) => {
-      var _v$61 = styles.bottomLeftHud, _v$62 = styles.list;
-      _v$61 !== _p$.e && className(_el$42, _p$.e = _v$61);
-      _v$62 !== _p$.t && className(_el$43, _p$.t = _v$62);
+      var _v$68 = styles.bottomLeftHud, _v$69 = styles.list;
+      _v$68 !== _p$.e && className(_el$48, _p$.e = _v$68);
+      _v$69 !== _p$.t && className(_el$49, _p$.t = _v$69);
       return _p$;
     }, {
       e: void 0,
       t: void 0
     });
-    return _el$42;
+    return _el$48;
   })();
 }
 function BottomRightHud() {
+  createEffect(() => console.log(zoom().x, zoom().y));
   return (() => {
-    var _el$44 = _tmpl$16(), _el$45 = _el$44.firstChild, _el$46 = _el$45.nextSibling, _el$47 = _el$46.nextSibling, _el$48 = _el$47.nextSibling, _el$49 = _el$48.nextSibling, _el$50 = _el$49.nextSibling, _el$51 = _el$50.nextSibling;
-    insert(_el$45, createComponent(NumberButton, {
+    var _el$50 = _tmpl$16(), _el$51 = _el$50.firstChild, _el$52 = _el$51.nextSibling, _el$53 = _el$52.nextSibling, _el$54 = _el$53.nextSibling, _el$55 = _el$54.nextSibling, _el$56 = _el$55.nextSibling, _el$57 = _el$56.nextSibling;
+    insert(_el$51, createComponent(NumberButton, {
       label: "zoom time",
       get value() {
         return zoom().x;
       },
       decrement: () => setZoom((zoom2) => ({
         ...zoom2,
-        x: zoom2.x + 0.1
+        x: zoom2.x - 10
       })),
       increment: () => setZoom((zoom2) => ({
         ...zoom2,
-        x: zoom2.x - 0.1
+        x: zoom2.x + 10
       })),
       get canDecrement() {
-        return zoom().x > 0;
+        return zoom().x > 0.1;
       },
       get canIncrement() {
-        return zoom().x < 10;
+        return zoom().x < 1;
       }
     }));
-    insert(_el$46, createComponent(NumberButton, {
+    insert(_el$52, createComponent(NumberButton, {
       label: "zoom pitch",
       get value() {
         return zoom().y;
       },
       decrement: () => setZoom((zoom2) => ({
         ...zoom2,
-        y: zoom2.y + 0.1
+        y: zoom2.y - 10
       })),
       increment: () => setZoom((zoom2) => ({
         ...zoom2,
-        y: zoom2.y - 0.1
+        y: zoom2.y + 10
       })),
       get canDecrement() {
-        return zoom().y > 0;
+        return zoom().y > 0.1;
       },
       get canIncrement() {
-        return zoom().y < 10;
+        return zoom().y < 1;
       }
     }));
-    insert(_el$47, createComponent(NumberButton, {
+    insert(_el$53, createComponent(NumberButton, {
       label: "volume",
       get value() {
         return volume();
@@ -41424,7 +41543,7 @@ function BottomRightHud() {
         return volume() < 10;
       }
     }));
-    insert(_el$48, createComponent(NumberButton, {
+    insert(_el$54, createComponent(NumberButton, {
       label: "tempo",
       get value() {
         return doc().bpm;
@@ -41438,7 +41557,7 @@ function BottomRightHud() {
         return doc().bpm < 1e3;
       }
     }));
-    insert(_el$49, createComponent(NumberButton, {
+    insert(_el$55, createComponent(NumberButton, {
       label: "grid",
       get value() {
         return createMemo(() => timeScale() / 8 < 1)() ? `1:${1 / (timeScale() / 8)}` : timeScale() / 8;
@@ -41449,7 +41568,7 @@ function BottomRightHud() {
         return timeScale() > 8 / 128;
       }
     }));
-    insert(_el$50, createComponent(NumberButton, {
+    insert(_el$56, createComponent(NumberButton, {
       label: "instrument",
       get value() {
         return doc().instrument.toString().padStart(3, "0");
@@ -41477,7 +41596,7 @@ function BottomRightHud() {
         }
       }
     }));
-    insert(_el$51, createComponent(Button, {
+    insert(_el$57, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -41490,7 +41609,7 @@ function BottomRightHud() {
         return createComponent(IconGrommetIconsStop, {});
       }
     }), null);
-    insert(_el$51, createComponent(Button, {
+    insert(_el$57, createComponent(Button, {
       get ["class"]() {
         return styles.horizontal;
       },
@@ -41499,8 +41618,20 @@ function BottomRightHud() {
         return createMemo(() => !!!playing())() ? createComponent(IconGrommetIconsPlay, {}) : createComponent(IconGrommetIconsPause, {});
       }
     }), null);
-    createRenderEffect(() => className(_el$44, styles.bottomRightHud));
-    return _el$44;
+    createRenderEffect((_p$) => {
+      var _v$70 = styles.bottomRightHud, _v$71 = styles.desktop, _v$72 = styles.desktop, _v$73 = styles.desktop;
+      _v$70 !== _p$.e && className(_el$50, _p$.e = _v$70);
+      _v$71 !== _p$.t && className(_el$51, _p$.t = _v$71);
+      _v$72 !== _p$.a && className(_el$52, _p$.a = _v$72);
+      _v$73 !== _p$.o && className(_el$53, _p$.o = _v$73);
+      return _p$;
+    }, {
+      e: void 0,
+      t: void 0,
+      a: void 0,
+      o: void 0
+    });
+    return _el$50;
   })();
 }
 const dimensionsContext = createContext();
@@ -41512,18 +41643,7 @@ function useDimensions() {
   return context;
 }
 function App() {
-  createEffect(() => {
-    if (mode() !== "select") {
-      setSelectionPresence();
-      setSelectionArea();
-    }
-  });
-  createEffect(mapArray(() => doc().notes, (note) => {
-    createEffect(on(() => isNoteSelected(note), (selected) => selected && playNote({
-      ...note,
-      duration: Math.min(1, note.duration)
-    })));
-  }));
+  createEffect(on(mode, () => setSelectionLocked(false)));
   let lastVelocity = doc().bpm / 60;
   createEffect(on(playing, (playing2) => {
     if (!playing2 || !audioContext) return;
@@ -41591,25 +41711,63 @@ function App() {
     });
   });
   return [createComponent(Piano, {}), (() => {
-    var _el$52 = _tmpl$17(), _el$53 = _el$52.firstChild;
-    insert(_el$52, createComponent(Hud, {}), _el$53);
-    _el$53.$$pointerdown = async (event) => {
-      switch (mode()) {
-        case "note":
-          handleCreateNote(event);
-          break;
-        case "select":
-          handleSelectionBox(event);
-          break;
-        case "pan":
-          handlePan(event);
+    var _el$58 = _tmpl$17(), _el$59 = _el$58.firstChild;
+    insert(_el$58, createComponent(Hud, {}), _el$59);
+    _el$59.$$pointerdown = async (event) => {
+      if (selectionLocked()) {
+        switch (mode()) {
+          case "stretch":
+            await handleStretchSelectedNotes(event);
+            break;
+          case "velocity":
+            await handleVelocitySelectedNotes(event);
+            break;
+          case "select":
+            await handleDragSelectedNotes(event);
+        }
+      } else {
+        switch (mode()) {
+          case "note":
+            handleCreateNote(event);
+            break;
+          case "stretch":
+          case "select":
+            await handleSelectionArea(event);
+            setSelectionArea();
+            break;
+          case "velocity":
+            await handleSelectionArea(event);
+            setSelectionArea();
+            setSelectionPresence();
+            break;
+          case "loop":
+            await handleSelectionArea(event);
+            const area = selectionArea();
+            if (!area) {
+              return;
+            }
+            setLoop({
+              time: area.start.x,
+              duration: area.end.x - area.start.x
+            });
+            break;
+          case "erase":
+            handleErase(event);
+            break;
+          case "snip":
+            handleSnip(event);
+            break;
+          case "pan":
+            handlePan(event);
+            break;
+        }
       }
     };
-    _el$53.addEventListener("wheel", (event) => setOrigin((origin) => ({
+    _el$59.addEventListener("wheel", (event) => setOrigin((origin) => ({
       x: origin.x - event.deltaX / zoom().x,
       y: origin.y - event.deltaY / zoom().y * (2 / 3)
     })));
-    _el$53.$$dblclick = () => setSelectedNotes([]);
+    _el$59.$$dblclick = () => !selectionLocked() && setSelectedNotes([]);
     use((element) => {
       onMount(() => {
         const observer = new ResizeObserver(() => {
@@ -41618,11 +41776,11 @@ function App() {
         observer.observe(element);
         onCleanup(() => observer.disconnect());
       });
-    }, _el$53);
-    _el$53.style.setProperty("width", "100%");
-    _el$53.style.setProperty("height", "100%");
-    _el$53.style.setProperty("overflow", "hidden");
-    insert(_el$53, createComponent(Show, {
+    }, _el$59);
+    _el$59.style.setProperty("width", "100%");
+    _el$59.style.setProperty("height", "100%");
+    _el$59.style.setProperty("overflow", "hidden");
+    insert(_el$59, createComponent(Show, {
       get when() {
         return dimensions();
       },
@@ -41631,16 +41789,16 @@ function App() {
         get children() {
           return [createComponent(PianoUnderlay, {}), createComponent(Grid, {}), createComponent(Show, {
             get when() {
-              return createMemo(() => mode() === "select")() && selectionArea();
+              return selectionArea();
             },
             children: (area) => (() => {
-              var _el$56 = _tmpl$18();
+              var _el$62 = _tmpl$18();
               createRenderEffect((_p$) => {
-                var _v$67 = area().start.x * projectedWidth() + projectedOrigin().x, _v$68 = area().start.y * projectedHeight() + projectedOrigin().y, _v$69 = (area().end.x - area().start.x) * projectedWidth(), _v$70 = (area().end.y - area().start.y) * projectedHeight();
-                _v$67 !== _p$.e && setAttribute(_el$56, "x", _p$.e = _v$67);
-                _v$68 !== _p$.t && setAttribute(_el$56, "y", _p$.t = _v$68);
-                _v$69 !== _p$.a && setAttribute(_el$56, "width", _p$.a = _v$69);
-                _v$70 !== _p$.o && setAttribute(_el$56, "height", _p$.o = _v$70);
+                var _v$78 = area().start.x * projectedWidth() + projectedOrigin().x, _v$79 = area().start.y * projectedHeight() + projectedOrigin().y, _v$80 = (area().end.x - area().start.x) * projectedWidth(), _v$81 = (area().end.y - area().start.y) * projectedHeight();
+                _v$78 !== _p$.e && setAttribute(_el$62, "x", _p$.e = _v$78);
+                _v$79 !== _p$.t && setAttribute(_el$62, "y", _p$.t = _v$79);
+                _v$80 !== _p$.a && setAttribute(_el$62, "width", _p$.a = _v$80);
+                _v$81 !== _p$.o && setAttribute(_el$62, "height", _p$.o = _v$81);
                 return _p$;
               }, {
                 e: void 0,
@@ -41648,20 +41806,20 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$56;
+              return _el$62;
             })()
           }), createComponent(Show, {
             get when() {
-              return createMemo(() => mode() === "select")() && selectionPresence();
+              return selectionPresence();
             },
             children: (presence) => (() => {
-              var _el$57 = _tmpl$19();
+              var _el$63 = _tmpl$19();
               createRenderEffect((_p$) => {
-                var _v$71 = presence().x * projectedWidth() + projectedOrigin().x, _v$72 = presence().y * projectedHeight() + projectedOrigin().y, _v$73 = projectedWidth() * timeScale(), _v$74 = projectedHeight();
-                _v$71 !== _p$.e && setAttribute(_el$57, "x", _p$.e = _v$71);
-                _v$72 !== _p$.t && setAttribute(_el$57, "y", _p$.t = _v$72);
-                _v$73 !== _p$.a && setAttribute(_el$57, "width", _p$.a = _v$73);
-                _v$74 !== _p$.o && setAttribute(_el$57, "height", _p$.o = _v$74);
+                var _v$82 = presence().x * projectedWidth() + projectedOrigin().x, _v$83 = presence().y * projectedHeight() + projectedOrigin().y, _v$84 = projectedWidth() * timeScale(), _v$85 = projectedHeight();
+                _v$82 !== _p$.e && setAttribute(_el$63, "x", _p$.e = _v$82);
+                _v$83 !== _p$.t && setAttribute(_el$63, "y", _p$.t = _v$83);
+                _v$84 !== _p$.a && setAttribute(_el$63, "width", _p$.a = _v$84);
+                _v$85 !== _p$.o && setAttribute(_el$63, "height", _p$.o = _v$85);
                 return _p$;
               }, {
                 e: void 0,
@@ -41669,15 +41827,15 @@ function App() {
                 a: void 0,
                 o: void 0
               });
-              return _el$57;
+              return _el$63;
             })()
           }), createComponent(Show, {
             get when() {
               return doc().notes.length > 0;
             },
             get children() {
-              var _el$54 = _tmpl$5();
-              insert(_el$54, createComponent(For, {
+              var _el$60 = _tmpl$5();
+              insert(_el$60, createComponent(For, {
                 get each() {
                   return doc().notes;
                 },
@@ -41685,18 +41843,18 @@ function App() {
                   note
                 })
               }));
-              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$54.style.setProperty("transform", _$p) : _el$54.style.removeProperty("transform"));
-              return _el$54;
+              createRenderEffect((_$p) => (_$p = `translate(${projectedOrigin().x}px, ${projectedOrigin().y}px)`) != null ? _el$60.style.setProperty("transform", _$p) : _el$60.style.removeProperty("transform"));
+              return _el$60;
             }
           }), (() => {
-            var _el$55 = _tmpl$3();
-            _el$55.style.setProperty("opacity", "0.075");
+            var _el$61 = _tmpl$3();
+            _el$61.style.setProperty("opacity", "0.075");
             createRenderEffect((_p$) => {
-              var _v$63 = styles.now, _v$64 = projectedWidth() * timeScale(), _v$65 = dimensions2().height, _v$66 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
-              _v$63 !== _p$.e && setAttribute(_el$55, "class", _p$.e = _v$63);
-              _v$64 !== _p$.t && setAttribute(_el$55, "width", _p$.t = _v$64);
-              _v$65 !== _p$.a && setAttribute(_el$55, "height", _p$.a = _v$65);
-              _v$66 !== _p$.o && ((_p$.o = _v$66) != null ? _el$55.style.setProperty("transform", _v$66) : _el$55.style.removeProperty("transform"));
+              var _v$74 = styles.now, _v$75 = projectedWidth() * timeScale(), _v$76 = dimensions2().height, _v$77 = `translateX(${projectedOrigin().x + Math.floor(now() / timeScale()) * projectedWidth() * timeScale()}px)`;
+              _v$74 !== _p$.e && setAttribute(_el$61, "class", _p$.e = _v$74);
+              _v$75 !== _p$.t && setAttribute(_el$61, "width", _p$.t = _v$75);
+              _v$76 !== _p$.a && setAttribute(_el$61, "height", _p$.a = _v$76);
+              _v$77 !== _p$.o && ((_p$.o = _v$77) != null ? _el$61.style.setProperty("transform", _v$77) : _el$61.style.removeProperty("transform"));
               return _p$;
             }, {
               e: void 0,
@@ -41704,7 +41862,7 @@ function App() {
               a: void 0,
               o: void 0
             });
-            return _el$55;
+            return _el$61;
           })(), createComponent(Ruler, {
             loop,
             setLoop
@@ -41712,8 +41870,8 @@ function App() {
         }
       })
     }));
-    createRenderEffect(() => className(_el$52, styles.main));
-    return _el$52;
+    createRenderEffect(() => className(_el$58, styles.main));
+    return _el$58;
   })()];
 }
 delegateEvents(["pointerdown", "click", "dblclick"]);
