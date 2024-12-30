@@ -40418,17 +40418,6 @@ const IconGrommetIconsPause = (props = {}) => (() => {
 })();
 
 var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ template(`<div><div><label></label><span></span></div><div><button><div></div><div></div></button><button><div></div><div>`), _tmpl$3 = /* @__PURE__ */ template(`<svg><rect></svg>`, false, true), _tmpl$4 = /* @__PURE__ */ template(`<svg>`), _tmpl$5 = /* @__PURE__ */ template(`<svg><g></svg>`, false, true), _tmpl$6 = /* @__PURE__ */ template(`<svg><rect x=0></svg>`, false, true), _tmpl$7 = /* @__PURE__ */ template(`<svg><rect x=0 opacity=0.8></svg>`, false, true), _tmpl$8 = /* @__PURE__ */ template(`<svg><rect x=0 y=0 fill=var(--color-piano-black)></svg>`, false, true), _tmpl$9 = /* @__PURE__ */ template(`<svg><line x1=0 stroke=var(--color-stroke)></svg>`, false, true), _tmpl$10 = /* @__PURE__ */ template(`<svg><rect y=0></svg>`, false, true), _tmpl$11 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=2px></svg>`, false, true), _tmpl$12 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke) stroke-width=1px></svg>`, false, true), _tmpl$13 = /* @__PURE__ */ template(`<svg><line y1=0 stroke=var(--color-stroke-secondary)></svg>`, false, true), _tmpl$14 = /* @__PURE__ */ template(`<div><div></div><div>`), _tmpl$15 = /* @__PURE__ */ template(`<div><div>`), _tmpl$16 = /* @__PURE__ */ template(`<div><div></div><div></div><div></div><div></div><div></div><div></div><div>`), _tmpl$17 = /* @__PURE__ */ template(`<div><svg>`), _tmpl$18 = /* @__PURE__ */ template(`<svg><rect opacity=0.3 fill=var(--color-selection-area)></svg>`, false, true), _tmpl$19 = /* @__PURE__ */ template(`<svg><rect opacity=0.8 fill=var(--color-selection-area)></svg>`, false, true);
-function Button(props) {
-  return (() => {
-    var _el$ = _tmpl$();
-    spread(_el$, mergeProps(props, {
-      get ["class"]() {
-        return clsx(props.class, styles.button);
-      }
-    }), false, false);
-    return _el$;
-  })();
-}
 function createMidiDataUri(notes) {
   const track = new MidiWriter.Track();
   const division = 8;
@@ -40444,6 +40433,17 @@ function createMidiDataUri(notes) {
   });
   const write = new MidiWriter.Writer(track);
   return write.dataUri();
+}
+function Button(props) {
+  return (() => {
+    var _el$ = _tmpl$();
+    spread(_el$, mergeProps(props, {
+      get ["class"]() {
+        return clsx(props.class, styles.button);
+      }
+    }), false, false);
+    return _el$;
+  })();
 }
 function ActionButton(props) {
   const [trigger, setTrigger] = createSignal(false);
@@ -40544,6 +40544,54 @@ function Note(props) {
     setSelectedNotes([]);
     clipOverlappingNotes(props.note);
   }
+  async function handleDeleteNote(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedNotes([props.note]);
+    await pointerHelper(event);
+    setSelectedNotes([]);
+    setDoc((doc2) => {
+      const index = doc2.notes.findIndex((note) => note.id === props.note.id);
+      doc2.notes.splice(index, 1);
+    });
+  }
+  async function handlePointerDown(event) {
+    let initiallySelected = isNoteSelected(props.note);
+    switch (mode()) {
+      case "select":
+        if (selectionLocked()) break;
+        if (initiallySelected) {
+          await handleDragSelectedNotes(event);
+        }
+        break;
+      case "stretch":
+        if (selectionLocked()) break;
+        if (!initiallySelected) {
+          setSelectedNotes([props.note]);
+        }
+        await handleStretchSelectedNotes(event);
+        if (!initiallySelected) {
+          setSelectedNotes([]);
+        }
+        break;
+      case "note":
+        await handleDragNote(event);
+        break;
+      case "velocity":
+        if (selectionLocked()) break;
+        if (!initiallySelected) {
+          setSelectedNotes([props.note]);
+        }
+        await handleVelocitySelectedNotes(event);
+        if (!initiallySelected && !selectionLocked()) {
+          setSelectedNotes([]);
+        }
+        break;
+      case "erase":
+        handleDeleteNote(event);
+        break;
+    }
+  }
   const shouldSnip = () => mode() === "snip" && isNoteSelected(props.note) && selectionArea() && props.note.time < selectionArea().start.x && props.note.time + props.note.duration > selectionArea().start.x;
   return createComponent(Show, {
     get when() {
@@ -40552,50 +40600,7 @@ function Note(props) {
     get fallback() {
       return (() => {
         var _el$13 = _tmpl$3();
-        _el$13.$$pointerdown = async (event) => {
-          let initiallySelected = isNoteSelected(props.note);
-          switch (mode()) {
-            case "select":
-              if (selectionLocked()) break;
-              if (initiallySelected) {
-                await handleDragSelectedNotes(event);
-              }
-              break;
-            case "stretch":
-              if (selectionLocked()) break;
-              if (!initiallySelected) {
-                setSelectedNotes([props.note]);
-              }
-              await handleStretchSelectedNotes(event);
-              if (!initiallySelected) {
-                setSelectedNotes([]);
-              }
-              break;
-            case "note":
-              await handleDragNote(event);
-              break;
-            case "velocity":
-              if (selectionLocked()) break;
-              if (!initiallySelected) {
-                setSelectedNotes([props.note]);
-              }
-              await handleVelocitySelectedNotes(event);
-              if (!initiallySelected && !selectionLocked()) {
-                setSelectedNotes([]);
-              }
-              break;
-            case "erase":
-              event.preventDefault();
-              event.stopPropagation();
-              setSelectedNotes([props.note]);
-              await pointerHelper(event);
-              setSelectedNotes([]);
-              setDoc((doc2) => {
-                const index = doc2.notes.findIndex((note) => note.id === props.note.id);
-                doc2.notes.splice(index, 1);
-              });
-          }
-        };
+        _el$13.$$pointerdown = handlePointerDown;
         _el$13.$$dblclick = () => {
           if (mode() === "note") {
             setDoc((doc2) => {
