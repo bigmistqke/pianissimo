@@ -39730,7 +39730,7 @@ const {
   document: doc,
   setDocument: setDoc,
   newDocument: newDoc,
-  handleUrl,
+  url,
   openUrl
 } = createRoot(
   () => createDocumentStore({
@@ -39751,13 +39751,13 @@ const [savedDocumentUrls, setSavedDocumentUrls] = makePersisted(
 );
 createRoot(() => {
   createEffect(() => {
-    document.location.hash = handleUrl();
+    document.location.hash = url();
   });
   createEffect(() => {
     if (doc().date && doc().notes.length > 0) {
       setSavedDocumentUrls((urls) => ({
         ...urls,
-        [handleUrl()]: doc().date
+        [url()]: doc().date
       }));
     }
   });
@@ -41367,7 +41367,7 @@ function BottomLeftHud() {
                               children: ([_url, date]) => createComponent(DropdownMenu.Item, {
                                 as: Button,
                                 get ["class"]() {
-                                  return clsx(styles["dropdown-menu__item"], handleUrl() === _url && styles.selected);
+                                  return clsx(styles["dropdown-menu__item"], url() === _url && styles.selected);
                                 },
                                 onClick: () => openUrl(_url),
                                 get children() {
