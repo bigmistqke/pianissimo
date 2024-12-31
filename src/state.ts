@@ -52,7 +52,7 @@ export const {
     repo,
     url: `${document.location.hash.substring(1)}`,
     initialValue: {
-      notes: [],
+      notes: {},
       instrument: 24,
       bpm: 140,
       get date() {
@@ -71,7 +71,7 @@ createRoot(() => {
     document.location.hash = url()
   })
   createEffect(() => {
-    if (doc().date && doc().notes.length > 0) {
+    if (doc().date && Object.keys(doc().notes).length > 0) {
       setSavedDocumentUrls(urls => ({
         ...urls,
         [url()]: doc().date
@@ -184,7 +184,7 @@ export function filterNote(...notes: Array<NoteData>) {
 
 export function selectNotesFromSelectionArea(area: SelectionArea) {
   setSelectedNotes(
-    doc().notes.filter(note => {
+    Object.values(doc().notes).filter(note => {
       const noteStartTime = note.time
       const noteEndTime = note.time + note.duration
       const isWithinXBounds = noteStartTime < area.end.x && noteEndTime > area.start.x
@@ -265,7 +265,8 @@ export async function handleCreateNote(event: PointerEvent) {
   }
 
   setDoc(doc => {
-    doc.notes.push(note)
+    doc.notes[note.id] = note
+
     // notes.sort((a, b) => (a.time < b.time ? -1 : 1))
   })
 
@@ -279,38 +280,38 @@ export async function handleCreateNote(event: PointerEvent) {
     const deltaX = Math.floor((offset + delta.x) / timeScaleWidth()) * timeScale()
     if (deltaX < 0) {
       setDoc(doc => {
-        const _note = doc.notes.find(filterNote(note))
+        const _note = doc.notes[note.id]
         if (!_note) return
         _note.time = initialTime + deltaX
         _note.duration = 1 - deltaX
       })
     } else if (deltaX > 0) {
       setDoc(doc => {
-        const _note = doc.notes.find(filterNote(note))
+        const _note = doc.notes[note.id]
         if (!_note) return
         _note.duration = initialDuration + deltaX
       })
     } else {
       setDoc(doc => {
-        const _note = doc.notes.find(filterNote(note))
+        const _note = doc.notes[note.id]
         if (!_note) return
         _note.time = initialTime
         _note.duration = timeScale()
       })
     }
-    markOverlappingNotes(note)
+    // markOverlappingNotes(note)
   })
 
   setSelectedNotes([])
-  clipOverlappingNotes(note)
+  // clipOverlappingNotes(note)
 }
 
 export async function handleErase(event: PointerEvent & { currentTarget: SVGElement }) {
   await handleSelectionArea(event)
   setDoc(doc => {
-    for (let index = doc.notes.length - 1; index >= 0; index--) {
-      if (isNoteSelected(doc.notes[index])) {
-        doc.notes.splice(index, 1)
+    for (const id in doc.notes) {
+      if (isNoteSelected(doc.notes[id])) {
+        delete doc.notes[id]
       }
     }
   })
@@ -342,11 +343,15 @@ export async function handleSnip(event: PointerEvent & { currentTarget: SVGEleme
       } satisfies NoteData
     })
 
-  setDoc(doc => doc.notes.push(...newNotes))
+  setDoc(doc =>
+    newNotes.forEach(note => {
+      doc.notes[note.id] = note
+    })
+  )
   setSelectedNotes(notes => [...notes, ...newNotes])
 
   setDoc(doc => {
-    doc.notes.forEach(note => {
+    Object.values(doc.notes).forEach(note => {
       if (isNoteSelected(note) && note.time < cutLine) {
         note.duration = cutLine - note.time
       }
@@ -433,7 +438,7 @@ export async function handleDragSelectedNotes(event: PointerEvent) {
       }
 
       setDoc(doc => {
-        doc.notes.forEach(note => {
+        Object.values(doc.notes).forEach(note => {
           if (isNoteSelected(note)) {
             note.time = initialNotes[note.id].time + time - offset
             note.pitch =
@@ -442,10 +447,10 @@ export async function handleDragSelectedNotes(event: PointerEvent) {
           }
         })
       })
-      markOverlappingNotes(...selectedNotes())
+      // markOverlappingNotes(...selectedNotes())
     })
 
-    clipOverlappingNotes(...selectedNotes())
+    // clipOverlappingNotes(...selectedNotes())
   }
 }
 
@@ -470,8 +475,9 @@ export async function handleStretchSelectedNotes(
             : delta.x / timeScaleWidth()
         ) * timeScale()
       setDoc(doc => {
-        doc.notes.forEach(note => {
-          if (!isNoteSelected(note)) return
+        selectedNotes().forEach(({ id }) => {
+          const note = doc.notes[id]
+
           const duration = initialSelectedNotes[note.id].duration + deltaX
           if (duration > timeScale()) {
             note.duration = duration
@@ -481,11 +487,11 @@ export async function handleStretchSelectedNotes(
           }
         })
       })
-      markOverlappingNotes(...selectedNotes())
+      //markOverlappingNotes(...selectedNotes())
     })
   })
 
-  clipOverlappingNotes(...selectedNotes())
+  // clipOverlappingNotes(...selectedNotes())
   if (selectedNotes().length === 1) {
     setSelectedNotes([])
   }
@@ -498,7 +504,7 @@ export async function handleVelocitySelectedNotes(event: PointerEvent) {
   const initialNotes = Object.fromEntries(selectedNotes().map(note => [note.id, { ...note }]))
   await pointerHelper(event, ({ delta }) => {
     setDoc(doc => {
-      doc.notes.forEach(note => {
+      Object.values(doc.notes).forEach(note => {
         if (!note.active) {
           note.active = true
         }
@@ -535,9 +541,16 @@ export function pasteNotes(clipboard: Array<NoteData>, position: Vector) {
     }))
     // Remove all the notes that start on the same pitch/time then an existing note
     .filter(
-      note => !doc().notes.find(({ pitch, time }) => note.pitch === pitch && note.time === time)
+      note =>
+        !Object.values(doc().notes).find(
+          ({ pitch, time }) => note.pitch === pitch && note.time === time
+        )
     )
-  setDoc(doc => doc.notes.push(...newNotes))
+  setDoc(doc => {
+    newNotes.forEach(note => {
+      doc.notes[note.id] = note
+    })
+  })
   clipOverlappingNotes(...newNotes)
 }
 
@@ -583,10 +596,10 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
   // - intersecting with source and
   // - come after source
   setDoc(doc => {
-    for (let index = doc.notes.length - 1; index >= 0; index--) {
-      const note = doc.notes[index]
+    for (const id in doc.notes) {
+      const note = doc.notes[id]
       if (findSourceIntersectingAndBeforeNote(sources, note)) {
-        doc.notes.splice(index, 1)
+        delete doc.notes[id]
       }
     }
   })
@@ -594,21 +607,17 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
   // Clip all notes that are
   // - intersecting with source and
   // - come before source
-  setDoc(doc =>
-    doc.notes.forEach((note, index) => {
+  setDoc(doc => {
+    for (const id in doc.notes) {
+      const note = doc.notes[id]
       const source = findSourceIntersectingAndAfterNote(sources, note)
       if (source) {
-        doc.notes[index].duration = source.time - note.time
-      }
-    })
-  )
-
-  // Remove all notes that have 0 duration (after being clipped)
-  setDoc(doc => {
-    for (let index = doc.notes.length - 1; index >= 0; index--) {
-      const note = doc.notes[index]
-      if (note.duration === 0) {
-        doc.notes.splice(index, 1)
+        const newDuration = source.time - note.time
+        if (newDuration === 0) {
+          delete doc.notes[id]
+        } else {
+          doc.notes[id].duration = source.time - note.time
+        }
       }
     }
   })
@@ -625,7 +634,7 @@ export function clipOverlappingNotes(...sources: Array<NoteData>) {
       }
       if (source.time < note.time + note.duration) {
         setDoc(doc => {
-          doc.notes.forEach(_note => {
+          Object.values(doc.notes).forEach(_note => {
             if (_note.id === note.id) {
               _note.duration = source.time - note.time
             }
@@ -651,7 +660,7 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
     // - intersecting with source and
     // - come after source
     setDoc(doc =>
-      doc.notes.forEach(note => {
+      Object.values(doc.notes).forEach(note => {
         if (findSourceIntersectingAndBeforeNote(sources, note)) {
           note._remove = true
         } else {
@@ -663,7 +672,7 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
     // - intersecting with source and
     // - come before source
     setDoc(doc =>
-      doc.notes.forEach((note, index) => {
+      Object.values(doc.notes).forEach((note, index) => {
         const source = findSourceIntersectingAndAfterNote(sources, note)
         if (source) {
           doc.notes[index]._duration = source.time - note.time
@@ -683,7 +692,7 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
         }
         if (sources[index + 1].time <= end) {
           setDoc(doc => {
-            doc.notes.forEach(note => {
+            Object.values(doc.notes).forEach(note => {
               if (note.id === source.id) {
                 note._duration = sources[index + 1].time - source.time
               }
@@ -693,7 +702,7 @@ export function markOverlappingNotes(...sources: Array<NoteData>) {
           break
         }
         setDoc(doc => {
-          doc.notes.forEach(note => {
+          Object.values(doc.notes).forEach(note => {
             if (note.id === source.id) {
               delete note._duration
             }

@@ -46,7 +46,6 @@ import {
   KEY_COLORS,
   loop,
   MARGIN,
-  markOverlappingNotes,
   midiOutputEnabled,
   midiOutputs,
   mode,
@@ -96,11 +95,11 @@ import { downloadDataUri } from './utils/download-data-uri'
 import { mod } from './utils/mod'
 import { pointerHelper } from './utils/pointer-helper'
 
-function createMidiDataUri(notes: Array<NoteData>) {
+function createMidiDataUri(notes: Record<string, NoteData>) {
   const track = new MidiWriter.Track()
   const division = 8
 
-  notes.forEach(note => {
+  Object.values(notes).forEach(note => {
     track.addEvent(
       new MidiWriter.NoteEvent({
         pitch: [MidiWriter.Utils.getPitch(note.pitch)],
@@ -215,7 +214,7 @@ function Note(props: { note: NoteData }) {
       const pitch = initialPitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
 
       setDoc(doc => {
-        const note = doc.notes.find(note => note.id === props.note.id)
+        const note = doc.notes[props.note.id]
         if (!note) return
         note.time = time
         note.pitch = pitch
@@ -225,10 +224,10 @@ function Note(props: { note: NoteData }) {
         }
       })
 
-      markOverlappingNotes(props.note)
+      // markOverlappingNotes(props.note)
     })
     setSelectedNotes([])
-    clipOverlappingNotes(props.note)
+    //clipOverlappingNotes(props.note)
   }
 
   async function handleDeleteNote(event: PointerEvent) {
@@ -238,8 +237,7 @@ function Note(props: { note: NoteData }) {
     await pointerHelper(event)
     setSelectedNotes([])
     setDoc(doc => {
-      const index = doc.notes.findIndex(note => note.id === props.note.id)
-      doc.notes.splice(index, 1)
+      delete doc.notes[props.note.id]
     })
   }
 
@@ -704,7 +702,7 @@ function TopLeftHud() {
       <div class={styles.list}>
         <ActionButton
           onClick={() => {
-            const selection = doc().notes?.filter(
+            const selection = Object.values(doc().notes)?.filter(
               note => note.time >= loop.time && note.time < loop.time + loop.duration
             )
 
@@ -716,7 +714,11 @@ function TopLeftHud() {
               time: note.time + loop.duration
             }))
 
-            setDoc(doc => doc.notes.push(...newNotes))
+            setDoc(doc => {
+              newNotes.forEach(note => {
+                doc.notes[note.id] = note
+              })
+            })
 
             setLoop('duration', duration => duration * 2)
             clipOverlappingNotes(...newNotes)
@@ -1178,8 +1180,9 @@ function App() {
         }
 
         setNow(time)
+        for (const id in doc().notes) {
+          const note = doc().notes[id]
 
-        doc().notes.forEach(note => {
           if (!note.active) return
           if (playedNotes.has(note)) return
 
@@ -1198,7 +1201,7 @@ function App() {
             playedNotes.add(note)
             playNote(note, (note.time - time) / VELOCITY)
           }
-        })
+        }
 
         requestAnimationFrame(clock)
       }
@@ -1282,13 +1285,13 @@ function App() {
                   )}
                 </Show>
                 {/* Notes */}
-                <Show when={doc().notes.length > 0}>
+                <Show when={Object.values(doc().notes).length > 0}>
                   <g
                     style={{
                       transform: `translate(${projectedOriginX()}px, ${projectedOriginY()}px)`
                     }}
                   >
-                    <For each={doc().notes}>{note => <Note note={note} />}</For>
+                    <For each={Object.values(doc().notes)}>{note => <Note note={note} />}</For>
                   </g>
                 </Show>
                 {/* Now Underlay */}

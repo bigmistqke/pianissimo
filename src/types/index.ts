@@ -23,7 +23,7 @@ export interface Loop {
 export type Mode = 'erase' | 'loop' | 'note' | 'pan' | 'select' | 'snip' | 'stretch' | 'velocity'
 
 export interface SharedState {
-  notes: Array<NoteData>
+  notes: Record<string, NoteData>
   instrument: number
   date: number
   bpm: number
