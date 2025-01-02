@@ -94,7 +94,7 @@ function createRoot(fn, detachedOwner) {
           context: current ? current.context : null,
           owner: current
         },
-    updateFn = unowned ? fn : () => fn(() => untrack(() => cleanNode(root)));
+    updateFn = unowned ? fn : () => fn(() => untrack$1(() => cleanNode(root)));
   Owner = root;
   Listener$1 = null;
   try {
@@ -153,11 +153,11 @@ function createResource(pSource, pFetcher, pOptions) {
   if ((arguments.length === 2 && typeof pFetcher === "object") || arguments.length === 1) {
     source = true;
     fetcher = pSource;
-    options = pFetcher || {};
+    options = pFetcher;
   } else {
     source = pSource;
     fetcher = pFetcher;
-    options = pOptions || {};
+    options = {};
   }
   let pr = null,
     initP = NO_INIT,
@@ -214,13 +214,13 @@ function createResource(pSource, pFetcher, pOptions) {
     scheduled = false;
     const lookup = dynamic ? dynamic() : source;
     if (lookup == null || lookup === false) {
-      loadEnd(pr, untrack(value));
+      loadEnd(pr, untrack$1(value));
       return;
     }
     const p =
       initP !== NO_INIT
         ? initP
-        : untrack(() =>
+        : untrack$1(() =>
             fetcher(lookup, {
               value: value(),
               refetching
@@ -319,7 +319,7 @@ function createSelector(source, fn = equalFn, options) {
 function batch(fn) {
   return runUpdates(fn, false);
 }
-function untrack(fn) {
+function untrack$1(fn) {
   if (Listener$1 === null) return fn();
   const listener = Listener$1;
   Listener$1 = null;
@@ -344,13 +344,13 @@ function on(deps, fn, options) {
       defer = false;
       return prevValue;
     }
-    const result = untrack(() => fn(input, prevInput, prevValue));
+    const result = untrack$1(() => fn(input, prevInput, prevValue));
     prevInput = input;
     return result;
   };
 }
 function onMount(fn) {
-  createEffect(() => untrack(fn));
+  createEffect(() => untrack$1(fn));
 }
 function onCleanup(fn) {
   if (Owner === null);
@@ -523,7 +523,7 @@ function createComputation(fn, init, pure, state = STALE, options) {
 function runTop(node) {
   if ((node.state) === 0) return;
   if ((node.state) === PENDING) return lookUpstream(node);
-  if (node.suspense && untrack(node.suspense.inFallback)) return node.suspense.effects.push(node);
+  if (node.suspense && untrack$1(node.suspense.inFallback)) return node.suspense.effects.push(node);
   const ancestors = [node];
   while ((node = node.owner) && (!node.updatedAt || node.updatedAt < ExecCount)) {
     if (node.state) ancestors.push(node);
@@ -676,7 +676,7 @@ function createProvider(id, options) {
     let res;
     createRenderEffect(
       () =>
-        (res = untrack(() => {
+        (res = untrack$1(() => {
           Owner.context = {
             ...Owner.context,
             [id]: props.value
@@ -706,7 +706,7 @@ function mapArray(list, mapFn, options = {}) {
       i,
       j;
     newItems[$TRACK];
-    return untrack(() => {
+    return untrack$1(() => {
       let newIndices, newIndicesNext, temp, tempdisposers, tempIndexes, start, end, newEnd, item;
       if (newLen === 0) {
         if (len !== 0) {
@@ -807,7 +807,7 @@ function indexArray(list, mapFn, options = {}) {
     const newItems = list() || [],
       newLen = newItems.length;
     newItems[$TRACK];
-    return untrack(() => {
+    return untrack$1(() => {
       if (newLen === 0) {
         if (len !== 0) {
           dispose(disposers);
@@ -857,7 +857,7 @@ function indexArray(list, mapFn, options = {}) {
   };
 }
 function createComponent(Comp, props) {
-  return untrack(() => Comp(props || {}));
+  return untrack$1(() => Comp(props || {}));
 }
 function trueFn() {
   return true;
@@ -1061,12 +1061,12 @@ function Show(props) {
         const child = props.children;
         const fn = typeof child === "function" && child.length > 0;
         return fn
-          ? untrack(() =>
+          ? untrack$1(() =>
               child(
                 keyed
                   ? c
                   : () => {
-                      if (!untrack(condition)) throw narrowedError("Show");
+                      if (!untrack$1(condition)) throw narrowedError("Show");
                       return props.when;
                     }
               )
@@ -1343,7 +1343,7 @@ function template(html, isImportNode, isSVG) {
     return isSVG ? t.content.firstChild.firstChild : t.content.firstChild;
   };
   const fn = isImportNode
-    ? () => untrack(() => document.importNode(node || (node = create()), true))
+    ? () => untrack$1(() => document.importNode(node || (node = create()), true))
     : () => (node || (node = create())).cloneNode(true);
   fn.cloneNode = fn;
   return fn;
@@ -1440,7 +1440,7 @@ function spread(node, props = {}, isSVG, skipChildren) {
   return prevProps;
 }
 function use(fn, element, arg) {
-  return untrack(() => fn(element, arg));
+  return untrack$1(() => fn(element, arg));
 }
 function insert(parent, accessor, marker, initial) {
   if (marker !== undefined && !initial) initial = [];
@@ -1785,7 +1785,7 @@ function Dynamic(props) {
     const component = cached();
     switch (typeof component) {
       case "function":
-        return untrack(() => component(others));
+        return untrack$1(() => component(others));
       case "string":
         const isSvg = SVGElements.has(component);
         const el = sharedConfig.context ? getNextElement() : createElement(component, isSvg);
@@ -4498,7 +4498,7 @@ function createControllableSignal(props) {
   const isControlled = createMemo(() => props.value?.() !== void 0);
   const value = createMemo(() => isControlled() ? props.value?.() : _value());
   const setValue = (next) => {
-    untrack(() => {
+    untrack$1(() => {
       const nextValue = accessWith(next, value());
       if (!Object.is(nextValue, value())) {
         if (!isControlled()) {
@@ -6890,7 +6890,7 @@ var createPresence = (props) => {
   let animationName = "none";
   createEffect((prevShow) => {
     const show = access(props.show);
-    untrack(() => {
+    untrack$1(() => {
       if (prevShow === show) return show;
       const prevAnimationName = animationName;
       const currentAnimationName = getAnimationName();
@@ -25342,7 +25342,7 @@ function makePersisted(signal, options = {}) {
   if (typeof options.sync?.[0] === "function") {
     const get = typeof signal[0] === "function" ? signal[0] : () => signal[0];
     options.sync[0]((data) => {
-      if (data.key !== name || (data.url || globalThis.location.href) !== globalThis.location.href || data.newValue === serialize(untrack(get))) {
+      if (data.key !== name || (data.url || globalThis.location.href) !== globalThis.location.href || data.newValue === serialize(untrack$1(get))) {
         return;
       }
       set(data.newValue);
@@ -25360,7 +25360,7 @@ function makePersisted(signal, options = {}) {
       return output;
     } : (...args) => {
       signal[1](...args);
-      const value = serialize(untrack(() => signal[0]));
+      const value = serialize(untrack$1(() => signal[0]));
       options.sync?.[1](name, value);
       storage.setItem(name, value, storageOptions);
       unchanged = false;
@@ -39602,42 +39602,257 @@ function fromAutomerge(autopatch) {
   }
 }
 
-function autoproduce(patches) {
-  return produce((doc) => {
-    for (let patch of patches) {
-      const [path, range, val] = fromAutomerge(patch);
-      apply(path, doc, range, val);
+const $PATCH = Symbol();
+let TRACKING = true;
+function untrack(callback) {
+  TRACKING = false;
+  callback();
+  TRACKING = true;
+}
+function createPatchProxy(target, basePath = []) {
+  const patches = new Array();
+  function createProxy(target2, currentPath) {
+    return new Proxy(target2, {
+      get(obj, prop) {
+        if (Array.isArray(target2)) {
+          switch (prop) {
+            case "splice":
+              return (start, length, ...values) => {
+                target2.splice(start, length, ...values);
+                patches.push({
+                  op: "splice",
+                  start,
+                  length,
+                  values,
+                  path: currentPath
+                });
+              };
+            case "shift":
+              return () => {
+                patches.push({
+                  op: "splice",
+                  start: 0,
+                  length: 1,
+                  values: [],
+                  path: currentPath
+                });
+              };
+            case "unshift":
+              return (...values) => {
+                patches.push({
+                  op: "splice",
+                  start: 0,
+                  length: 0,
+                  values,
+                  path: currentPath
+                });
+              };
+          }
+        }
+        if (!TRACKING) {
+          return obj[prop];
+        }
+        if (prop === $PATCH) {
+          return true;
+        }
+        const value = obj[prop];
+        if (typeof value === "object" && value !== null) {
+          if (!obj[$PATCH]) {
+            obj[prop] = Array.isArray(value) ? [...value] : { ...value };
+          }
+          return createProxy(obj[prop], [...currentPath, prop.toString()]);
+        }
+        return value;
+      },
+      set(obj, prop, value) {
+        if (!TRACKING || Array.isArray(obj) && prop === "length") {
+          target2[prop] = value;
+          return true;
+        }
+        const fullPath = [...currentPath, prop.toString()];
+        if (prop in obj) {
+          patches.push({ op: "update", path: fullPath, value });
+        } else {
+          patches.push({ op: "add", path: fullPath, value });
+        }
+        target2[prop] = value;
+        return true;
+      },
+      deleteProperty(obj, prop) {
+        if (prop in obj) {
+          const fullPath = [...currentPath, prop.toString()];
+          patches.push({
+            op: "delete",
+            path: fullPath,
+            shifts: Array.isArray(obj)
+          });
+          delete obj[prop];
+          return true;
+        }
+        return false;
+      }
+    });
+  }
+  return {
+    proxy: createProxy({ ...target }, basePath),
+    patches,
+    clearPatches: () => patches.length = 0
+  };
+}
+function createShiftIndex(length) {
+  const indices = Array.from({ length }, (_, i) => i);
+  function apply(index, delta) {
+    for (let i = index; i < indices.length; i++) {
+      if (indices[i] !== -1) {
+        indices[i] += delta;
+      }
+    }
+  }
+  function deleteAt(index) {
+    indices[index] = -1;
+    apply(index + 1, -1);
+  }
+  function insertAt(index) {
+    apply(index, 1);
+    indices.splice(index, 0, index);
+  }
+  return {
+    indices,
+    apply,
+    deleteAt,
+    insertAt
+  };
+}
+function optimizePatches(patches) {
+  const optimized = [];
+  const shiftIndices = /* @__PURE__ */ new Map();
+  for (const patch of patches) {
+    if (patch.op === "splice" && patch.path.length > 0) {
+      const arrayPath = patch.path.join(".");
+      const { start, length, values } = patch;
+      if (!shiftIndices.has(arrayPath)) {
+        shiftIndices.set(arrayPath, createShiftIndex(start + length + (values?.length || 0)));
+      }
+      const shiftIndex = shiftIndices.get(arrayPath);
+      for (let i = 0; i < length; i++) {
+        shiftIndex.deleteAt(start);
+      }
+      if (values?.length) {
+        for (let i = 0; i < values.length; i++) {
+          shiftIndex.insertAt(start + i);
+        }
+      }
+    }
+  }
+  const updateMap = /* @__PURE__ */ new Map();
+  function resolveShiftedPath(path) {
+    const arrayPath = path.slice(0, -1).join(".");
+    const lastSegment = path[path.length - 1];
+    const arrayIndex = parseInt(lastSegment, 10);
+    if (!shiftIndices.has(arrayPath) || isNaN(arrayIndex)) return path;
+    const shiftIndex = shiftIndices.get(arrayPath);
+    if (arrayIndex >= shiftIndex.indices.length || shiftIndex.indices[arrayIndex] === -1) {
+      return path;
+    }
+    const shiftedIndex = shiftIndex.indices[arrayIndex];
+    return [...path.slice(0, -1), shiftedIndex.toString()];
+  }
+  const order = /* @__PURE__ */ new Map();
+  for (let index = 0; index < patches.length; index++) {
+    const patch = patches[index];
+    const path = resolveShiftedPath(patch.path);
+    const pathKey = path.join(".");
+    order.set(patch, index);
+    switch (patch.op) {
+      case "splice":
+        optimized.push({ ...patch });
+        const keys = [...updateMap.keys()];
+        const affectedPaths = Array.from({ length: patch.length }, (_, index2) => [
+          ...patch.path,
+          (index2 + patch.start).toString()
+        ]);
+        keys.filter((key) => {
+          const splitKey = key.split(".");
+          return affectedPaths.find(
+            (affectedPath) => affectedPath.every((part, index2) => part === splitKey[index2])
+          );
+        }).forEach((key) => updateMap.delete(key));
+        break;
+      case "update":
+        updateMap.set(pathKey, {
+          ...patch,
+          path
+        });
+        break;
+      default:
+        optimized.push({ ...patch, path });
+    }
+  }
+  for (const update of updateMap.values()) {
+    optimized.push(update);
+  }
+  optimized.sort((a, b) => order.get(a) - order.get(b) < 0 ? -1 : 1);
+  console.log("optimized", optimized);
+  return optimized;
+}
+function applyPatches(target, patches) {
+  untrack(() => {
+    for (const patch of patches) {
+      const lastKey = patch.path[patch.path.length - 1];
+      const parent = patch.path.slice(0, -1).reduce((acc, key) => {
+        if (!(key in acc)) {
+          console.log(patch.path, patch, target, patches);
+          throw new Error(`Path not found: ${patch.path.join(".")}`);
+        }
+        return acc[key];
+      }, target);
+      switch (patch.op) {
+        case "splice":
+          parent[lastKey].splice(patch.start, patch.length, ...patch.values);
+          break;
+        case "add":
+        case "update":
+          parent[lastKey] = patch.value;
+          break;
+        case "delete":
+          if (lastKey in parent) {
+            delete parent[lastKey];
+          } else {
+            throw new Error(`Key not found for deletion: ${patch.path.join(".")}`);
+          }
+          break;
+        default:
+          throw new Error(`Unknown operation: ${patch.op}`);
+      }
     }
   });
+  return target;
 }
+
 function createDocumentStore({
   initialValue,
   url,
   repo
 }) {
-  let owner = getOwner();
   const [handle, setHandle] = createSignal(
     isValidAutomergeUrl(url) ? repo.find(url) : repo.create(initialValue)
   );
-  let [document] = createResource(
-    handle,
-    async (handle2) => {
-      await handle2.whenReady();
-      let [document2, update] = createStore(handle2.docSync());
-      function patch(payload) {
-        update(autoproduce(payload.patches));
-      }
-      handle2.on("change", patch);
-      runWithOwner(owner, () => onCleanup(() => handle2.off("change", patch)));
-      return document2;
-    },
-    {
-      initialValue: handle().docSync() ?? initialValue
-    }
-  );
+  const [doc, update] = createStore({ ...handle().docSync() ?? initialValue });
   let queue = [];
   createEffect(async () => {
     await handle().whenReady();
+    update(reconcile(handle().docSync()));
+    handle().on("change", (payload) => {
+      console.log(payload.patches);
+      update(
+        produce((doc2) => {
+          for (let patch of payload.patches) {
+            const [path, range, val] = fromAutomerge(patch);
+            apply(path, doc2, range, val);
+          }
+        })
+      );
+    });
     if (handle()) {
       let next;
       while (next = queue.shift()) {
@@ -39648,15 +39863,35 @@ function createDocumentStore({
     }
   });
   return {
-    document,
-    setDocument(fn) {
+    get: () => doc,
+    set(fn) {
+      handle().change(fn);
       if (handle().isReady()) {
         handle().change(fn);
       } else {
         queue.push(fn);
       }
     },
-    async newDocument() {
+    /**
+     * Temporary local branch
+     * - Before resolution: mutate solid's store directly
+     * - After resolution: applies an optimized transformation operation on the automerge document
+     **/
+    async branch(callback) {
+      const patches = new Array();
+      const pathProxy = createPatchProxy(await handle().doc());
+      const clone = repo.clone(handle());
+      const result = await callback(function(fn) {
+        fn(pathProxy.proxy);
+        update(produce((doc2) => applyPatches(doc2, pathProxy.patches)));
+        patches.push(...pathProxy.patches);
+        pathProxy.clearPatches();
+      });
+      clone.change((doc2) => applyPatches(doc2, optimizePatches(patches)));
+      handle().merge(clone);
+      return result;
+    },
+    async new() {
       setHandle(repo.create(initialValue));
     },
     url() {
@@ -39726,18 +39961,12 @@ const repo = new Repo({
   network: [new BrowserWebSocketClientAdapter("wss://sync.cyberspatialstudies.org")],
   storage: new IndexedDBStorageAdapter()
 });
-const {
-  document: doc,
-  setDocument: setDoc,
-  newDocument: newDoc,
-  url,
-  openUrl
-} = createRoot(
+const doc = createRoot(
   () => createDocumentStore({
     repo,
     url: `${document.location.hash.substring(1)}`,
     initialValue: {
-      notes: [],
+      notes: {},
       instrument: 24,
       bpm: 140,
       get date() {
@@ -39751,13 +39980,13 @@ const [savedDocumentUrls, setSavedDocumentUrls] = makePersisted(
 );
 createRoot(() => {
   createEffect(() => {
-    document.location.hash = url();
+    document.location.hash = doc.url();
   });
   createEffect(() => {
-    if (doc().date && doc().notes.length > 0) {
+    if (doc.get().date && Object.keys(doc.get().notes).length > 0) {
       setSavedDocumentUrls((urls) => ({
         ...urls,
-        [url()]: doc().date
+        [doc.url()]: doc.get().date
       }));
     }
   });
@@ -39829,7 +40058,7 @@ function filterNote(...notes) {
 }
 function selectNotesFromSelectionArea(area) {
   setSelectedNotes(
-    doc().notes.filter((note) => {
+    Object.values(doc.get().notes).filter((note) => {
       const noteStartTime = note.time;
       const noteEndTime = note.time + note.duration;
       const isWithinXBounds = noteStartTime < area.end.x && noteEndTime > area.start.x;
@@ -39859,7 +40088,7 @@ function playNote(note, delay = 0) {
     return;
   }
   player.play(
-    doc().instrument,
+    doc.get().instrument,
     // instrument: 24 is "Acoustic Guitar (nylon)"
     note.pitch,
     // note: midi number or frequency in Hz (if > 127)
@@ -39868,7 +40097,7 @@ function playNote(note, delay = 0) {
     // velocity
     delay,
     // delay
-    note.duration / (doc().bpm / 60),
+    note.duration / (doc.get().bpm / 60),
     // duration
     0,
     // (optional - specify channel for tinysynth to use)
@@ -39877,7 +40106,7 @@ function playNote(note, delay = 0) {
   );
   selectedMidiOutputs().forEach((output) => {
     output.playNote(note.pitch, {
-      duration: note.duration / (doc().bpm / 60) * 1e3 - 100,
+      duration: note.duration / (doc.get().bpm / 60) * 1e3 - 100,
       time: `+${delay * 1e3}`
     });
   });
@@ -39908,47 +40137,44 @@ async function handleCreateNote(event) {
     time: Math.floor(absolutePosition.x / timeScaleWidth()) * timeScale(),
     velocity: 1
   };
-  setDoc((doc2) => {
-    doc2.notes.push(note);
-  });
-  const initialTime = note.time;
-  const initialDuration = note.duration;
-  const offset = absolutePosition.x - initialTime * projectedWidth();
-  setSelectedNotes([note]);
-  await pointerHelper(event, ({ delta }) => {
-    const deltaX = Math.floor((offset + delta.x) / timeScaleWidth()) * timeScale();
-    if (deltaX < 0) {
-      setDoc((doc2) => {
-        const _note = doc2.notes.find(filterNote(note));
-        if (!_note) return;
-        _note.time = initialTime + deltaX;
-        _note.duration = 1 - deltaX;
-      });
-    } else if (deltaX > 0) {
-      setDoc((doc2) => {
-        const _note = doc2.notes.find(filterNote(note));
-        if (!_note) return;
-        _note.duration = initialDuration + deltaX;
-      });
-    } else {
-      setDoc((doc2) => {
-        const _note = doc2.notes.find(filterNote(note));
-        if (!_note) return;
-        _note.time = initialTime;
-        _note.duration = timeScale();
-      });
-    }
-    markOverlappingNotes(note);
+  await doc.branch(async (update) => {
+    update((doc2) => {
+      doc2.notes[note.id] = note;
+    });
+    const initialTime = note.time;
+    const initialDuration = note.duration;
+    const offset = absolutePosition.x - initialTime * projectedWidth();
+    setSelectedNotes([note]);
+    await pointerHelper(event, ({ delta }) => {
+      const deltaX = Math.floor((offset + delta.x) / timeScaleWidth()) * timeScale();
+      if (deltaX < 0) {
+        update(({ notes }) => {
+          if (!notes[note.id]) return;
+          notes[note.id].time = initialTime + deltaX;
+          notes[note.id].duration = 1 - deltaX;
+        });
+      } else if (deltaX > 0) {
+        update(({ notes }) => {
+          if (!notes[note.id]) return;
+          notes[note.id].duration = initialDuration + deltaX;
+        });
+      } else {
+        update(({ notes }) => {
+          if (!notes[note.id]) return;
+          notes[note.id].time = initialTime;
+          notes[note.id].duration = timeScale();
+        });
+      }
+    });
   });
   setSelectedNotes([]);
-  clipOverlappingNotes(note);
 }
 async function handleErase(event) {
   await handleSelectionArea(event);
-  setDoc((doc2) => {
-    for (let index = doc2.notes.length - 1; index >= 0; index--) {
-      if (isNoteSelected(doc2.notes[index])) {
-        doc2.notes.splice(index, 1);
+  doc.set((doc2) => {
+    for (const id in doc2.notes) {
+      if (isNoteSelected(doc2.notes[id])) {
+        delete doc2.notes[id];
       }
     }
   });
@@ -39973,15 +40199,17 @@ async function handleSnip(event) {
       velocity: note.velocity
     };
   });
-  setDoc((doc2) => doc2.notes.push(...newNotes));
-  setSelectedNotes((notes) => [...notes, ...newNotes]);
-  setDoc((doc2) => {
-    doc2.notes.forEach((note) => {
+  doc.set((doc2) => {
+    newNotes.forEach((note) => {
+      doc2.notes[note.id] = note;
+    });
+    Object.values(doc2.notes).forEach((note) => {
       if (isNoteSelected(note) && note.time < cutLine) {
         note.duration = cutLine - note.time;
       }
     });
   });
+  setSelectedNotes((notes) => [...notes, ...newNotes]);
   setSelectedNotes([]);
   setSelectionArea();
   setSelectionPresence();
@@ -40046,24 +40274,24 @@ async function handleDragSelectedNotes(event) {
         }
       ])
     );
-    await pointerHelper(event, ({ delta }) => {
-      let time = Math.floor(delta.x / timeScaleWidth()) * timeScale();
-      if (time === timeScale() * -1) {
-        time = 0;
-      } else if (time < timeScale() * -1) {
-        time = time + timeScale();
-      }
-      setDoc((doc2) => {
-        doc2.notes.forEach((note) => {
-          if (isNoteSelected(note)) {
-            note.time = initialNotes[note.id].time + time - offset;
-            note.pitch = initialNotes[note.id].pitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight());
-          }
+    await doc.branch(
+      (update) => pointerHelper(event, ({ delta }) => {
+        let time = Math.floor(delta.x / timeScaleWidth()) * timeScale();
+        if (time === timeScale() * -1) {
+          time = 0;
+        } else if (time < timeScale() * -1) {
+          time = time + timeScale();
+        }
+        update((doc2) => {
+          Object.values(doc2.notes).forEach((note) => {
+            if (isNoteSelected(note)) {
+              note.time = initialNotes[note.id].time + time - offset;
+              note.pitch = initialNotes[note.id].pitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight());
+            }
+          });
         });
-      });
-      markOverlappingNotes(...selectedNotes());
-    });
-    clipOverlappingNotes(...selectedNotes());
+      })
+    );
   }
 }
 async function handleStretchSelectedNotes(event) {
@@ -40072,14 +40300,14 @@ async function handleStretchSelectedNotes(event) {
   const initialSelectedNotes = Object.fromEntries(
     selectedNotes().map((note) => [note.id, { ...note }])
   );
-  await pointerHelper(event, ({ delta }) => {
-    batch(() => {
+  await doc.branch(
+    (update) => pointerHelper(event, ({ delta }) => {
       let deltaX = Math.floor(
         delta.x < 0 ? (delta.x + timeScaleWidth() * 0.5) / timeScaleWidth() : delta.x / timeScaleWidth()
       ) * timeScale();
-      setDoc((doc2) => {
-        doc2.notes.forEach((note) => {
-          if (!isNoteSelected(note)) return;
+      update((doc2) => {
+        selectedNotes().forEach(({ id }) => {
+          const note = doc2.notes[id];
           const duration = initialSelectedNotes[note.id].duration + deltaX;
           if (duration > timeScale()) {
             note.duration = duration;
@@ -40089,10 +40317,8 @@ async function handleStretchSelectedNotes(event) {
           }
         });
       });
-      markOverlappingNotes(...selectedNotes());
-    });
-  });
-  clipOverlappingNotes(...selectedNotes());
+    })
+  );
   if (selectedNotes().length === 1) {
     setSelectedNotes([]);
   }
@@ -40100,16 +40326,18 @@ async function handleStretchSelectedNotes(event) {
 async function handleVelocitySelectedNotes(event) {
   event.preventDefault();
   event.stopPropagation();
-  const initialNotes = Object.fromEntries(selectedNotes().map((note) => [note.id, { ...note }]));
-  await pointerHelper(event, ({ delta }) => {
-    setDoc((doc2) => {
-      doc2.notes.forEach((note) => {
-        if (!note.active) {
-          note.active = true;
-        }
-        if (note.id in initialNotes) {
-          note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100));
-        }
+  await doc.branch(async (update) => {
+    const initialNotes = Object.fromEntries(selectedNotes().map((note) => [note.id, { ...note }]));
+    await pointerHelper(event, ({ delta }) => {
+      update((doc2) => {
+        Object.values(doc2.notes).forEach((note) => {
+          if (!note.active) {
+            note.active = true;
+          }
+          if (note.id in initialNotes) {
+            note.velocity = Math.min(1, Math.max(0, initialNotes[note.id].velocity - delta.y / 100));
+          }
+        });
       });
     });
   });
@@ -40135,9 +40363,15 @@ function pasteNotes(clipboard2, position) {
     time: note.time + position.x,
     id: get()
   })).filter(
-    (note) => !doc().notes.find(({ pitch, time }) => note.pitch === pitch && note.time === time)
+    (note) => !Object.values(doc.get().notes).find(
+      ({ pitch, time }) => note.pitch === pitch && note.time === time
+    )
   );
-  setDoc((doc2) => doc2.notes.push(...newNotes));
+  doc.set((doc2) => {
+    newNotes.forEach((note) => {
+      doc2.notes[note.id] = note;
+    });
+  });
   clipOverlappingNotes(...newNotes);
 }
 function findSourceIntersectingAndBeforeNote(sources, { id, time, pitch }) {
@@ -40158,27 +40392,25 @@ function findSourceIntersectingAndAfterNote(sources, { id, time, duration, pitch
 }
 function clipOverlappingNotes(...sources) {
   sources.sort((a, b) => a.time < b.time ? -1 : 1);
-  setDoc((doc2) => {
-    for (let index = doc2.notes.length - 1; index >= 0; index--) {
-      const note = doc2.notes[index];
+  doc.set((doc2) => {
+    for (const id in doc2.notes) {
+      const note = doc2.notes[id];
       if (findSourceIntersectingAndBeforeNote(sources, note)) {
-        doc2.notes.splice(index, 1);
+        delete doc2.notes[id];
       }
     }
   });
-  setDoc(
-    (doc2) => doc2.notes.forEach((note, index) => {
+  doc.set((doc2) => {
+    for (const id in doc2.notes) {
+      const note = doc2.notes[id];
       const source = findSourceIntersectingAndAfterNote(sources, note);
       if (source) {
-        doc2.notes[index].duration = source.time - note.time;
-      }
-    })
-  );
-  setDoc((doc2) => {
-    for (let index = doc2.notes.length - 1; index >= 0; index--) {
-      const note = doc2.notes[index];
-      if (note.duration === 0) {
-        doc2.notes.splice(index, 1);
+        const newDuration = source.time - note.time;
+        if (newDuration === 0) {
+          delete doc2.notes[id];
+        } else {
+          doc2.notes[id].duration = source.time - note.time;
+        }
       }
     }
   });
@@ -40190,8 +40422,8 @@ function clipOverlappingNotes(...sources) {
         continue;
       }
       if (source.time < note.time + note.duration) {
-        setDoc((doc2) => {
-          doc2.notes.forEach((_note) => {
+        doc.set((doc2) => {
+          Object.values(doc2.notes).forEach((_note) => {
             if (_note.id === note.id) {
               _note.duration = source.time - note.time;
             }
@@ -40200,57 +40432,6 @@ function clipOverlappingNotes(...sources) {
       }
       break;
     }
-  });
-}
-function markOverlappingNotes(...sources) {
-  sources.sort((a, b) => a.time < b.time ? -1 : 1);
-  batch(() => {
-    setDoc(
-      (doc2) => doc2.notes.forEach((note) => {
-        if (findSourceIntersectingAndBeforeNote(sources, note)) {
-          note._remove = true;
-        } else {
-          delete note._remove;
-        }
-      })
-    );
-    setDoc(
-      (doc2) => doc2.notes.forEach((note, index) => {
-        const source = findSourceIntersectingAndAfterNote(sources, note);
-        if (source) {
-          doc2.notes[index]._duration = source.time - note.time;
-        } else {
-          delete doc2.notes[index]._duration;
-        }
-      })
-    );
-    sources.forEach((source, index) => {
-      const end = source.time + source.duration;
-      while (index + 1 < sources.length) {
-        if (sources[index + 1].pitch !== source.pitch) {
-          index++;
-          continue;
-        }
-        if (sources[index + 1].time <= end) {
-          setDoc((doc2) => {
-            doc2.notes.forEach((note) => {
-              if (note.id === source.id) {
-                note._duration = sources[index + 1].time - source.time;
-              }
-            });
-          });
-          break;
-        }
-        setDoc((doc2) => {
-          doc2.notes.forEach((note) => {
-            if (note.id === source.id) {
-              delete note._duration;
-            }
-          });
-        });
-        break;
-      }
-    });
   });
 }
 
@@ -40404,7 +40585,7 @@ var _tmpl$ = /* @__PURE__ */ template(`<button>`), _tmpl$2 = /* @__PURE__ */ tem
 function createMidiDataUri(notes) {
   const track = new MidiWriter.Track();
   const division = 8;
-  notes.forEach((note) => {
+  Object.values(notes).forEach((note) => {
     track.addEvent(new MidiWriter.NoteEvent({
       pitch: [MidiWriter.Utils.getPitch(note.pitch)],
       duration: Array.from({
@@ -40506,21 +40687,19 @@ function Note(props) {
     const initialTime = props.note.time;
     const initialPitch = props.note.pitch;
     setSelectedNotes([props.note]);
-    await pointerHelper(event, ({
+    await doc.branch((update) => pointerHelper(event, ({
       delta
     }) => {
       const time = Math.floor((initialTime + delta.x / projectedWidth()) / timeScale()) * timeScale();
       const pitch = initialPitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight());
-      setDoc((doc2) => {
-        const note = doc2.notes.find((note2) => note2.id === props.note.id);
+      update((doc2) => {
+        const note = doc2.notes[props.note.id];
         if (!note) return;
         note.time = time;
         note.pitch = pitch;
       });
-      markOverlappingNotes(props.note);
-    });
+    }));
     setSelectedNotes([]);
-    clipOverlappingNotes(props.note);
   }
   async function handleDeleteNote(event) {
     event.preventDefault();
@@ -40528,9 +40707,8 @@ function Note(props) {
     setSelectedNotes([props.note]);
     await pointerHelper(event);
     setSelectedNotes([]);
-    setDoc((doc2) => {
-      const index = doc2.notes.findIndex((note) => note.id === props.note.id);
-      doc2.notes.splice(index, 1);
+    doc.set((doc2) => {
+      delete doc2.notes[props.note.id];
     });
   }
   async function handlePointerDown(event) {
@@ -40581,9 +40759,8 @@ function Note(props) {
         _el$13.$$pointerdown = handlePointerDown;
         _el$13.$$dblclick = () => {
           if (mode() === "note") {
-            setDoc((doc2) => {
-              const index = doc2.notes.findIndex(filterNote(props.note));
-              if (index !== -1) doc2.notes.splice(index, 1);
+            doc.set((doc2) => {
+              delete doc2.notes[props.note.id];
             });
           }
         };
@@ -41043,14 +41220,18 @@ function TopLeftHud() {
     _el$38.style.setProperty("gap", "5px");
     insert(_el$39, createComponent(ActionButton, {
       onClick: () => {
-        const selection = doc().notes?.filter((note) => note.time >= loop.time && note.time < loop.time + loop.duration);
+        const selection = Object.values(doc.get().notes)?.filter((note) => note.time >= loop.time && note.time < loop.time + loop.duration);
         if (!selection) return;
         const newNotes = selection.map((note) => ({
           ...note,
           id: get(),
           time: note.time + loop.duration
         }));
-        setDoc((doc2) => doc2.notes.push(...newNotes));
+        doc.set((doc2) => {
+          newNotes.forEach((note) => {
+            doc2.notes[note.id] = note;
+          });
+        });
         setLoop("duration", (duration) => duration * 2);
         clipOverlappingNotes(...newNotes);
       },
@@ -41243,7 +41424,7 @@ function TopRightHud() {
               }
             });
             const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2;
-            setDoc((doc2) => {
+            doc.set((doc2) => {
               doc2.notes.forEach((note) => {
                 if (isNoteSelected(note)) {
                   note.active = shouldActivate;
@@ -41340,7 +41521,9 @@ function BottomLeftHud() {
                   get ["class"]() {
                     return styles["dropdown-menu__item"];
                   },
-                  onClick: newDoc,
+                  get onClick() {
+                    return doc.new;
+                  },
                   children: "New File"
                 }), createComponent(DropdownMenu.Sub, {
                   overlap: true,
@@ -41367,9 +41550,9 @@ function BottomLeftHud() {
                               children: ([_url, date]) => createComponent(DropdownMenu.Item, {
                                 as: Button,
                                 get ["class"]() {
-                                  return clsx(styles["dropdown-menu__item"], url() === _url && styles.selected);
+                                  return clsx(styles["dropdown-menu__item"], doc.url() === _url && styles.selected);
                                 },
-                                onClick: () => openUrl(_url),
+                                onClick: () => doc.openUrl(_url),
                                 get children() {
                                   return deserializeDate(date);
                                 }
@@ -41386,7 +41569,7 @@ function BottomLeftHud() {
                   get ["class"]() {
                     return styles["dropdown-menu__item"];
                   },
-                  onClick: () => downloadDataUri(createMidiDataUri(doc().notes), "pianissimo.mid"),
+                  onClick: () => downloadDataUri(createMidiDataUri(doc.get().notes), "pianissimo.mid"),
                   children: "Export to Midi"
                 }), createComponent(DropdownMenu.Item, {
                   as: Button,
@@ -41467,7 +41650,6 @@ function BottomLeftHud() {
   })();
 }
 function BottomRightHud() {
-  createEffect(() => console.log(zoom().x, zoom().y));
   return (() => {
     var _el$50 = _tmpl$16(), _el$51 = _el$50.firstChild, _el$52 = _el$51.nextSibling, _el$53 = _el$52.nextSibling, _el$54 = _el$53.nextSibling, _el$55 = _el$54.nextSibling, _el$56 = _el$55.nextSibling, _el$57 = _el$56.nextSibling;
     insert(_el$51, createComponent(NumberButton, {
@@ -41527,15 +41709,15 @@ function BottomRightHud() {
     insert(_el$54, createComponent(NumberButton, {
       label: "tempo",
       get value() {
-        return doc().bpm;
+        return doc.get().bpm;
       },
-      decrement: () => setDoc((doc2) => doc2.bpm = Math.max(0, doc2.bpm - 1)),
-      increment: () => setDoc((doc2) => doc2.bpm = Math.min(1e3, doc2.bpm + 1)),
+      decrement: () => doc.set((doc2) => doc2.bpm = Math.max(0, doc2.bpm - 1)),
+      increment: () => doc.set((doc2) => doc2.bpm = Math.min(1e3, doc2.bpm + 1)),
       get canDecrement() {
-        return doc().bpm > 0;
+        return doc.get().bpm > 0;
       },
       get canIncrement() {
-        return doc().bpm < 1e3;
+        return doc.get().bpm < 1e3;
       }
     }));
     insert(_el$55, createComponent(NumberButton, {
@@ -41552,26 +41734,26 @@ function BottomRightHud() {
     insert(_el$56, createComponent(NumberButton, {
       label: "instrument",
       get value() {
-        return doc().instrument.toString().padStart(3, "0");
+        return doc.get().instrument.toString().padStart(3, "0");
       },
       decrement: () => {
-        if (doc().instrument > 0) {
-          setDoc((doc2) => {
+        if (doc.get().instrument > 0) {
+          doc.set((doc2) => {
             doc2.instrument = doc2.instrument - 1;
           });
         } else {
-          setDoc((doc2) => {
+          doc.set((doc2) => {
             doc2.instrument = 174;
           });
         }
       },
       increment: () => {
-        if (doc().instrument >= 174) {
-          setDoc((doc2) => {
+        if (doc.get().instrument >= 174) {
+          doc.set((doc2) => {
             doc2.instrument = 0;
           });
         } else {
-          setDoc((doc2) => {
+          doc.set((doc2) => {
             doc2.instrument = doc2.instrument + 1;
           });
         }
@@ -41671,18 +41853,18 @@ function App() {
       }
     }
   }
-  let lastVelocity = doc().bpm / 60;
+  let lastVelocity = doc.get().bpm / 60;
   createEffect(on(playing, (playing2) => {
     if (!playing2 || !audioContext) return;
     let shouldPlay = true;
-    const newVelocity = doc().bpm / 60;
+    const newVelocity = doc.get().bpm / 60;
     const currentTime = audioContext.currentTime;
     const elapsedTime = currentTime * lastVelocity - internalTimeOffset();
     setInternalTimeOffset(currentTime * newVelocity - elapsedTime);
     lastVelocity = newVelocity;
     function clock() {
       if (!shouldPlay) return;
-      const VELOCITY = doc().bpm / 60;
+      const VELOCITY = doc.get().bpm / 60;
       let time = audioContext.currentTime * VELOCITY - internalTimeOffset();
       if (loop) {
         if (time < loop.time) {
@@ -41697,7 +41879,8 @@ function App() {
         }
       }
       setNow(time);
-      doc().notes.forEach((note) => {
+      for (const id in doc.get().notes) {
+        const note = doc.get().notes[id];
         if (!note.active) return;
         if (playedNotes.has(note)) return;
         const loopEnd = loop.time + loop.duration;
@@ -41714,7 +41897,7 @@ function App() {
           playedNotes.add(note);
           playNote(note, (note.time - time) / VELOCITY);
         }
-      });
+      }
       requestAnimationFrame(clock);
     }
     clock();
@@ -41809,13 +41992,13 @@ function App() {
             })()
           }), createComponent(Show, {
             get when() {
-              return doc().notes.length > 0;
+              return Object.values(doc.get().notes).length > 0;
             },
             get children() {
               var _el$60 = _tmpl$5();
               insert(_el$60, createComponent(For, {
                 get each() {
-                  return doc().notes;
+                  return Object.values(doc.get().notes);
                 },
                 children: (note) => createComponent(Note, {
                   note
