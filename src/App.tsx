@@ -29,7 +29,6 @@ import {
   deserializeDate,
   dimensions,
   doc,
-  filterNote,
   handleCreateNote,
   handleDragSelectedNotes,
   handleErase,
@@ -49,9 +48,7 @@ import {
   midiOutputEnabled,
   midiOutputs,
   mode,
-  newDoc,
   now,
-  openUrl,
   pasteNotes,
   playedNotes,
   playing,
@@ -67,7 +64,6 @@ import {
   selectionLocked,
   selectionPresence,
   setDimensions,
-  setDoc,
   setInternalTimeOffset,
   setLoop,
   setMidiOutputEnabled,
@@ -86,7 +82,6 @@ import {
   timeScale,
   timeScaleWidth,
   togglePlaying,
-  url,
   volume,
   zoom
 } from './state'
@@ -208,26 +203,28 @@ function Note(props: { note: NoteData }) {
     const initialPitch = props.note.pitch
     let previousPitch = initialPitch
     setSelectedNotes([props.note])
-    await pointerHelper(event, ({ delta }) => {
-      const time =
-        Math.floor((initialTime + delta.x / projectedWidth()) / timeScale()) * timeScale()
-      const pitch = initialPitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
 
-      setDoc(doc => {
-        const note = doc.notes[props.note.id]
-        if (!note) return
-        note.time = time
-        note.pitch = pitch
+    await doc.branch(update =>
+      pointerHelper(event, ({ delta }) => {
+        const time =
+          Math.floor((initialTime + delta.x / projectedWidth()) / timeScale()) * timeScale()
+        const pitch =
+          initialPitch - Math.floor((delta.y + projectedHeight() / 2) / projectedHeight())
 
-        if (previousPitch !== pitch) {
-          previousPitch = pitch
-        }
+        update(doc => {
+          const note = doc.notes[props.note.id]
+          if (!note) return
+          note.time = time
+          note.pitch = pitch
+
+          if (previousPitch !== pitch) {
+            previousPitch = pitch
+          }
+        })
       })
+    )
 
-      // markOverlappingNotes(props.note)
-    })
     setSelectedNotes([])
-    //clipOverlappingNotes(props.note)
   }
 
   async function handleDeleteNote(event: PointerEvent) {
@@ -236,7 +233,7 @@ function Note(props: { note: NoteData }) {
     setSelectedNotes([props.note])
     await pointerHelper(event)
     setSelectedNotes([])
-    setDoc(doc => {
+    doc.set(doc => {
       delete doc.notes[props.note.id]
     })
   }
@@ -312,9 +309,8 @@ function Note(props: { note: NoteData }) {
           opacity={props.note.active ? props.note.velocity * 0.5 + 0.5 : 0.25}
           onDblClick={() => {
             if (mode() === 'note') {
-              setDoc(doc => {
-                const index = doc.notes.findIndex(filterNote(props.note))
-                if (index !== -1) doc.notes.splice(index, 1)
+              doc.set(doc => {
+                delete doc.notes[props.note.id]
               })
             }
           }}
@@ -702,7 +698,7 @@ function TopLeftHud() {
       <div class={styles.list}>
         <ActionButton
           onClick={() => {
-            const selection = Object.values(doc().notes)?.filter(
+            const selection = Object.values(doc.get().notes)?.filter(
               note => note.time >= loop.time && note.time < loop.time + loop.duration
             )
 
@@ -714,7 +710,7 @@ function TopLeftHud() {
               time: note.time + loop.duration
             }))
 
-            setDoc(doc => {
+            doc.set(doc => {
               newNotes.forEach(note => {
                 doc.notes[note.id] = note
               })
@@ -841,7 +837,7 @@ function TopRightHud() {
 
                 const shouldActivate = inactiveSelectedNotes > selectedNotes().length / 2
 
-                setDoc(doc => {
+                doc.set(doc => {
                   doc.notes.forEach(note => {
                     if (isNoteSelected(note)) {
                       note.active = shouldActivate
@@ -893,7 +889,11 @@ function BottomLeftHud() {
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content class={styles['dropdown-menu__content']}>
-              <DropdownMenu.Item as={Button} class={styles['dropdown-menu__item']} onClick={newDoc}>
+              <DropdownMenu.Item
+                as={Button}
+                class={styles['dropdown-menu__item']}
+                onClick={doc.new}
+              >
                 New File
               </DropdownMenu.Item>
               <DropdownMenu.Sub overlap gutter={4} shift={-8}>
@@ -912,9 +912,9 @@ function BottomLeftHud() {
                           as={Button}
                           class={clsx(
                             styles['dropdown-menu__item'],
-                            url() === _url && styles.selected
+                            doc.url() === _url && styles.selected
                           )}
-                          onClick={() => openUrl(_url)}
+                          onClick={() => doc.openUrl(_url)}
                         >
                           {deserializeDate(date)}
                         </DropdownMenu.Item>
@@ -927,7 +927,9 @@ function BottomLeftHud() {
                 as={Button}
                 closeOnSelect={false}
                 class={styles['dropdown-menu__item']}
-                onClick={() => downloadDataUri(createMidiDataUri(doc().notes), 'pianissimo.mid')}
+                onClick={() =>
+                  downloadDataUri(createMidiDataUri(doc.get().notes), 'pianissimo.mid')
+                }
               >
                 Export to Midi
               </DropdownMenu.Item>
@@ -986,7 +988,6 @@ function BottomLeftHud() {
 }
 
 function BottomRightHud() {
-  createEffect(() => console.log(zoom().x, zoom().y))
   return (
     <div class={styles.bottomRightHud}>
       <div class={styles.desktop}>
@@ -1022,11 +1023,11 @@ function BottomRightHud() {
       <div>
         <NumberButton
           label="tempo"
-          value={doc().bpm}
-          decrement={() => setDoc(doc => (doc.bpm = Math.max(0, doc.bpm - 1)))}
-          increment={() => setDoc(doc => (doc.bpm = Math.min(1000, doc.bpm + 1)))}
-          canDecrement={doc().bpm > 0}
-          canIncrement={doc().bpm < 1000}
+          value={doc.get().bpm}
+          decrement={() => doc.set(doc => (doc.bpm = Math.max(0, doc.bpm - 1)))}
+          increment={() => doc.set(doc => (doc.bpm = Math.min(1000, doc.bpm + 1)))}
+          canDecrement={doc.get().bpm > 0}
+          canIncrement={doc.get().bpm < 1000}
         />
       </div>
       <div>
@@ -1041,25 +1042,25 @@ function BottomRightHud() {
       <div>
         <NumberButton
           label="instrument"
-          value={doc().instrument.toString().padStart(3, '0')}
+          value={doc.get().instrument.toString().padStart(3, '0')}
           decrement={() => {
-            if (doc().instrument > 0) {
-              setDoc(doc => {
+            if (doc.get().instrument > 0) {
+              doc.set(doc => {
                 doc.instrument = doc.instrument - 1
               })
             } else {
-              setDoc(doc => {
+              doc.set(doc => {
                 doc.instrument = 174
               })
             }
           }}
           increment={() => {
-            if (doc().instrument >= 174) {
-              setDoc(doc => {
+            if (doc.get().instrument >= 174) {
+              doc.set(doc => {
                 doc.instrument = 0
               })
             } else {
-              setDoc(doc => {
+              doc.set(doc => {
                 doc.instrument = doc.instrument + 1
               })
             }
@@ -1146,7 +1147,7 @@ function App() {
   }
 
   // Audio Loop
-  let lastVelocity = doc().bpm / 60 // Track the last velocity to adjust time offset
+  let lastVelocity = doc.get().bpm / 60 // Track the last velocity to adjust time offset
   createEffect(
     on(playing, playing => {
       if (!playing || !audioContext) return
@@ -1154,7 +1155,7 @@ function App() {
       let shouldPlay = true
 
       // Adjust timeOffset when BPM changes to prevent abrupt shifts
-      const newVelocity = doc().bpm / 60
+      const newVelocity = doc.get().bpm / 60
       const currentTime = audioContext!.currentTime
       const elapsedTime = currentTime * lastVelocity - internalTimeOffset()
       setInternalTimeOffset(currentTime * newVelocity - elapsedTime)
@@ -1163,7 +1164,7 @@ function App() {
       function clock() {
         if (!shouldPlay) return
 
-        const VELOCITY = doc().bpm / 60 // Calculate velocity dynamically from BPM
+        const VELOCITY = doc.get().bpm / 60 // Calculate velocity dynamically from BPM
         let time = audioContext!.currentTime * VELOCITY - internalTimeOffset()
 
         if (loop) {
@@ -1180,8 +1181,8 @@ function App() {
         }
 
         setNow(time)
-        for (const id in doc().notes) {
-          const note = doc().notes[id]
+        for (const id in doc.get().notes) {
+          const note = doc.get().notes[id]
 
           if (!note.active) return
           if (playedNotes.has(note)) return
@@ -1285,13 +1286,13 @@ function App() {
                   )}
                 </Show>
                 {/* Notes */}
-                <Show when={Object.values(doc().notes).length > 0}>
+                <Show when={Object.values(doc.get().notes).length > 0}>
                   <g
                     style={{
                       transform: `translate(${projectedOriginX()}px, ${projectedOriginY()}px)`
                     }}
                   >
-                    <For each={Object.values(doc().notes)}>{note => <Note note={note} />}</For>
+                    <For each={Object.values(doc.get().notes)}>{note => <Note note={note} />}</For>
                   </g>
                 </Show>
                 {/* Now Underlay */}
